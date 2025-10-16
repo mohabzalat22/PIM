@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  SIMPLE
+  CONFIGURABLE
+  BUNDLE
+  VIRTUAL
+  DOWNLOADABLE
+}
+
+model Product {
+  id        Int         @id @default(autoincrement())
+  sku       String      @unique
+  type      ProductType @default(SIMPLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  /**
+   * Relations
+   */
+  productAssets          ProductAsset[]
+  productCategories      ProductCategory[]
+  productAttributeValues ProductAttributeValue[]
+}
+
+model Asset {
+  id        Int      @id @default(autoincrement())
+  filePath  String
+  mimeType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  productAssets ProductAsset[]
+}
+
+model ProductAsset {
+  productId Int
+  assetId   Int
+  position  Int?
+  type      String // image, video, pdf, manual
+  createdAt DateTime @default(now())
+
+  /**
+   * Relations
+   */
+  product Product @relation(fields: [productId], references: [id])
+  asset   Asset   @relation(fields: [assetId], references: [id])
+
+  @@id([productId, assetId, type])
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  parentId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  parent            Category?             @relation("CategoryToSubcategories", fields: [parentId], references: [id])
+  subcategory       Category[]            @relation("CategoryToSubcategories")
+  productCategories ProductCategory[]
+  translations      CategoryTranslation[]
+}
+
+model CategoryTranslation {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int
+  storeViewId Int
+  name        String?
+  slug        String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  category  Category  @relation(fields: [categoryId], references: [id])
+  storeView StoreView @relation(fields: [storeViewId], references: [id])
+
+  @@unique([categoryId, storeViewId])
+}
+
+model ProductCategory {
+  productId  Int
+  categoryId Int
+  createdAt  DateTime @default(now())
+
+  /**
+   * Relations
+   */
+  product  Product  @relation(fields: [productId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([productId, categoryId])
+}
+
+enum AttributeDataType {
+  BOOLEAN
+  STRING
+  INT
+  DECIMAL
+  TEXT
+  JSON
+}
+
+enum AttributeInputType {
+  TEXT
+  SELECT
+  MULTISELECT
+  DATE
+  MEDIA
+}
+
+model Attribute {
+  id           Int                @id @default(autoincrement())
+  code         String             @unique
+  label        String?
+  dataType     AttributeDataType
+  inputType    AttributeInputType
+  isRequired   Boolean            @default(false)
+  isFilterable Boolean            @default(false)
+  isGlobal     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  /**
+   * Relations
+   */
+  productAttributeValues ProductAttributeValue[]
+}
+
+model ProductAttributeValue {
+  id           Int      @id @default(autoincrement())
+  productId    Int
+  attributeId  Int
+  storeViewId  Int? // NULL = global scope, otherwise per store view
+  valueString  String?
+  valueInt     Int?
+  valueDecimal Decimal?
+  valueText    String?
+  valueBoolean Boolean?
+  valueJson    Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  product   Product    @relation(fields: [productId], references: [id])
+  attribute Attribute  @relation(fields: [attributeId], references: [id])
+  storeView StoreView? @relation(fields: [storeViewId], references: [id])
+
+  @@unique([productId, attributeId, storeViewId])
+}
+
+model StoreView {
+  id        Int      @id @default(autoincrement())
+  storeId   Int
+  code      String   @unique
+  name      String
+  locale    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  store                  Store                   @relation(fields: [storeId], references: [id])
+  productAttributeValues ProductAttributeValue[]
+  categoryTranslations   CategoryTranslation[]
+}
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Relations
+   */
+  storeViews StoreView[]
+}
