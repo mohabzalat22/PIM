@@ -14,31 +14,38 @@ import {
   validateCategoryTranslationDelete,
   validateCategoryTranslationUpdate,
 } from "../middlewares/validateCategoryTranslation.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getCategoryTranslations);
-router.get("/category/:categoryId", getCategoryTranslationsByCategory);
-router.get("/storeview/:storeViewId", getCategoryTranslationsByStoreView);
+router.get("/", asyncWrapper(getCategoryTranslations));
+router.get(
+  "/category/:categoryId",
+  asyncWrapper(getCategoryTranslationsByCategory)
+);
+router.get(
+  "/storeview/:storeViewId",
+  asyncWrapper(getCategoryTranslationsByStoreView)
+);
 router.get(
   "/composite/:categoryId/:storeViewId",
-  getCategoryTranslationByComposite
+  asyncWrapper(getCategoryTranslationByComposite)
 );
-router.get("/:id", getCategoryTranslation);
+router.get("/:id", asyncWrapper(getCategoryTranslation));
 router.post(
   "/",
   validateCategoryTranslationCreation,
-  createCategoryTranslation
+  asyncWrapper(createCategoryTranslation)
 );
 router.put(
   "/:id",
   validateCategoryTranslationUpdate,
-  updateCategoryTranslation
+  asyncWrapper(updateCategoryTranslation)
 );
 router.delete(
   "/:id",
   validateCategoryTranslationDelete,
-  deleteCategoryTranslation
+  asyncWrapper(deleteCategoryTranslation)
 );
 
 export default router;

@@ -9,6 +9,7 @@ import categoryTranslationRoutes from "./routes/categoryTranslationRoute.js";
 import productCategoryRoutes from "./routes/productCategoryRoute.js";
 import storeRoutes from "./routes/storeRoute.js";
 import storeViewRoutes from "./routes/storeViewRoute.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const PORT = 3000;
 
@@ -35,6 +36,9 @@ app.use("/api/stores", storeRoutes);
 app.use("/api/store-views", storeViewRoutes);
 
 // grouped routes
+
+// error handler middleware
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log("Listening on port: ", PORT);

@@ -11,13 +11,14 @@ import {
   validateProductDelete,
   validateProductUpdate,
 } from "../middlewares/validateProduct.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getProducts);
-router.get("/:id", getProduct);
-router.post("/", validateProductCreation, createProduct);
-router.put("/:id", validateProductUpdate, updateProduct);
-router.delete("/:id", validateProductDelete, deleteProduct);
+router.get("/", asyncWrapper(getProducts));
+router.get("/:id", asyncWrapper(getProduct));
+router.post("/", validateProductCreation, asyncWrapper(createProduct));
+router.put("/:id", validateProductUpdate, asyncWrapper(updateProduct));
+router.delete("/:id", validateProductDelete, asyncWrapper(deleteProduct));
 
 export default router;

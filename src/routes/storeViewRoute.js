@@ -13,15 +13,16 @@ import {
   validateStoreViewDelete,
   validateStoreViewUpdate,
 } from "../middlewares/validateStoreView.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getStoreViews);
-router.get("/store/:storeId", getStoreViewsByStore);
-router.get("/code/:code", getStoreViewByCode);
-router.get("/:id", getStoreView);
-router.post("/", validateStoreViewCreation, createStoreView);
-router.put("/:id", validateStoreViewUpdate, updateStoreView);
-router.delete("/:id", validateStoreViewDelete, deleteStoreView);
+router.get("/", asyncWrapper(getStoreViews));
+router.get("/store/:storeId", asyncWrapper(getStoreViewsByStore));
+router.get("/code/:code", asyncWrapper(getStoreViewByCode));
+router.get("/:id", asyncWrapper(getStoreView));
+router.post("/", validateStoreViewCreation, asyncWrapper(createStoreView));
+router.put("/:id", validateStoreViewUpdate, asyncWrapper(updateStoreView));
+router.delete("/:id", validateStoreViewDelete, asyncWrapper(deleteStoreView));
 
 export default router;

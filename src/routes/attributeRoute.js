@@ -11,13 +11,14 @@ import {
   validateAttributeUpdate,
   validateAttributeDelete,
 } from "../middlewares/validateAttribute.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getAttributes);
-router.get("/:id", getAttribute);
-router.post("/", validateAttributeCreation, createAttribute);
-router.put("/:id", validateAttributeUpdate, updateAttribute);
-router.delete("/:id", validateAttributeDelete, deleteAttribute);
+router.get("/", asyncWrapper(getAttributes));
+router.get("/:id", asyncWrapper(getAttribute));
+router.post("/", validateAttributeCreation, asyncWrapper(createAttribute));
+router.put("/:id", validateAttributeUpdate, asyncWrapper(updateAttribute));
+router.delete("/:id", validateAttributeDelete, asyncWrapper(deleteAttribute));
 
 export default router;

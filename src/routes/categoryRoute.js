@@ -13,15 +13,16 @@ import {
   validateCategoryDelete,
   validateCategoryUpdate,
 } from "../middlewares/validateCategory.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getCategories);
-router.get("/root", getRootCategories);
-router.get("/parent/:parentId", getCategoriesByParent);
-router.get("/:id", getCategory);
-router.post("/", validateCategoryCreation, createCategory);
-router.put("/:id", validateCategoryUpdate, updateCategory);
-router.delete("/:id", validateCategoryDelete, deleteCategory);
+router.get("/", asyncWrapper(getCategories));
+router.get("/root", asyncWrapper(getRootCategories));
+router.get("/parent/:parentId", asyncWrapper(getCategoriesByParent));
+router.get("/:id", asyncWrapper(getCategory));
+router.post("/", validateCategoryCreation, asyncWrapper(createCategory));
+router.put("/:id", validateCategoryUpdate, asyncWrapper(updateCategory));
+router.delete("/:id", validateCategoryDelete, asyncWrapper(deleteCategory));
 
 export default router;

@@ -11,18 +11,26 @@ import {
   validateProductCategoryCreation,
   validateProductCategoryDelete,
 } from "../middlewares/validateProductCategory.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getProductCategories);
-router.get("/product/:productId", getProductCategoriesByProduct);
-router.get("/category/:categoryId", getProductCategoriesByCategory);
-router.get("/:productId/:categoryId", getProductCategory);
-router.post("/", validateProductCategoryCreation, createProductCategory);
+router.get("/", asyncWrapper(getProductCategories));
+router.get("/product/:productId", asyncWrapper(getProductCategoriesByProduct));
+router.get(
+  "/category/:categoryId",
+  asyncWrapper(getProductCategoriesByCategory)
+);
+router.get("/:productId/:categoryId", asyncWrapper(getProductCategory));
+router.post(
+  "/",
+  validateProductCategoryCreation,
+  asyncWrapper(createProductCategory)
+);
 router.delete(
   "/:productId/:categoryId",
   validateProductCategoryDelete,
-  deleteProductCategory
+  asyncWrapper(deleteProductCategory)
 );
 
 export default router;

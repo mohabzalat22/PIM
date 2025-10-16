@@ -14,20 +14,33 @@ import {
   validateProductAttributeDelete,
   validateProductAttributeDeleteByCompositeKey,
 } from "../middlewares/validateProductAttribute.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 const router = express.Router();
 
-router.get("/", getProductAttributes);
-router.get("/:id", getProductAttribute);
-router.post("/", validateProductAttributeCreation, createProductAttribute);
-router.put("/:id", validateProductAttributeUpdate, updateProductAttribute);
-router.delete("/:id", validateProductAttributeDelete, deleteProductAttribute);
+router.get("/", asyncWrapper(getProductAttributes));
+router.get("/:id", asyncWrapper(getProductAttribute));
+router.post(
+  "/",
+  validateProductAttributeCreation,
+  asyncWrapper(createProductAttribute)
+);
+router.put(
+  "/:id",
+  validateProductAttributeUpdate,
+  asyncWrapper(updateProductAttribute)
+);
+router.delete(
+  "/:id",
+  validateProductAttributeDelete,
+  asyncWrapper(deleteProductAttribute)
+);
 
 // Composite key delete routes
 // For global scope (no store view)
 router.delete(
   "/products/:productId/attributes/:attributeId",
   validateProductAttributeDeleteByCompositeKey,
-  deleteProductAttributeByCompositeKey
+  asyncWrapper(deleteProductAttributeByCompositeKey)
 );
 // For specific store view
 router.delete(

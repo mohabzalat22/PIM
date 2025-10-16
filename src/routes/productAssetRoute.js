@@ -13,18 +13,23 @@ import {
   validateProductAssetDelete,
   validateProductAssetUpdate,
 } from "../middlewares/validateProductAsset.js";
+import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 const router = express.Router();
 
-router.get("/", getProductAssets);
-router.get("/product/:productId", getProductAssetsByProduct);
-router.get("/asset/:assetId", getProductAssetsByAsset);
-router.get("/:productId/:assetId/:type", getProductAsset);
-router.post("/", validateProductAssetCreation, createProductAsset);
+router.get("/", asyncWrapper(getProductAssets));
+router.get("/product/:productId", asyncWrapper(getProductAssetsByProduct));
+router.get("/asset/:assetId", asyncWrapper(getProductAssetsByAsset));
+router.get("/:productId/:assetId/:type", asyncWrapper(getProductAsset));
+router.post(
+  "/",
+  validateProductAssetCreation,
+  asyncWrapper(createProductAsset)
+);
 router.put(
   "/:productId/:assetId/:type",
   validateProductAssetUpdate,
-  updateProductAsset
+  asyncWrapper(updateProductAsset)
 );
 router.delete(
   "/:productId/:assetId/:type",
