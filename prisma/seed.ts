@@ -15,47 +15,49 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting seed...");
 
-  await prisma.$transaction([
-    prisma.productAttributeValue.deleteMany(),
-    prisma.productAsset.deleteMany(),
-    prisma.productCategory.deleteMany(),
-    prisma.asset.deleteMany(),
-    prisma.categoryTranslation.deleteMany(),
-    prisma.category.deleteMany(),
-    prisma.attribute.deleteMany(),
-    prisma.storeView.deleteMany(),
-    prisma.store.deleteMany(),
-    prisma.product.deleteMany(),
-  ]);
+  // await prisma.$transaction([
+  //   prisma.productAttributeValue.deleteMany(),
+  //   prisma.productAsset.deleteMany(),
+  //   prisma.productCategory.deleteMany(),
+  //   prisma.asset.deleteMany(),
+  //   prisma.categoryTranslation.deleteMany(),
+  //   prisma.category.deleteMany(),
+  //   prisma.attribute.deleteMany(),
+  //   prisma.storeView.deleteMany(),
+  //   prisma.store.deleteMany(),
+  //   prisma.product.deleteMany(),
+  // ]);
 
-  const store = await prisma.store.create({ data: createStore() });
-  const storeView = await prisma.storeView.create({
-    data: createStoreView(store.id),
-  });
+  for (let i = 0; i < 50; i++) {
+    const store = await prisma.store.create({ data: createStore() });
+    const storeView = await prisma.storeView.create({
+      data: createStoreView(store.id),
+    });
 
-  const category = await prisma.category.create({ data: createCategory() });
-  await prisma.categoryTranslation.create({
-    data: createCategoryTranslation(category.id, storeView.id),
-  });
+    const category = await prisma.category.create({ data: createCategory() });
+    await prisma.categoryTranslation.create({
+      data: createCategoryTranslation(category.id, storeView.id),
+    });
 
-  const product = await prisma.product.create({ data: createProduct() });
-  const asset = await prisma.asset.create({ data: createAsset() });
-  await prisma.productAsset.create({
-    data: createProductAsset(product.id, asset.id),
-  });
+    const product = await prisma.product.create({ data: createProduct() });
+    const asset = await prisma.asset.create({ data: createAsset() });
+    await prisma.productAsset.create({
+      data: createProductAsset(product.id, asset.id),
+    });
 
-  await prisma.productCategory.create({
-    data: createProductCategory(product.id, category.id),
-  });
+    await prisma.productCategory.create({
+      data: createProductCategory(product.id, category.id),
+    });
 
-  const attribute = await prisma.attribute.create({ data: createAttribute() });
-  await prisma.productAttributeValue.create({
-    data: createProductAttributeValue(product.id, attribute.id, storeView.id),
-  });
-
+    const attribute = await prisma.attribute.create({
+      data: createAttribute(),
+    });
+    await prisma.productAttributeValue.create({
+      data: createProductAttributeValue(product.id, attribute.id, storeView.id),
+    });
+  }
   console.log("✅ Seed completed successfully!");
-}
-
+} // simple 50 record loop
 main()
   .catch((e) => {
     console.error(e);
