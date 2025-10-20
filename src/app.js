@@ -10,10 +10,18 @@ import productCategoryRoutes from "./routes/productCategoryRoute.js";
 import storeRoutes from "./routes/storeRoute.js";
 import storeViewRoutes from "./routes/storeViewRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import cors from "cors";
 
 const PORT = 3000;
 
 const app = express();
+// cors options
+const CorsOptions = {
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(CorsOptions));
 
 app.use(express.json());
 
