@@ -1,9 +1,15 @@
-export const successMessage = (data, statusCode = 200, message = "Success") => {
+export const successMessage = (
+  data,
+  statusCode = 200,
+  message = "Success",
+  meta
+) => {
   return {
     success: true,
     statusCode,
     message,
     data,
+    meta,
   };
 };
 

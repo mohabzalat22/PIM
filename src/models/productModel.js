@@ -2,31 +2,37 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const findAll = async () => {
-  return await prisma.product.findMany({
-    include: {
-      productAssets: {
-        include: {
-          asset: true,
+export const findAll = async (skip, limit) => {
+  return await Promise.all([
+    prisma.product.findMany({
+      skip,
+      take: limit,
+      include: {
+        productAssets: {
+          include: {
+            asset: true,
+          },
         },
-      },
-      productCategories: {
-        include: {
-          category: {
-            include: {
-              translations: true,
+        productCategories: {
+          include: {
+            category: {
+              include: {
+                translations: true,
+              },
             },
           },
         },
-      },
-      productAttributeValues: {
-        include: {
-          attribute: true,
-          storeView: true,
+        productAttributeValues: {
+          include: {
+            attribute: true,
+            storeView: true,
+          },
         },
       },
-    },
-  });
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.product.count(),
+  ]);
 };
 
 export const findBySku = async (sku) => {

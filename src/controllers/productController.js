@@ -8,8 +8,21 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProducts = async (req, res) => {
-  const products = (await findAll()) ?? [];
-  res.json(successMessage(products));
+  const page = parseInt(req.query.page) || 1; // current page
+  const limit = parseInt(req.query.limit) || 10; // items per page
+  const skip = (page - 1) * limit;
+
+  const [products, total] = (await findAll(skip, limit)) ?? [];
+
+  // meta data
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  res.json(successMessage(products, 200, "Success fetching products", meta));
 };
 
 export const getProduct = async (req, res) => {
