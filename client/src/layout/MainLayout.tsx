@@ -8,7 +8,7 @@ export default function MainLayout() {
     <SidebarProvider>
       <AppSidebar />
       <Toaster richColors position="top-right" />
-      <main>
+      <main className="w-full border rounded-3xl p-2 m-4">
         <SidebarTrigger />
         <Outlet />
       </main>
