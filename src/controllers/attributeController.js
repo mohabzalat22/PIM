@@ -8,8 +8,30 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getAttributes = async (req, res) => {
-  const attributes = (await findAll()) ?? [];
-  return res.json(successMessage(attributes));
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
+  const filters = {
+    search: req.query.search || null,
+    dataType: req.query.dataType || null,
+    inputType: req.query.inputType || null,
+    isFilterable: req.query.isFilterable || null,
+    isGlobal: req.query.isGlobal || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [attributes, total] = (await findAll(skip, limit, filters)) ?? [];
+  
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+  
+  return res.json(successMessage(attributes, 200, "Success fetching attributes", meta));
 };
 
 export const getAttribute = async (req, res) => {

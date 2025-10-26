@@ -9,8 +9,28 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getStores = async (req, res) => {
-  const stores = (await findAll()) ?? [];
-  res.json(successMessage(stores));
+  const page = parseInt(req.query.page) || 1; // current page
+  const limit = parseInt(req.query.limit) || 10; // items per page
+  const skip = (page - 1) * limit;
+
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [stores, total] = (await findAll(skip, limit, filters)) ?? [];
+
+  // meta data
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  res.json(successMessage(stores, 200, "Success fetching stores", meta));
 };
 
 export const getStore = async (req, res) => {

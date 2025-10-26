@@ -10,8 +10,27 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getCategories = async (req, res) => {
-  const categories = (await findAll()) ?? [];
-  res.json(successMessage(categories));
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
+  const filters = {
+    search: req.query.search || null,
+    parentId: req.query.parentId || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [categories, total] = (await findAll(skip, limit, filters)) ?? [];
+  
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+  
+  res.json(successMessage(categories, 200, "Success fetching categories", meta));
 };
 
 export const getRootCategories = async (req, res) => {

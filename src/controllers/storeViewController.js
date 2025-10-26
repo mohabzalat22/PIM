@@ -10,8 +10,30 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getStoreViews = async (req, res) => {
-  const storeViews = (await findAll()) ?? [];
-  res.json(successMessage(storeViews));
+  const page = parseInt(req.query.page) || 1; // current page
+  const limit = parseInt(req.query.limit) || 10; // items per page
+  const skip = (page - 1) * limit;
+
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    storeId: req.query.storeId || null,
+    locale: req.query.locale || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [storeViews, total] = (await findAll(skip, limit, filters)) ?? [];
+
+  // meta data
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  res.json(successMessage(storeViews, 200, "Success fetching store views", meta));
 };
 
 export const getStoreViewsByStore = async (req, res) => {

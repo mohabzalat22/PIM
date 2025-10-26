@@ -1,18 +1,70 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export const findAll = async () => {
-  return await prisma.productAttributeValue.findMany({
-    include: {
-      product: true,
-      attribute: true,
-      storeView: {
-        include: {
-          store: true,
+export const findAll = async (skip = 0, limit = 10, filters = {}) => {
+  const where = {};
+
+  // Search filter (search in product SKU and attribute code/label)
+  if (filters.search) {
+    where.OR = [
+      { product: { sku: { contains: filters.search, mode: 'insensitive' } } },
+      { attribute: { code: { contains: filters.search, mode: 'insensitive' } } },
+      { attribute: { label: { contains: filters.search, mode: 'insensitive' } } }
+    ];
+  }
+
+  // Product filter
+  if (filters.productId) {
+    where.productId = parseInt(filters.productId);
+  }
+
+  // Attribute filter
+  if (filters.attributeId) {
+    where.attributeId = parseInt(filters.attributeId);
+  }
+
+  // Store view filter
+  if (filters.storeViewId) {
+    where.storeViewId = parseInt(filters.storeViewId);
+  }
+
+  // Data type filter
+  if (filters.dataType) {
+    where.attribute = {
+      dataType: filters.dataType
+    };
+  }
+
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'productId') {
+    orderBy.productId = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'attributeId') {
+    orderBy.attributeId = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'storeViewId') {
+    orderBy.storeViewId = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
+  return await Promise.all([
+    prisma.productAttributeValue.findMany({
+      skip,
+      take: limit,
+      where,
+      include: {
+        product: true,
+        attribute: true,
+        storeView: {
+          include: {
+            store: true,
+          },
         },
       },
-    },
-  });
+      orderBy,
+    }),
+    prisma.productAttributeValue.count({ where }),
+  ]);
 };
 
 export const findById = async (id) => {

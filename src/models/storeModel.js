@@ -2,12 +2,39 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const findAll = async () => {
-  return await prisma.store.findMany({
-    include: {
-      storeViews: true,
-    },
-  });
+export const findAll = async (skip = 0, limit = 10, filters = {}) => {
+  const where = {};
+
+  // Search filter (code and name search)
+  if (filters.search) {
+    where.OR = [
+      { code: { contains: filters.search, mode: 'insensitive' } },
+      { name: { contains: filters.search, mode: 'insensitive' } }
+    ];
+  }
+
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'code') {
+    orderBy.code = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'name') {
+    orderBy.name = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
+  return await Promise.all([
+    prisma.store.findMany({
+      skip,
+      take: limit,
+      where,
+      include: {
+        storeViews: true,
+      },
+      orderBy,
+    }),
+    prisma.store.count({ where }),
+  ]);
 };
 
 export const findById = async (id) => {

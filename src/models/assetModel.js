@@ -2,16 +2,48 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const findAll = async () => {
-  return await prisma.asset.findMany({
-    include: {
-      productAssets: {
-        include: {
-          product: true,
+export const findAll = async (skip = 0, limit = 10, filters = {}) => {
+  const where = {};
+  
+  // Search filter (file path search)
+  if (filters.search) {
+    where.filePath = {
+      contains: filters.search,
+      mode: 'insensitive'
+    };
+  }
+  
+  // MIME type filter
+  if (filters.mimeType) {
+    where.mimeType = filters.mimeType;
+  }
+  
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'filePath') {
+    orderBy.filePath = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'mimeType') {
+    orderBy.mimeType = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
+  return await Promise.all([
+    prisma.asset.findMany({
+      skip,
+      take: limit,
+      where,
+      include: {
+        productAssets: {
+          include: {
+            product: true,
+          },
         },
       },
-    },
-  });
+      orderBy,
+    }),
+    prisma.asset.count({ where }),
+  ]);
 };
 
 export const findById = async (id) => {

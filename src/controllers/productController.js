@@ -11,8 +11,18 @@ export const getProducts = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // current page
   const limit = parseInt(req.query.limit) || 10; // items per page
   const skip = (page - 1) * limit;
+  
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    type: req.query.type || null,
+    categoryId: req.query.categoryId || null,
+    attributeFilters: req.query.attributes ? JSON.parse(req.query.attributes) : null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
 
-  const [products, total] = (await findAll(skip, limit)) ?? [];
+  const [products, total] = (await findAll(skip, limit, filters)) ?? [];
 
   // meta data
   const meta = {

@@ -8,8 +8,27 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getAssets = async (req, res) => {
-  const assets = (await findAll()) ?? [];
-  res.json(successMessage(assets));
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
+  const filters = {
+    search: req.query.search || null,
+    mimeType: req.query.mimeType || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [assets, total] = (await findAll(skip, limit, filters)) ?? [];
+  
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+  
+  res.json(successMessage(assets, 200, "Success fetching assets", meta));
 };
 
 export const getAsset = async (req, res) => {

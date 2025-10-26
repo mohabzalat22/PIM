@@ -2,23 +2,62 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const findAll = async () => {
-  return await prisma.storeView.findMany({
-    include: {
-      store: true,
-      productAttributeValues: {
-        include: {
-          product: true,
-          attribute: true,
+export const findAll = async (skip = 0, limit = 10, filters = {}) => {
+  const where = {};
+
+  // Search filter (code and name search)
+  if (filters.search) {
+    where.OR = [
+      { code: { contains: filters.search, mode: 'insensitive' } },
+      { name: { contains: filters.search, mode: 'insensitive' } }
+    ];
+  }
+
+  // Store filter
+  if (filters.storeId) {
+    where.storeId = parseInt(filters.storeId);
+  }
+
+  // Locale filter
+  if (filters.locale) {
+    where.locale = filters.locale;
+  }
+
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'code') {
+    orderBy.code = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'name') {
+    orderBy.name = filters.sortOrder || 'asc';
+  } else if (filters.sortBy === 'locale') {
+    orderBy.locale = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
+  return await Promise.all([
+    prisma.storeView.findMany({
+      skip,
+      take: limit,
+      where,
+      include: {
+        store: true,
+        productAttributeValues: {
+          include: {
+            product: true,
+            attribute: true,
+          },
+        },
+        categoryTranslations: {
+          include: {
+            category: true,
+          },
         },
       },
-      categoryTranslations: {
-        include: {
-          category: true,
-        },
-      },
-    },
-  });
+      orderBy,
+    }),
+    prisma.storeView.count({ where }),
+  ]);
 };
 
 export const findById = async (id) => {

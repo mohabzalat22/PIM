@@ -9,8 +9,32 @@ import {
 import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProductAttributes = async (req, res) => {
-  const result = (await findAll()) ?? [];
-  return res.json(successMessage(result));
+  const page = parseInt(req.query.page) || 1; // current page
+  const limit = parseInt(req.query.limit) || 10; // items per page
+  const skip = (page - 1) * limit;
+
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    productId: req.query.productId || null,
+    attributeId: req.query.attributeId || null,
+    storeViewId: req.query.storeViewId || null,
+    dataType: req.query.dataType || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [productAttributeValues, total] = (await findAll(skip, limit, filters)) ?? [];
+
+  // meta data
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  return res.json(successMessage(productAttributeValues, 200, "Success fetching product attributes", meta));
 };
 
 export const getProductAttribute = async (req, res) => {
