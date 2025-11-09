@@ -9,7 +9,7 @@ export const findAll = async (skip, limit, filters = {}) => {
   if (filters.search) {
     where.sku = {
       contains: filters.search,
-      mode: 'insensitive'
+      mode: 'sensitive'
     };
   }
   
@@ -29,24 +29,102 @@ export const findAll = async (skip, limit, filters = {}) => {
   
   // Attribute filters (EAV filtering)
   if (filters.attributeFilters && Object.keys(filters.attributeFilters).length > 0) {
-    where.productAttributeValues = {
-      some: {
-        OR: Object.entries(filters.attributeFilters).map(([attributeCode, value]) => {
-          return {
+    // First, fetch attributes to determine which are DATE type
+    const attributeCodes = Object.keys(filters.attributeFilters);
+    const attributes = await prisma.attribute.findMany({
+      where: {
+        code: { in: attributeCodes }
+      },
+      select: {
+        code: true,
+        inputType: true
+      }
+    });
+
+    // Separate DATE and non-DATE attribute filters
+    const dateAttributeCodes = new Set(
+      attributes.filter(attr => attr.inputType === 'DATE').map(attr => attr.code)
+    );
+    
+    const dateFilters = [];
+    const nonDateFilters = [];
+
+    Object.entries(filters.attributeFilters).forEach(([attributeCode, value]) => {
+      if (!value) return; // Skip empty values
+      
+      if (dateAttributeCodes.has(attributeCode)) {
+        // Parse date range: format "fromDate:toDate" or "fromDate" or ":toDate"
+        const dateParts = value.split(':');
+        const fromDate = dateParts[0] && dateParts[0].trim() !== '' ? dateParts[0].trim() : null;
+        const toDate = dateParts[1] && dateParts[1].trim() !== '' ? dateParts[1].trim() : null;
+
+        // Build date filter conditions only if at least one date is provided
+        if (fromDate || toDate) {
+          const dateConditions = {
             attribute: {
               code: attributeCode
             },
-            OR: [
-              { valueString: { contains: value, mode: 'insensitive' } },
-              { valueText: { contains: value, mode: 'insensitive' } },
-              { valueInt: value },
-              { valueDecimal: value },
-              { valueBoolean: value === 'true' || value === true }
-            ]
+            valueString: {} // DATE values are stored in valueString
           };
-        })
+
+          // If both from and to dates are provided, filter by range
+          if (fromDate && toDate) {
+            // Date stored as string in format YYYY-MM-DD, so we can do string comparison
+            // For proper date comparison, we ensure the format matches
+            dateConditions.valueString = {
+              gte: fromDate, // greater than or equal to fromDate
+              lte: toDate    // less than or equal to toDate
+            };
+          } else if (fromDate) {
+            // Only from date - filter products with date >= fromDate
+            dateConditions.valueString = {
+              gte: fromDate
+            };
+          } else if (toDate) {
+            // Only to date - filter products with date <= toDate
+            dateConditions.valueString = {
+              lte: toDate
+            };
+          }
+
+          dateFilters.push(dateConditions);
+        }
+      } else {
+        // Non-DATE attribute filters (text, number, boolean, etc.)
+        nonDateFilters.push({
+          attribute: {
+            code: attributeCode
+          },
+          OR: [
+            { valueString: { contains: value, mode: 'insensitive' } },
+            { valueText: { contains: value, mode: 'insensitive' } },
+            { valueInt: parseInt(value) || undefined },
+            { valueDecimal: parseFloat(value) || undefined },
+            { valueBoolean: value === 'true' || value === true }
+          ].filter(condition => {
+            // Remove undefined conditions
+            return Object.values(condition)[0] !== undefined;
+          })
+        });
       }
-    };
+    });
+
+    // Combine DATE and non-DATE filters
+    const allAttributeFilters = [];
+    if (dateFilters.length > 0) {
+      allAttributeFilters.push(...dateFilters);
+    }
+    if (nonDateFilters.length > 0) {
+      allAttributeFilters.push(...nonDateFilters);
+    }
+
+    if (allAttributeFilters.length > 0) {
+      where.productAttributeValues = {
+        some: {
+          OR: allAttributeFilters
+        }
+      };
+    }
   }
   
   // Sorting

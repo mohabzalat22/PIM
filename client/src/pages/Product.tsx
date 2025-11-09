@@ -60,6 +60,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { SelectType } from "@/components/app/select-type";
+import { MultiSelectType } from "@/components/app/multiselect-type";
+import { DateType } from "@/components/app/date-type";
+
+interface ProductAsset {
+  id: number;
+  productId: number;
+  assetId: number;
+  position: number;
+  type: string;
+}
+
+interface ProductCategory {
+  id: number;
+  productId: number;
+  categoryId: number;
+  createdAt: string;
+}
 
 interface Product {
   id: number;
@@ -67,9 +85,9 @@ interface Product {
   type: string;
   createdAt: string;
   updatedAt: string;
-  productAssets?: any[];
-  productCategories?: any[];
-  productAttributeValues?: any[];
+  productAssets?: ProductAsset[];
+  productCategories?: ProductCategory[];
+  productAttributeValues?: ProductAttributeValue[];
 }
 
 interface Category {
@@ -81,6 +99,18 @@ interface Category {
   }>;
 }
 
+interface ProductAttributeValue {
+  id: number;
+  productId: number;
+  attributeId: number;
+  storeViewId: number;
+  valueString?: string;
+  valueText?: string;
+  valueInt?: number;
+  valueDecimal?: number;
+  valueBoolean?: boolean;
+}
+
 interface Attribute {
   id: number;
   code: string;
@@ -88,6 +118,7 @@ interface Attribute {
   dataType: string;
   inputType: string;
   isFilterable: boolean;
+  productAttributeValues: ProductAttributeValue[];
 }
 
 interface Filters {
@@ -265,6 +296,7 @@ export default function Product() {
       toast.error(`Failed to delete product: ${err.response?.data?.message || err.message}`);
     }
   };
+  console.log(attributes);
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
@@ -274,6 +306,59 @@ export default function Product() {
     });
     setShowEditDialog(true);
   };
+
+  const renderFilterComponent = (attribute: Attribute) => {
+    switch (attribute.inputType) {
+      case 'TEXT':
+        return (
+          <Input type="text" value={filters.attributeFilters[attribute.code] || ""} onChange={(e) => handleAttributeFilterChange(attribute.code, e.target.value)} placeholder={attribute.label} />
+        )
+      case 'SELECT':
+        return (
+          <SelectType initialValue={"none"} 
+          options={
+            attribute.productAttributeValues.map((element) => 
+              { 
+                const value = element.valueString ?? element.valueText ?? element.valueInt?.toString() ?? element.valueDecimal?.toString() ?? element.valueBoolean?.toString();
+                if (value) {
+                  return { name: value, value: value };
+                }
+
+                return null;
+              }).filter((item): item is { name: string; value: string } => item !== null)
+
+          } />)
+          
+      case 'MULTISELECT':
+        return (  
+        
+        <MultiSelectType  options={
+            attribute.productAttributeValues.map((element) => 
+              { 
+                const value = element.valueString ?? element.valueText ?? element.valueInt?.toString() ?? element.valueDecimal?.toString() ?? element.valueBoolean?.toString();
+                if (value) {
+                  return { name: value, value: value };
+                }
+
+                return null;
+              }).filter((item): item is { name: string; value: string } => item !== null)
+
+          }/>)
+      case 'MEDIA':
+        // Media attributes are not filterable - they store file references, not filterable values
+        return null;
+      case 'DATE':
+        return (
+          <DateType
+            initialValue={filters.attributeFilters[attribute.code] || ""}
+            onValueChange={(value) => handleAttributeFilterChange(attribute.code, value)}
+            placeholder={attribute.label}
+          />
+        );
+      default:
+        return null;
+  }
+}
 
   if (loading && products.length === 0) {
     return <div className="flex justify-center items-center h-64">
@@ -331,12 +416,12 @@ export default function Product() {
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.type} onValueChange={(value) => handleFilterChange('type', value)}>
+            <Select value={filters.type || "all"} onValueChange={(value) => handleFilterChange('type', value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Product Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 {productTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
@@ -346,12 +431,12 @@ export default function Product() {
             </Select>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.categoryId} onValueChange={(value) => handleFilterChange('categoryId', value)}>
+            <Select value={filters.categoryId || "all"} onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.translations?.[0]?.name || `Category ${category.id}`}
@@ -368,17 +453,28 @@ export default function Product() {
             <div>
               <Label className="text-sm font-medium mb-2 block">Attribute Filters</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {attributes.filter(attr => attr.isFilterable).map((attribute) => (
-                  <div key={attribute.id} className="space-y-1">
-                    <Label className="text-xs text-gray-600">{attribute.label}</Label>
-                    <Input
-                      placeholder={`Filter by ${attribute.label.toLowerCase()}...`}
-                      value={filters.attributeFilters[attribute.code] || ''}
-                      onChange={(e) => handleAttributeFilterChange(attribute.code, e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                ))}
+                {attributes
+                  .filter(attr => 
+                    // Exclude MEDIA: Media attributes store file references and should never be filterable
+                    // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
+                    // 
+                    // DATE attributes are now supported for filtering with date range support
+                    attr.isFilterable && 
+                    attr.inputType !== 'MEDIA'
+                  )
+                  .map((attribute) => {
+                    const filterComponent = renderFilterComponent(attribute);
+                    // Only render if the component returns something (exclude null returns)
+                    if (!filterComponent) return null;
+                    
+                    return (
+                      <div key={attribute.id} className="space-y-1">
+                        <Label className="text-xs text-gray-600">{attribute.label}</Label>
+                        {filterComponent}
+                      </div>
+                    );
+                  })
+                  .filter(Boolean)}
               </div>
             </div>
 
