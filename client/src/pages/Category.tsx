@@ -362,10 +362,10 @@ export default function Category() {
                 <SelectValue placeholder="Parent Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
-                <SelectItem value="null">Root Categories</SelectItem>
+                <SelectItem value="none">All Categories</SelectItem>
+                <SelectItem value="none">Root Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
+                  <SelectItem key={category.id} value={category.id.toString() || 'none'}>
                     {category.translations?.[0]?.name || `Category ${category.id}`}
                   </SelectItem>
                 ))}
@@ -551,7 +551,7 @@ export default function Category() {
                   <SelectValue placeholder="Select parent category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No parent (Root category)</SelectItem>
+                  <SelectItem value="none">No parent (Root category)</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.translations?.[0]?.name || `Category ${category.id}`}
@@ -736,7 +736,7 @@ export default function Category() {
                       </SelectTrigger>
                       <SelectContent>
                         {storeViews.map((storeView) => (
-                          <SelectItem key={storeView.id} value={storeView.id.toString()}>
+                          <SelectItem key={storeView.id} value={storeView.id.toString() || "none"}>
                             {storeView.name} ({storeView.locale})
                           </SelectItem>
                         ))}

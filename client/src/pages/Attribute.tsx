@@ -323,9 +323,9 @@ export default function Attribute() {
                 <SelectValue placeholder="Data Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="none">All Types</SelectItem>
                 {dataTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
+                  <SelectItem key={type.value} value={type.value || 'none'}>
                     {type.label}
                   </SelectItem>
                 ))}
@@ -338,9 +338,9 @@ export default function Attribute() {
                 <SelectValue placeholder="Input Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Input Types</SelectItem>
+                <SelectItem value="none">All Input Types</SelectItem>
                 {inputTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
+                  <SelectItem key={type.value} value={type.value || 'none'}>
                     {type.label}
                   </SelectItem>
                 ))}

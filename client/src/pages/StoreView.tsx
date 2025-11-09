@@ -316,9 +316,9 @@ export default function StoreView() {
                 <SelectValue placeholder="Store" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Stores</SelectItem>
+                <SelectItem value="none">All Stores</SelectItem>
                 {stores.map((store) => (
-                  <SelectItem key={store.id} value={store.id.toString()}>
+                  <SelectItem key={store.id} value={store.id.toString() || "none"}>
                     {store.name || store.code}
                   </SelectItem>
                 ))}
@@ -331,9 +331,9 @@ export default function StoreView() {
                 <SelectValue placeholder="Locale" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locales</SelectItem>
+                <SelectItem value="none">All Locales</SelectItem>
                 {locales.map((locale) => (
-                  <SelectItem key={locale.value} value={locale.value}>
+                  <SelectItem key={locale.value} value={locale.value || "none"}>
                     {locale.label}
                   </SelectItem>
                 ))}
@@ -511,7 +511,7 @@ export default function StoreView() {
                 </SelectTrigger>
                 <SelectContent>
                   {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
+                    <SelectItem key={store.id} value={store.id.toString() || "none"}>
                       {store.name || store.code}
                     </SelectItem>
                   ))}
@@ -544,7 +544,7 @@ export default function StoreView() {
                 </SelectTrigger>
                 <SelectContent>
                   {locales.map((locale) => (
-                    <SelectItem key={locale.value} value={locale.value}>
+                    <SelectItem key={locale.value} value={locale.value || "none"}>
                       {locale.label}
                     </SelectItem>
                   ))}
@@ -581,7 +581,7 @@ export default function StoreView() {
                 </SelectTrigger>
                 <SelectContent>
                   {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
+                    <SelectItem key={store.id} value={store.id.toString() || "none"}>
                       {store.name || store.code}
                     </SelectItem>
                   ))}
@@ -614,7 +614,7 @@ export default function StoreView() {
                 </SelectTrigger>
                 <SelectContent>
                   {locales.map((locale) => (
-                    <SelectItem key={locale.value} value={locale.value}>
+                    <SelectItem key={locale.value} value={locale.value || "none"}>
                       {locale.label}
                     </SelectItem>
                   ))}
