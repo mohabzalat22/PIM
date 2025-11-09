@@ -327,12 +327,16 @@ export default function Product() {
                 return null;
               }).filter((item): item is { name: string; value: string } => item !== null)
 
-          } />)
+          }
+          onValueChange={(value) => handleAttributeFilterChange(attribute.code, value)}
+          />)
           
       case 'MULTISELECT':
         return (  
         
-        <MultiSelectType  options={
+        <MultiSelectType  
+        
+        options={
             attribute.productAttributeValues.map((element) => 
               { 
                 const value = element.valueString ?? element.valueText ?? element.valueInt?.toString() ?? element.valueDecimal?.toString() ?? element.valueBoolean?.toString();
@@ -343,7 +347,9 @@ export default function Product() {
                 return null;
               }).filter((item): item is { name: string; value: string } => item !== null)
 
-          }/>)
+          }
+        onValueChange={(values) => handleAttributeFilterChange(attribute.code, values.join(','))}
+          />)
       case 'MEDIA':
         // Media attributes are not filterable - they store file references, not filterable values
         return null;
