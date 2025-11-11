@@ -155,7 +155,7 @@ export default function Product() {
     fetchProducts(currentPage);
     fetchCategories();
     fetchAttributes();
-  });
+  },[]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -267,23 +267,31 @@ export default function Product() {
         return (
           <Input type="text" value={filters.attributeFilters[attribute.code] || ""} onChange={(e) => handleAttributeFilterChange(attribute.code, e.target.value)} placeholder={attribute.label} />
         )
-      case 'SELECT':
-        return (
-          <SelectType initialValue={"none"} 
-          options={
-            attribute.productAttributeValues.map((element) => 
-              { 
-                const value = element.valueString ?? element.valueText ?? element.valueInt?.toString() ?? element.valueDecimal?.toString() ?? element.valueBoolean?.toString();
-                if (value) {
-                  return { name: value, value: value };
-                }
-
+     case 'SELECT':
+      return (
+        <SelectType
+          initialValue={filters.attributeFilters[attribute.code] || "all"} // use current filter or default
+          options={[
+            { name: "all", value: "all" }, // optional default
+            ...attribute.productAttributeValues
+              .map((element) => {
+                const value =
+                  element.valueString ??
+                  element.valueText ??
+                  element.valueInt?.toString() ??
+                  element.valueDecimal?.toString() ??
+                  element.valueBoolean?.toString();
+                if (value) return { name: value, value };
                 return null;
-              }).filter((item): item is { name: string; value: string } => item !== null)
+              })
+              .filter(
+                (item): item is { name: string; value: string } => item !== null
+              ),
+          ]}
+          onValueChange={(value) => handleAttributeFilterChange(attribute.code, value === "all" ? "" : value)}
+        />
+      );
 
-          }
-          onValueChange={(value) => handleAttributeFilterChange(attribute.code, value)}
-          />)
           
       case 'MULTISELECT':
         return (  
