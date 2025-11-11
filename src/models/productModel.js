@@ -111,10 +111,8 @@ export const findAll = async (skip, limit, filters = {}) => {
             const attribute = await prisma.attribute.findUnique({
               where: { code: attributeCode },
             });
-            console.log("can be array", canBeArray(value));
             if(canBeArray(value)) {
               const parsedValues = JSON.parse(value);
-              console.log("parsed values", parsedValues);
               switch (attribute.dataType) {
                 case "STRING":
                 case "TEXT":
@@ -194,13 +192,9 @@ export const findAll = async (skip, limit, filters = {}) => {
       )
     );
 
-    // Filter out null/undefined values
     const validFilters = allAttributeFilters.filter((f) => f != null);
 
-    console.log("All Attribute Filters:", validFilters);
-
     if (validFilters.length > 0) {
-      // Use AND to ensure ALL attribute filters match
       where.AND = validFilters.map((filter) => ({
         productAttributeValues: {
           some: filter,
