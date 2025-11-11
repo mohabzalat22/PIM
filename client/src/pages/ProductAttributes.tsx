@@ -62,6 +62,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type StoreView from "@/interfaces/storeView.interface";
+import Loading from "@/components/app/loading";
+import { SelectType } from "@/components/app/select-type";
 interface ProductAttributeValue {
   id: number;
   productId: number;
@@ -103,6 +105,17 @@ interface Filters {
   dataType: string;
   sortBy: string;
   sortOrder: string;
+}
+
+interface AttributeData {
+  productId: number;
+  attributeId: number;
+  storeViewId: number;
+  valueString?: string;
+  valueText?: string;
+  valueInt?: number;
+  valueDecimal?: number;
+  valueBoolean?: boolean;
 }
 
 export default function ProductAttributes() {
@@ -172,8 +185,9 @@ export default function ProductAttributes() {
       setProductAttributeValues(response.data.data);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load product attributes: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load product attributes: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -183,8 +197,9 @@ export default function ProductAttributes() {
     try {
       const response = await axios.get('http://localhost:3000/api/products?limit=100');
       setProducts(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load products:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load products: ${error.message}`);
     }
   };
 
@@ -192,8 +207,9 @@ export default function ProductAttributes() {
     try {
       const response = await axios.get('http://localhost:3000/api/attributes?limit=100');
       setAttributes(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load attributes:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load attributes: ${error.message}`);
     }
   };
 
@@ -201,8 +217,9 @@ export default function ProductAttributes() {
     try {
       const response = await axios.get('http://localhost:3000/api/store-views?limit=100');
       setStoreViews(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load store views:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load store views: ${error.message}`);
     }
   };
 
@@ -247,7 +264,7 @@ export default function ProductAttributes() {
         return;
       }
 
-      const attributeData: any = {
+      const attributeData: AttributeData = {
         productId: parseInt(formData.productId),
         attributeId: parseInt(formData.attributeId),
         storeViewId: parseInt(formData.storeViewId)
@@ -277,8 +294,9 @@ export default function ProductAttributes() {
       setShowCreateDialog(false);
       resetFormData();
       fetchProductAttributeValues(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to assign attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to assign attribute: ${error.message}`);
     }
   };
 
@@ -292,7 +310,7 @@ export default function ProductAttributes() {
         return;
       }
 
-      const attributeData: any = {
+      const attributeData: AttributeData = {
         productId: parseInt(formData.productId),
         attributeId: parseInt(formData.attributeId),
         storeViewId: parseInt(formData.storeViewId)
@@ -323,8 +341,9 @@ export default function ProductAttributes() {
       setEditingProductAttribute(null);
       resetFormData();
       fetchProductAttributeValues(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update attribute: ${error.message}`);
     }
   };
 
@@ -335,8 +354,9 @@ export default function ProductAttributes() {
       await axios.delete(`http://localhost:3000/api/product-attributes/${id}`);
       toast.success('Product attribute deleted successfully');
       fetchProductAttributeValues(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete product attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete product attribute: ${error.message}`);
     }
   };
 
@@ -389,9 +409,7 @@ export default function ProductAttributes() {
   };
 
   if (loading && productAttributeValues.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading product attributes...</p>
-    </div>;
+    return <Loading />;
   }
 
   return (
@@ -444,64 +462,44 @@ export default function ProductAttributes() {
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.productId} onValueChange={(value) => handleFilterChange('productId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Product" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id.toString() || "none"}>
-                    {product.sku}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.productId || "all"}
+              options={[
+                { name: "All Products", value: "all" },
+                ...products.map((product) => ({ name: product.sku, value: product.id.toString() })),
+              ]}
+              onValueChange={(value) => handleFilterChange('productId', value === "all" ? "" : value)}
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.attributeId} onValueChange={(value) => handleFilterChange('attributeId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Attribute" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Attributes</SelectItem>
-                {attributes.map((attribute) => (
-                  <SelectItem key={attribute.id} value={attribute.id.toString() || "none"}>
-                    {attribute.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.attributeId || "all"}
+              options={[
+                { name: "All Attributes", value: "all" },
+                ...attributes.map((attribute) => ({ name: attribute.label, value: attribute.id.toString() })),
+              ]}
+              onValueChange={(value) => handleFilterChange('attributeId', value === "all" ? "" : value)}
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.storeViewId} onValueChange={(value) => handleFilterChange('storeViewId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Store View" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Store Views</SelectItem>
-                {storeViews.map((storeView) => (
-                  <SelectItem key={storeView.id} value={storeView.id.toString() || "none"}>
-                    {storeView.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.storeViewId || "all"}
+              options={[
+                { name: "All Store Views", value: "all" },
+                ...storeViews.map((storeView) => ({ name: storeView.name, value: storeView.id.toString() })),
+              ]}
+              onValueChange={(value) => handleFilterChange('storeViewId', value === "all" ? "" : value)}
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.dataType} onValueChange={(value) => handleFilterChange('dataType', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Data Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {dataTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || "none"}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.dataType || "all"}
+              options={[
+                { name: "All Data Types", value: "all" },
+                ...dataTypes.map((type) => ({ name: type.label, value: type.value })),
+              ]}
+              onValueChange={(value) => handleFilterChange('dataType', value === "all" ? "" : value)}
+            />
           </div>
         </div>
 
