@@ -16,7 +16,9 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/src/app.js",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**"],
+      "runtimeExecutable": "nodemon",
+      "restart": true,
     }
   ],
   "compounds": [
