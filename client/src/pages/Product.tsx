@@ -63,76 +63,14 @@ import { Label } from "@/components/ui/label";
 import { SelectType } from "@/components/app/select-type";
 import { MultiSelectType } from "@/components/app/multiselect-type";
 import { DateType } from "@/components/app/date-type";
-
-interface ProductAsset {
-  id: number;
-  productId: number;
-  assetId: number;
-  position: number;
-  type: string;
-}
-
-interface ProductCategory {
-  id: number;
-  productId: number;
-  categoryId: number;
-  createdAt: string;
-}
-
-interface Product {
-  id: number;
-  sku: string;
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-  productAssets?: ProductAsset[];
-  productCategories?: ProductCategory[];
-  productAttributeValues?: ProductAttributeValue[];
-}
-
-interface Category {
-  id: number;
-  parentId?: number;
-  translations?: Array<{
-    name: string;
-    slug: string;
-  }>;
-}
-
-interface ProductAttributeValue {
-  id: number;
-  productId: number;
-  attributeId: number;
-  storeViewId: number;
-  valueString?: string;
-  valueText?: string;
-  valueInt?: number;
-  valueDecimal?: number;
-  valueBoolean?: boolean;
-}
-
-interface Attribute {
-  id: number;
-  code: string;
-  label: string;
-  dataType: string;
-  inputType: string;
-  isFilterable: boolean;
-  productAttributeValues: ProductAttributeValue[];
-}
-
-interface Filters {
-  search: string;
-  type: string;
-  categoryId: string;
-  attributeFilters: Record<string, string>;
-  sortBy: string;
-  sortOrder: string;
-}
+import type ProductInterface from "@/interfaces/product.interface";
+import type Category from "@/interfaces/category.interface";
+import type Attribute from "@/interfaces/attribute.interface";
+import type Filters from "@/interfaces/products.filters.interface";
 
 export default function Product() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductInterface[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);

@@ -61,7 +61,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
+import type StoreView from "@/interfaces/storeView.interface";
 interface ProductAttributeValue {
   id: number;
   productId: number;
@@ -93,13 +93,6 @@ interface Attribute {
   inputType: string;
   isFilterable: boolean;
   isGlobal: boolean;
-}
-
-interface StoreView {
-  id: number;
-  code: string;
-  name: string;
-  locale: string;
 }
 
 interface Filters {

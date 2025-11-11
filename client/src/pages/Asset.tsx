@@ -62,32 +62,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-interface Asset {
-  id: number;
-  filePath: string;
-  mimeType: string;
-  createdAt: string;
-  updatedAt: string;
-  productAssets?: any[];
-}
-
-interface Filters {
-  search: string;
-  mimeType: string;
-  sortBy: string;
-  sortOrder: string;
-}
+import type AssetInterface from "@/interfaces/asset.interface";
+import type Filters from "@/interfaces/categories.filters.interface";
 
 export default function Asset() {
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assets, setAssets] = useState<AssetInterface[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editingAsset, setEditingAsset] = useState<AssetInterface | null>(null);
   const [filters, setFilters] = useState<Filters>({
     search: '',
     mimeType: '',
