@@ -99,46 +99,95 @@ export const findAll = async (skip, limit, filters = {}) => {
             }
             return null;
           } else {
+            function canBeArray(value) {
+              try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed);
+              } catch {
+                return false;
+              }
+            }
             // Non-DATE attribute filters (text, number, boolean, etc.)
             const attribute = await prisma.attribute.findUnique({
               where: { code: attributeCode },
             });
-
-            switch (attribute.dataType) {
-              case "STRING":
-              case "TEXT":
-                return {
-                  attribute: {
-                    code: attributeCode,
-                  },
-                  OR: [
-                    { valueString: { startsWith: value, mode: "insensitive" } },
-                    { valueText: { startsWith: value, mode: "insensitive" } },
-                  ],
-                };
-              case "INT":
-                return {
-                  attribute: {
-                    code: attributeCode,
-                  },
-                  valueInt: parseInt(value),
-                };
-              case "DECIMAL":
-                return {
-                  attribute: {
-                    code: attributeCode,
-                  },
-                  valueDecimal: parseFloat(value),
-                };
-              case "BOOLEAN":
-                return {
-                  attribute: {
-                    code: attributeCode,
-                  },
-                  valueBoolean: value === "true" || value === true,
-                };
-              default:
-                return null;
+            console.log("can be array", canBeArray(value));
+            if(canBeArray(value)) {
+              const parsedValues = JSON.parse(value);
+              console.log("parsed values", parsedValues);
+              switch (attribute.dataType) {
+                case "STRING":
+                case "TEXT":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    OR: [
+                      { valueString: { in: parsedValues, mode: "insensitive" } },
+                      { valueText: { in: parsedValues, mode: "insensitive" } },
+                    ],
+                  };
+                case "INT":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueInt: { in: parsedValues.map((val) => parseInt(val)) },
+                  };
+                case "DECIMAL":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueDecimal: { in: parsedValues.map((val) => parseFloat(val)) },
+                  };
+                case "BOOLEAN":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueBoolean: { in: parsedValues.map((val) => val === "true" || val === true) },
+                  };
+                default:
+                  return null;
+              }
+            } else {
+              switch (attribute.dataType) {
+                case "STRING":
+                case "TEXT":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    OR: [
+                      { valueString: { startsWith: value, mode: "insensitive" } },
+                      { valueText: { startsWith: value, mode: "insensitive" } },
+                    ],
+                  };
+                case "INT":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueInt: parseInt(value),
+                  };
+                case "DECIMAL":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueDecimal: parseFloat(value),
+                  };
+                case "BOOLEAN":
+                  return {
+                    attribute: {
+                      code: attributeCode,
+                    },
+                    valueBoolean: value === "true" || value === true,
+                  };
+                default:
+                  return null;
+              }
             }
           }
         }

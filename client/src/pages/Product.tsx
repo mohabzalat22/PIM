@@ -233,16 +233,32 @@ export default function Product() {
     fetchProducts(1, newFilters);
   };
 
-  const handleAttributeFilterChange = (attributeCode: string, value: string) => {
+  const handleAttributeFilterChange = (attributeCode: string, value: string | string[], isMultiSelect: boolean = false) => {
     const newAttributeFilters = { ...filters.attributeFilters };
-    if (value) {
-      newAttributeFilters[attributeCode] = value;
+
+    if (isMultiSelect && Array.isArray(value)) {
+      const valueArray = value.map(v => v.trim()).filter(v => v !== "");
+      if (valueArray.length > 0) {
+        newAttributeFilters[attributeCode] = JSON.stringify(valueArray);
+      } else {
+        delete newAttributeFilters[attributeCode];
+      }
+      const newFilters = { ...filters, attributeFilters: newAttributeFilters };
+      setFilters(newFilters);
+      fetchProducts(1, newFilters);
+      return;
+      
     } else {
-      delete newAttributeFilters[attributeCode];
+
+      if (value && !Array.isArray(value) && value.trim() !== "") {
+        newAttributeFilters[attributeCode] = value;
+      } else {
+        delete newAttributeFilters[attributeCode];
+      }
+      const newFilters = { ...filters, attributeFilters: newAttributeFilters };
+      setFilters(newFilters);
+      fetchProducts(1, newFilters);
     }
-    const newFilters = { ...filters, attributeFilters: newAttributeFilters };
-    setFilters(newFilters);
-    fetchProducts(1, newFilters);
   };
 
   const clearFilters = () => {
@@ -348,7 +364,7 @@ export default function Product() {
               }).filter((item): item is { name: string; value: string } => item !== null)
 
           }
-        onValueChange={(values) => handleAttributeFilterChange(attribute.code, values.join(','))}
+        onValueChange={(values) => handleAttributeFilterChange(attribute.code, values, true)}
           />)
       case 'MEDIA':
         // Media attributes are not filterable - they store file references, not filterable values
