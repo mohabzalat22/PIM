@@ -382,7 +382,7 @@ export default function Product() {
             <SelectType
               initialValue={filters.type || "all"}
               options={[
-                { name: "all", value: "all" },
+                { name: "All Types", value: "all" },
                 ...Object.entries(productTypes).map(([, type]) => ({ name: type.label, value: type.value })),
               ]}
               onValueChange={(value) => handleFilterChange('type', value === "all" ? "" : value)}
@@ -392,7 +392,7 @@ export default function Product() {
             <SelectType
               initialValue={filters.categoryId || "all"}
               options={[
-                { name: "all", value: "all" },
+                { name: "All Categories", value: "all" },
                 ...categories.map((category) => ({ name: category.translations?.[0]?.name || `Category ${category.id}`, value: category.id.toString() })),
               ]}
               onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}
