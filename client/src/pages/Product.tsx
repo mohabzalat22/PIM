@@ -135,7 +135,6 @@ export default function Product() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -168,7 +167,6 @@ export default function Product() {
 
   const fetchProducts = async (page: number = 1, currentFilters: Filters = filters) => {
     try {
-      setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
@@ -192,9 +190,7 @@ export default function Product() {
       setCurrentPage(page);
     } catch (err: any) {
       toast.error(`Failed to load products: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   const fetchCategories = async () => {
@@ -382,11 +378,6 @@ export default function Product() {
   }
 }
 
-  if (loading && products.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading products...</p>
-    </div>;
-  }
 
   return (
     <div className="max-w-full p-4 space-y-4">
