@@ -456,7 +456,7 @@ export default function ProductAttributes() {
                 <SelectValue placeholder="Product" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Products</SelectItem>
+                <SelectItem value="all">All Products</SelectItem>
                 {products.map((product) => (
                   <SelectItem key={product.id} value={product.id.toString() || "none"}>
                     {product.sku}
@@ -471,7 +471,7 @@ export default function ProductAttributes() {
                 <SelectValue placeholder="Attribute" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Attributes</SelectItem>
+                <SelectItem value="all">All Attributes</SelectItem>
                 {attributes.map((attribute) => (
                   <SelectItem key={attribute.id} value={attribute.id.toString() || "none"}>
                     {attribute.label}
@@ -486,7 +486,7 @@ export default function ProductAttributes() {
                 <SelectValue placeholder="Store View" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Store Views</SelectItem>
+                <SelectItem value="all">All Store Views</SelectItem>
                 {storeViews.map((storeView) => (
                   <SelectItem key={storeView.id} value={storeView.id.toString() || "none"}>
                     {storeView.name}
@@ -501,7 +501,7 @@ export default function ProductAttributes() {
                 <SelectValue placeholder="Data Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 {dataTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value || "none"}>
                     {type.label}

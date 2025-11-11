@@ -362,8 +362,8 @@ export default function Category() {
                 <SelectValue placeholder="Parent Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Categories</SelectItem>
-                <SelectItem value="none">Root Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">Root Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString() || 'none'}>
                     {category.translations?.[0]?.name || `Category ${category.id}`}
@@ -551,7 +551,7 @@ export default function Category() {
                   <SelectValue placeholder="Select parent category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No parent (Root category)</SelectItem>
+                  <SelectItem value="all">No parent (Root category)</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.translations?.[0]?.name || `Category ${category.id}`}

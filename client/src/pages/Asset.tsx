@@ -305,7 +305,7 @@ export default function Asset() {
                 <SelectValue placeholder="File Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 {mimeTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
