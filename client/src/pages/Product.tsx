@@ -379,34 +379,24 @@ export default function Product() {
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.type || "all"} onValueChange={(value) => handleFilterChange('type', value === "all" ? "" : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Product Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.type || "all"}
+              options={[
+                { name: "all", value: "all" },
+                ...Object.entries(productTypes).map(([, type]) => ({ name: type.label, value: type.value })),
+              ]}
+              onValueChange={(value) => handleFilterChange('type', value === "all" ? "" : value)}
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.categoryId || "all"} onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.translations?.[0]?.name || `Category ${category.id}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.categoryId || "all"}
+              options={[
+                { name: "all", value: "all" },
+                ...categories.map((category) => ({ name: category.translations?.[0]?.name || `Category ${category.id}`, value: category.id.toString() })),
+              ]}
+              onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}
+            />
           </div>
         </div>
 
