@@ -163,7 +163,6 @@ model ProductAttributeValue {
   attribute Attribute  @relation(fields: [attributeId], references: [id])
   storeView StoreView? @relation(fields: [storeViewId], references: [id])
 
-  @@unique([productId, attributeId, storeViewId])
 }
 
 model StoreView {
