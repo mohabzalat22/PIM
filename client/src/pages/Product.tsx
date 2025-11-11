@@ -32,7 +32,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import {
@@ -78,7 +77,7 @@ export default function Product() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductInterface | null>(null);
   const [filters, setFilters] = useState<Filters>({
     search: '',
     type: '',
@@ -126,8 +125,9 @@ export default function Product() {
       setProducts(response.data.data);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load products: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load products: ${error.message}`);
     } 
   };
 
@@ -135,8 +135,9 @@ export default function Product() {
     try {
       const response = await axios.get('http://localhost:3000/api/categories?limit=100');
       setCategories(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load categories:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load categories: ${error.message}`);
     }
   };
 
@@ -144,8 +145,9 @@ export default function Product() {
     try {
       const response = await axios.get('http://localhost:3000/api/attributes?limit=100');
       setAttributes(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load attributes:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load attributes: ${error.message}`);
     }
   };
 
@@ -153,7 +155,7 @@ export default function Product() {
     fetchProducts(currentPage);
     fetchCategories();
     fetchAttributes();
-  }, []);
+  });
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -215,8 +217,9 @@ export default function Product() {
       setShowCreateDialog(false);
       setFormData({ sku: '', type: 'SIMPLE' });
       fetchProducts(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create product: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create product: ${error.message}`);
     }
   };
 
@@ -230,8 +233,9 @@ export default function Product() {
       setEditingProduct(null);
       setFormData({ sku: '', type: 'SIMPLE' });
       fetchProducts(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update product: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update product: ${error.message}`);
     }
   };
 
@@ -242,13 +246,13 @@ export default function Product() {
       await axios.delete(`http://localhost:3000/api/products/${id}`);
       toast.success('Product deleted successfully');
       fetchProducts(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete product: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete product: ${error.message}`);
     }
   };
-  console.log(attributes);
 
-  const openEditDialog = (product: Product) => {
+  const openEditDialog = (product: ProductInterface) => {
     setEditingProduct(product);
     setFormData({
       sku: product.sku,
