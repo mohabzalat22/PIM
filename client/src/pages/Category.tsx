@@ -45,36 +45,34 @@ import {
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { 
-  MoreHorizontalIcon, 
-  FilterIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  MoreHorizontalIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   SearchIcon,
   XIcon,
   FolderIcon,
-  FolderOpenIcon
+  FolderOpenIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import type ProductCategory from "@/interfaces/productCategory.interface";
+import type CategoryTranslation from "@/interfaces/categoryTranslation.interface";
+import { SelectType } from "@/components/app/select-type";
+import Loading from "@/components/app/loading";
 
-interface Category {
+interface CategoryType {
   id: number;
   parentId?: number;
   createdAt: string;
   updatedAt: string;
-  parent?: Category;
-  subcategory?: Category[];
-  productCategories?: any[];
-  translations?: Array<{
-    id: number;
-    name: string;
-    slug: string;
-    description?: string;
-    storeViewId: number;
-  }>;
+  parent?: CategoryType;
+  subcategory?: CategoryType[];
+  productCategories?: ProductCategory[];
+  translations?: CategoryTranslation[];
 }
 
 interface StoreView {
@@ -92,7 +90,8 @@ interface Filters {
 }
 
 export default function Category() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [filterCategories, setFilterCategories] = useState<CategoryType[]>([]);
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -100,63 +99,93 @@ export default function Category() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(
+    null
+  );
   const [filters, setFilters] = useState<Filters>({
-    search: '',
-    parentId: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    search: "",
+    parentId: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
 
   const [formData, setFormData] = useState({
-    parentId: '',
-    translations: [{
-      name: '',
-      slug: '',
-      description: '',
-      storeViewId: 1
-    }]
+    parentId: "",
+    translations: [
+      {
+        name: "",
+        slug: "",
+        description: "",
+        storeViewId: 1,
+      },
+    ],
   });
 
   const limit = 10;
 
-  const fetchCategories = async (page: number = 1, currentFilters: Filters = filters) => {
+  const fetchFilterCategories = async (page: number = 1, parentId = "") => {
     try {
-      setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
+        parentId: parentId,
       });
-
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.parentId !== '') params.append('parentId', currentFilters.parentId);
 
       const response = await axios.get(
         `http://localhost:3000/api/categories?${params.toString()}`
       );
-      
+
+      setFilterCategories(response.data.data);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load filter categories: ${error.message}`);
+    }
+  };
+
+  const fetchCategories = async (
+    page: number = 1,
+    currentFilters: Filters = filters
+  ) => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        sortBy: currentFilters.sortBy,
+        sortOrder: currentFilters.sortOrder,
+      });
+
+      if (currentFilters.search) params.append("search", currentFilters.search);
+      if (currentFilters.parentId !== "")
+        params.append("parentId", currentFilters.parentId);
+
+      const response = await axios.get(
+        `http://localhost:3000/api/categories?${params.toString()}`
+      );
+
       setCategories(response.data.data);
+      setLoading(false);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load categories: ${err.message}`);
-    } finally {
-      setLoading(false);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load categories: ${error.message}`);
     }
   };
 
   const fetchStoreViews = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/store-views?limit=100');
+      const response = await axios.get(
+        "http://localhost:3000/api/store-views?limit=100"
+      );
       setStoreViews(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load store views:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load store views: ${error.message}`);
     }
   };
 
   useEffect(() => {
+    fetchFilterCategories();
     fetchCategories(currentPage);
     fetchStoreViews();
   }, []);
@@ -167,7 +196,7 @@ export default function Category() {
     }
   };
 
-  const handleFilterChange = (key: keyof Filters, value: string) => {
+  const handleFilterChange = (key: keyof Filters, value: string | null) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     fetchCategories(1, newFilters);
@@ -175,10 +204,10 @@ export default function Category() {
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      parentId: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      search: "",
+      parentId: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
     fetchCategories(1, clearedFilters);
@@ -188,82 +217,96 @@ export default function Category() {
     try {
       const categoryData = {
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
-        translations: formData.translations.filter(t => t.name.trim() !== '')
+        translations: formData.translations.filter((t) => t.name.trim() !== ""),
       };
-      
-      await axios.post('http://localhost:3000/api/categories', categoryData);
-      toast.success('Category created successfully');
+
+      await axios.post("http://localhost:3000/api/categories", categoryData);
+      toast.success("Category created successfully");
       setShowCreateDialog(false);
       setFormData({
-        parentId: '',
-        translations: [{
-          name: '',
-          slug: '',
-          description: '',
-          storeViewId: 1
-        }]
+        parentId: "",
+        translations: [
+          {
+            name: "",
+            slug: "",
+            description: "",
+            storeViewId: 1,
+          },
+        ],
       });
       fetchCategories(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create category: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create category: ${error.message}`);
     }
   };
 
   const handleEditCategory = async () => {
     if (!editingCategory) return;
-    
+
     try {
       const categoryData = {
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
-        translations: formData.translations.filter(t => t.name.trim() !== '')
+        translations: formData.translations.filter((t) => t.name.trim() !== ""),
       };
-      
-      await axios.put(`http://localhost:3000/api/categories/${editingCategory.id}`, categoryData);
-      toast.success('Category updated successfully');
+
+      await axios.put(
+        `http://localhost:3000/api/categories/${editingCategory.id}`,
+        categoryData
+      );
+      toast.success("Category updated successfully");
       setShowEditDialog(false);
       setEditingCategory(null);
       setFormData({
-        parentId: '',
-        translations: [{
-          name: '',
-          slug: '',
-          description: '',
-          storeViewId: 1
-        }]
+        parentId: "",
+        translations: [
+          {
+            name: "",
+            slug: "",
+            description: "",
+            storeViewId: 1,
+          },
+        ],
       });
       fetchCategories(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update category: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update category: ${error.message}`);
     }
   };
 
   const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
-    
+    if (!confirm("Are you sure you want to delete this category?")) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/categories/${id}`);
-      toast.success('Category deleted successfully');
+      toast.success("Category deleted successfully");
       fetchCategories(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete category: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete category: ${error.message}`);
     }
   };
 
-  const openEditDialog = (category: Category) => {
+  const openEditDialog = (category: CategoryType) => {
     setEditingCategory(category);
     setFormData({
-      parentId: category.parentId?.toString() || '',
-      translations: category.translations?.length ? category.translations.map(t => ({
-        name: t.name || '',
-        slug: t.slug || '',
-        description: t.description || '',
-        storeViewId: t.storeViewId
-      })) : [{
-        name: '',
-        slug: '',
-        description: '',
-        storeViewId: 1
-      }]
+      parentId: category.parentId?.toString() || "",
+      translations: category.translations?.length
+        ? category.translations.map((t) => ({
+            name: t.name || "",
+            slug: t.slug || "",
+            description: t.description || "",
+            storeViewId: t.storeViewId,
+          }))
+        : [
+            {
+              name: "",
+              slug: "",
+              description: "",
+              storeViewId: 1,
+            },
+          ],
     });
     setShowEditDialog(true);
   };
@@ -271,12 +314,15 @@ export default function Category() {
   const addTranslation = () => {
     setFormData({
       ...formData,
-      translations: [...formData.translations, {
-        name: '',
-        slug: '',
-        description: '',
-        storeViewId: 1
-      }]
+      translations: [
+        ...formData.translations,
+        {
+          name: "",
+          slug: "",
+          description: "",
+          storeViewId: 1,
+        },
+      ],
     });
   };
 
@@ -284,27 +330,29 @@ export default function Category() {
     if (formData.translations.length > 1) {
       setFormData({
         ...formData,
-        translations: formData.translations.filter((_, i) => i !== index)
+        translations: formData.translations.filter((_, i) => i !== index),
       });
     }
   };
 
-  const updateTranslation = (index: number, field: string, value: string | number) => {
+  const updateTranslation = (
+    index: number,
+    field: string,
+    value: string | number
+  ) => {
     const updatedTranslations = [...formData.translations];
     updatedTranslations[index] = {
       ...updatedTranslations[index],
-      [field]: value
+      [field]: value,
     };
     setFormData({
       ...formData,
-      translations: updatedTranslations
+      translations: updatedTranslations,
     });
   };
 
-  if (loading && categories.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading categories...</p>
-    </div>;
+  if (loading) {
+    return <Loading />;
   }
 
   return (
@@ -331,19 +379,16 @@ export default function Category() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
           </div>
         </div>
 
+        {/* Filters Section */}
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
@@ -351,26 +396,27 @@ export default function Category() {
               <Input
                 placeholder="Search by name..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.parentId} onValueChange={(value) => handleFilterChange('parentId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Parent Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="all">Root Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString() || 'none'}>
-                    {category.translations?.[0]?.name || `Category ${category.id}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue="all"
+              options={[
+                { value: "all", name: "All Categories" },
+                ...filterCategories.map((category) => ({
+                  value: category.id.toString(),
+                  name:
+                    category.translations?.[0]?.name ||
+                    `Category ${category.id}`,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("parentId", value === "all" ? null : value)
+              }
+            />
           </div>
         </div>
 
@@ -378,7 +424,10 @@ export default function Category() {
           <div className="flex flex-wrap gap-4 pt-4 border-t">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value) => handleFilterChange("sortBy", value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -390,7 +439,12 @@ export default function Category() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={(value) =>
+                  handleFilterChange("sortOrder", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -431,14 +485,19 @@ export default function Category() {
                       ) : (
                         <FolderOpenIcon className="w-4 h-4 text-blue-500" />
                       )}
-                      <span>{category.translations?.[0]?.name || 'No name'}</span>
+                      <span>
+                        {category.translations?.[0]?.name || "No name"}
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell>{category.translations?.[0]?.slug || '-'}</TableCell>
+                  <TableCell>
+                    {category.translations?.[0]?.slug || "-"}
+                  </TableCell>
                   <TableCell>
                     {category.parent ? (
                       <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                        {category.parent.translations?.[0]?.name || `Category ${category.parent.id}`}
+                        {category.parent.translations?.[0]?.name ||
+                          `Category ${category.parent.id}`}
                       </span>
                     ) : (
                       <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -469,11 +528,13 @@ export default function Category() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(category)}>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(category)}
+                        >
                           <EditIcon className="w-4 h-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteCategory(category.id)}
                           className="text-red-600"
                         >
@@ -503,8 +564,12 @@ export default function Category() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -515,7 +580,9 @@ export default function Category() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -526,8 +593,14 @@ export default function Category() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage < totalPages && handlePageChange(currentPage + 1)
+                }
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -546,15 +619,24 @@ export default function Category() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="parentId">Parent Category</Label>
-              <Select value={formData.parentId} onValueChange={(value) => setFormData({ ...formData, parentId: value })}>
+              <Select
+                value={formData.parentId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, parentId: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">No parent (Root category)</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.translations?.[0]?.name || `Category ${category.id}`}
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
+                      {category.translations?.[0]?.name ||
+                        `Category ${category.id}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -564,15 +646,22 @@ export default function Category() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Translations</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addTranslation}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTranslation}
+                >
                   <PlusIcon className="w-4 h-4 mr-1" />
-                  Add Translation
+                  Add CategoryTranslation
                 </Button>
               </div>
-              {formData.translations.map((translation, index) => (
+              {formData.translations.map((CategoryTranslation, index) => (
                 <div key={index} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Translation {index + 1}</span>
+                    <span className="text-sm font-medium">
+                      CategoryTranslation {index + 1}
+                    </span>
                     {formData.translations.length > 1 && (
                       <Button
                         type="button"
@@ -589,8 +678,10 @@ export default function Category() {
                       <Label htmlFor={`name-${index}`}>Name</Label>
                       <Input
                         id={`name-${index}`}
-                        value={translation.name}
-                        onChange={(e) => updateTranslation(index, 'name', e.target.value)}
+                        value={CategoryTranslation.name}
+                        onChange={(e) =>
+                          updateTranslation(index, "name", e.target.value)
+                        }
                         placeholder="Category name"
                       />
                     </div>
@@ -598,8 +689,10 @@ export default function Category() {
                       <Label htmlFor={`slug-${index}`}>Slug</Label>
                       <Input
                         id={`slug-${index}`}
-                        value={translation.slug}
-                        onChange={(e) => updateTranslation(index, 'slug', e.target.value)}
+                        value={CategoryTranslation.slug}
+                        onChange={(e) =>
+                          updateTranslation(index, "slug", e.target.value)
+                        }
                         placeholder="category-slug"
                       />
                     </div>
@@ -608,23 +701,30 @@ export default function Category() {
                     <Label htmlFor={`description-${index}`}>Description</Label>
                     <Input
                       id={`description-${index}`}
-                      value={translation.description}
-                      onChange={(e) => updateTranslation(index, 'description', e.target.value)}
+                      value={CategoryTranslation.description}
+                      onChange={(e) =>
+                        updateTranslation(index, "description", e.target.value)
+                      }
                       placeholder="Category description"
                     />
                   </div>
                   <div>
                     <Label htmlFor={`storeView-${index}`}>Store View</Label>
-                    <Select 
-                      value={translation.storeViewId.toString()} 
-                      onValueChange={(value) => updateTranslation(index, 'storeViewId', parseInt(value))}
+                    <Select
+                      value={CategoryTranslation.storeViewId.toString()}
+                      onValueChange={(value) =>
+                        updateTranslation(index, "storeViewId", parseInt(value))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {storeViews.map((storeView) => (
-                          <SelectItem key={storeView.id} value={storeView.id.toString()}>
+                          <SelectItem
+                            key={storeView.id}
+                            value={storeView.id.toString()}
+                          >
                             {storeView.name} ({storeView.locale})
                           </SelectItem>
                         ))}
@@ -636,12 +736,13 @@ export default function Category() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateCategory}>
-              Create Category
-            </Button>
+            <Button onClick={handleCreateCategory}>Create Category</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -651,40 +752,52 @@ export default function Category() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>
-              Update category information.
-            </DialogDescription>
+            <DialogDescription>Update category information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-parentId">Parent Category</Label>
-              <Select value={formData.parentId} onValueChange={(value) => setFormData({ ...formData, parentId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select parent category (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No parent (Root category)</SelectItem>
-                  {categories.filter(c => c.id !== editingCategory?.id).map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.translations?.[0]?.name || `Category ${category.id}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SelectType
+                initialValue={formData.parentId || "all"}
+                options={[
+                  { value: "all", name: "No parent (Root category)" },
+                  ...categories
+                    .filter((c) => c.id !== editingCategory?.id)
+                    .map((category) => ({
+                      value: category.id.toString(),
+                      name:
+                        category.translations?.[0]?.name ||
+                        `Category ${category.id}`,
+                    })),
+                ]}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    parentId: value === "all" ? "" : value,
+                  })
+                }
+              />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Translations</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addTranslation}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTranslation}
+                >
                   <PlusIcon className="w-4 h-4 mr-1" />
-                  Add Translation
+                  Add CategoryTranslation
                 </Button>
               </div>
-              {formData.translations.map((translation, index) => (
+              {formData.translations.map((CategoryTranslation, index) => (
                 <div key={index} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Translation {index + 1}</span>
+                    <span className="text-sm font-medium">
+                      CategoryTranslation {index + 1}
+                    </span>
                     {formData.translations.length > 1 && (
                       <Button
                         type="button"
@@ -701,8 +814,10 @@ export default function Category() {
                       <Label htmlFor={`edit-name-${index}`}>Name</Label>
                       <Input
                         id={`edit-name-${index}`}
-                        value={translation.name}
-                        onChange={(e) => updateTranslation(index, 'name', e.target.value)}
+                        value={CategoryTranslation.name}
+                        onChange={(e) =>
+                          updateTranslation(index, "name", e.target.value)
+                        }
                         placeholder="Category name"
                       />
                     </div>
@@ -710,33 +825,46 @@ export default function Category() {
                       <Label htmlFor={`edit-slug-${index}`}>Slug</Label>
                       <Input
                         id={`edit-slug-${index}`}
-                        value={translation.slug}
-                        onChange={(e) => updateTranslation(index, 'slug', e.target.value)}
+                        value={CategoryTranslation.slug}
+                        onChange={(e) =>
+                          updateTranslation(index, "slug", e.target.value)
+                        }
                         placeholder="category-slug"
                       />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor={`edit-description-${index}`}>Description</Label>
+                    <Label htmlFor={`edit-description-${index}`}>
+                      Description
+                    </Label>
                     <Input
                       id={`edit-description-${index}`}
-                      value={translation.description}
-                      onChange={(e) => updateTranslation(index, 'description', e.target.value)}
+                      value={CategoryTranslation.description}
+                      onChange={(e) =>
+                        updateTranslation(index, "description", e.target.value)
+                      }
                       placeholder="Category description"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`edit-storeView-${index}`}>Store View</Label>
-                    <Select 
-                      value={translation.storeViewId.toString()} 
-                      onValueChange={(value) => updateTranslation(index, 'storeViewId', parseInt(value))}
+                    <Label htmlFor={`edit-storeView-${index}`}>
+                      Store View
+                    </Label>
+                    <Select
+                      value={CategoryTranslation.storeViewId.toString()}
+                      onValueChange={(value) =>
+                        updateTranslation(index, "storeViewId", parseInt(value))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {storeViews.map((storeView) => (
-                          <SelectItem key={storeView.id} value={storeView.id.toString() || "none"}>
+                          <SelectItem
+                            key={storeView.id}
+                            value={storeView.id.toString() || "none"}
+                          >
                             {storeView.name} ({storeView.locale})
                           </SelectItem>
                         ))}
@@ -751,9 +879,7 @@ export default function Category() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditCategory}>
-              Update Category
-            </Button>
+            <Button onClick={handleEditCategory}>Update Category</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
