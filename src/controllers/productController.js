@@ -65,7 +65,7 @@ export const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to created product"));
+    res.json(errorMessage("Failed to delete product"));
   }
   res.json(successMessage("Product deleted successfully"));
 };

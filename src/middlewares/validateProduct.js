@@ -76,33 +76,5 @@ export const validateProductDelete = async (req, res, next) => {
     return res.json(errorMessage("Unable to find product to delete", 404));
   }
 
-  // Check if product has associated data
-  if (productExists.productAssets && productExists.productAssets.length > 0) {
-    return res.json(
-      errorMessage("Cannot delete product with associated assets", 400)
-    );
-  }
-
-  if (
-    productExists.productCategories &&
-    productExists.productCategories.length > 0
-  ) {
-    return res.json(
-      errorMessage("Cannot delete product with associated categories", 400)
-    );
-  }
-
-  if (
-    productExists.productAttributeValues &&
-    productExists.productAttributeValues.length > 0
-  ) {
-    return res.json(
-      errorMessage(
-        "Cannot delete product with associated attribute values",
-        400
-      )
-    );
-  }
-
   next();
 };

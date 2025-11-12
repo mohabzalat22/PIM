@@ -243,7 +243,10 @@ export default function Product() {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      await axios.delete(`http://localhost:3000/api/products/${id}`);
+      const productDeleted = await axios.delete(`http://localhost:3000/api/products/${id}`);
+      if(!productDeleted.data.success) {
+        throw new Error(productDeleted.data.message);
+      }
       toast.success('Product deleted successfully');
       fetchProducts(currentPage);
     } catch (err: unknown) {
