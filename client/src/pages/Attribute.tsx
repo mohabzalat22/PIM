@@ -58,6 +58,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type ProductAttributeValue from "@/interfaces/productAttributeValue.interface";
+import { SelectType } from "@/components/app/select-type";
 
 interface Attribute {
   id: number;
@@ -330,40 +331,34 @@ export default function Attribute() {
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select
-              value={filters.dataType}
-              onValueChange={(value) => handleFilterChange("dataType", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Data Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {dataTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || "none"}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.dataType}
+              options={[
+                { value: "all", name: "All Data Types" },
+                ...dataTypes.map((type) => ({
+                  value: type.value || "none",
+                  name: type.value,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("dataType", value === "all" ? "" : value)
+              }
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select
-              value={filters.inputType}
-              onValueChange={(value) => handleFilterChange("inputType", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Input Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Input Types</SelectItem>
-                {inputTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || "none"}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.inputType}
+              options={[
+                { value: "all", name: "All Input Types" },
+                ...inputTypes.map((type) => ({
+                  value: type.value || "none",
+                  name: type.value,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("inputType", value === "all" ? "" : value)
+              }
+            />
           </div>
         </div>
 
