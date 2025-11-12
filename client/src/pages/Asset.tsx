@@ -64,6 +64,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type AssetInterface from "@/interfaces/asset.interface";
 import type Filters from "@/interfaces/categories.filters.interface";
+import type AssetType from "@/interfaces/asset.interface";
+import { SelectType } from "@/components/app/select-type";
 
 export default function Asset() {
   const [assets, setAssets] = useState<AssetInterface[]>([]);
@@ -75,67 +77,75 @@ export default function Asset() {
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingAsset, setEditingAsset] = useState<AssetInterface | null>(null);
   const [filters, setFilters] = useState<Filters>({
-    search: '',
-    mimeType: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    search: "",
+    mimeType: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
 
   const [formData, setFormData] = useState({
-    filePath: '',
-    mimeType: ''
+    filePath: "",
+    mimeType: "",
   });
 
   const limit = 10;
 
   const mimeTypes = [
-    { value: 'image/jpeg', label: 'JPEG Image' },
-    { value: 'image/png', label: 'PNG Image' },
-    { value: 'image/gif', label: 'GIF Image' },
-    { value: 'image/webp', label: 'WebP Image' },
-    { value: 'video/mp4', label: 'MP4 Video' },
-    { value: 'video/webm', label: 'WebM Video' },
-    { value: 'application/pdf', label: 'PDF Document' },
-    { value: 'text/plain', label: 'Text File' },
-    { value: 'application/json', label: 'JSON File' }
+    { value: "image/jpeg", label: "JPEG Image" },
+    { value: "image/png", label: "PNG Image" },
+    { value: "image/gif", label: "GIF Image" },
+    { value: "image/webp", label: "WebP Image" },
+    { value: "video/mp4", label: "MP4 Video" },
+    { value: "video/webm", label: "WebM Video" },
+    { value: "application/pdf", label: "PDF Document" },
+    { value: "text/plain", label: "Text File" },
+    { value: "application/json", label: "JSON File" },
   ];
 
   const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-blue-500" />;
-    if (mimeType.startsWith('video/')) return <VideoIcon className="w-4 h-4 text-red-500" />;
-    if (mimeType === 'application/pdf') return <FileTextIcon className="w-4 h-4 text-red-600" />;
+    if (mimeType.startsWith("image/"))
+      return <ImageIcon className="w-4 h-4 text-blue-500" />;
+    if (mimeType.startsWith("video/"))
+      return <VideoIcon className="w-4 h-4 text-red-500" />;
+    if (mimeType === "application/pdf")
+      return <FileTextIcon className="w-4 h-4 text-red-600" />;
     return <FileIcon className="w-4 h-4 text-gray-500" />;
   };
 
   const getFileTypeColor = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return 'bg-blue-100 text-blue-800';
-    if (mimeType.startsWith('video/')) return 'bg-red-100 text-red-800';
-    if (mimeType === 'application/pdf') return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
+    if (mimeType.startsWith("image/")) return "bg-blue-100 text-blue-800";
+    if (mimeType.startsWith("video/")) return "bg-red-100 text-red-800";
+    if (mimeType === "application/pdf") return "bg-red-100 text-red-800";
+    return "bg-gray-100 text-gray-800";
   };
 
-  const fetchAssets = async (page: number = 1, currentFilters: Filters = filters) => {
+  const fetchAssets = async (
+    page: number = 1,
+    currentFilters: Filters = filters
+  ) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
         sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
+        sortOrder: currentFilters.sortOrder,
       });
 
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.mimeType) params.append('mimeType', currentFilters.mimeType);
+      if (currentFilters.search) params.append("search", currentFilters.search);
+      if (currentFilters.mimeType)
+        params.append("mimeType", currentFilters.mimeType);
 
       const response = await axios.get(
         `http://localhost:3000/api/assets?${params.toString()}`
       );
-      
+
       setAssets(response.data.data);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load assets: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load assets: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -159,10 +169,10 @@ export default function Asset() {
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      mimeType: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      search: "",
+      mimeType: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
     fetchAssets(1, clearedFilters);
@@ -170,70 +180,70 @@ export default function Asset() {
 
   const handleCreateAsset = async () => {
     try {
-      await axios.post('http://localhost:3000/api/assets', formData);
-      toast.success('Asset created successfully');
+      await axios.post("http://localhost:3000/api/assets", formData);
+      toast.success("Asset created successfully");
       setShowCreateDialog(false);
       setFormData({
-        filePath: '',
-        mimeType: ''
+        filePath: "",
+        mimeType: "",
       });
       fetchAssets(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create asset: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create asset: ${error.message}`);
     }
   };
 
   const handleEditAsset = async () => {
     if (!editingAsset) return;
-    
+
     try {
-      await axios.put(`http://localhost:3000/api/assets/${editingAsset.id}`, formData);
-      toast.success('Asset updated successfully');
+      await axios.put(
+        `http://localhost:3000/api/assets/${editingAsset.id}`,
+        formData
+      );
+      toast.success("Asset updated successfully");
       setShowEditDialog(false);
       setEditingAsset(null);
       setFormData({
-        filePath: '',
-        mimeType: ''
+        filePath: "",
+        mimeType: "",
       });
       fetchAssets(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update asset: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update asset: ${error.message}`);
     }
   };
 
   const handleDeleteAsset = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this asset?')) return;
-    
+    if (!confirm("Are you sure you want to delete this asset?")) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/assets/${id}`);
-      toast.success('Asset deleted successfully');
+      toast.success("Asset deleted successfully");
       fetchAssets(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete asset: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete asset: ${error.message}`);
     }
   };
 
-  const openEditDialog = (asset: Asset) => {
+  const openEditDialog = (asset: AssetType) => {
     setEditingAsset(asset);
     setFormData({
       filePath: asset.filePath,
-      mimeType: asset.mimeType
+      mimeType: asset.mimeType,
     });
     setShowEditDialog(true);
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   if (loading && assets.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading assets...</p>
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-blue-500">Loading assets...</p>
+      </div>
+    );
   }
 
   return (
@@ -260,13 +270,9 @@ export default function Asset() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
@@ -280,25 +286,25 @@ export default function Asset() {
               <Input
                 placeholder="Search by file path..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.mimeType} onValueChange={(value) => handleFilterChange('mimeType', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="File Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {mimeTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.mimeType}
+              options={[
+                { value: "all", name: "All File Types" },
+                ...mimeTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("mimeType", value === "all" ? "" : value)
+              }
+            />
           </div>
         </div>
 
@@ -306,7 +312,10 @@ export default function Asset() {
           <div className="flex flex-wrap gap-4 pt-4 border-t">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value) => handleFilterChange("sortBy", value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -319,7 +328,12 @@ export default function Asset() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={(value) =>
+                  handleFilterChange("sortOrder", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -356,12 +370,16 @@ export default function Asset() {
                     <div className="flex items-center space-x-2">
                       {getFileIcon(asset.mimeType)}
                       <span className="truncate max-w-[200px]">
-                        {asset.filePath.split('/').pop() || asset.filePath}
+                        {asset.filePath.split("/").pop() || asset.filePath}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs ${getFileTypeColor(asset.mimeType)}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${getFileTypeColor(
+                        asset.mimeType
+                      )}`}
+                    >
                       {asset.mimeType}
                     </span>
                   </TableCell>
@@ -396,7 +414,7 @@ export default function Asset() {
                           <DownloadIcon className="w-4 h-4 mr-2" />
                           Download
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteAsset(asset.id)}
                           className="text-red-600"
                         >
@@ -426,8 +444,12 @@ export default function Asset() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -438,7 +460,9 @@ export default function Asset() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -449,8 +473,14 @@ export default function Asset() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage < totalPages && handlePageChange(currentPage + 1)
+                }
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -472,13 +502,20 @@ export default function Asset() {
               <Input
                 id="filePath"
                 value={formData.filePath}
-                onChange={(e) => setFormData({ ...formData, filePath: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, filePath: e.target.value })
+                }
                 placeholder="/uploads/images/product.jpg"
               />
             </div>
             <div>
               <Label htmlFor="mimeType">MIME Type</Label>
-              <Select value={formData.mimeType} onValueChange={(value) => setFormData({ ...formData, mimeType: value })}>
+              <Select
+                value={formData.mimeType}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, mimeType: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select MIME type" />
                 </SelectTrigger>
@@ -493,12 +530,13 @@ export default function Asset() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateAsset}>
-              Create Asset
-            </Button>
+            <Button onClick={handleCreateAsset}>Create Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -508,9 +546,7 @@ export default function Asset() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>
-              Update asset information.
-            </DialogDescription>
+            <DialogDescription>Update asset information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -518,13 +554,20 @@ export default function Asset() {
               <Input
                 id="edit-filePath"
                 value={formData.filePath}
-                onChange={(e) => setFormData({ ...formData, filePath: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, filePath: e.target.value })
+                }
                 placeholder="/uploads/images/product.jpg"
               />
             </div>
             <div>
               <Label htmlFor="edit-mimeType">MIME Type</Label>
-              <Select value={formData.mimeType} onValueChange={(value) => setFormData({ ...formData, mimeType: value })}>
+              <Select
+                value={formData.mimeType}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, mimeType: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select MIME type" />
                 </SelectTrigger>
@@ -542,9 +585,7 @@ export default function Asset() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditAsset}>
-              Update Asset
-            </Button>
+            <Button onClick={handleEditAsset}>Update Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
