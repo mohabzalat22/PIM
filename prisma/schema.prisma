@@ -44,8 +44,9 @@ model Asset {
 }
 
 model ProductAsset {
-  productId Int
-  assetId   Int
+  id        Int      @id @default(autoincrement())
+  productId Int?
+  assetId   Int?
   position  Int?
   type      String // image, video, pdf, manual
   createdAt DateTime @default(now())
@@ -53,10 +54,10 @@ model ProductAsset {
   /**
    * Relations
    */
-  product Product @relation(fields: [productId], references: [id])
-  asset   Asset   @relation(fields: [assetId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+  asset   Asset?   @relation(fields: [assetId], references: [id])
 
-  @@id([productId, assetId, type])
+  @@unique([productId, assetId, type])
 }
 
 model Category {
@@ -76,8 +77,8 @@ model Category {
 
 model CategoryTranslation {
   id          Int      @id @default(autoincrement())
-  categoryId  Int
-  storeViewId Int
+  categoryId  Int?
+  storeViewId Int?
   name        String?
   slug        String?
   description String?
@@ -87,24 +88,25 @@ model CategoryTranslation {
   /**
    * Relations
    */
-  category  Category  @relation(fields: [categoryId], references: [id])
-  storeView StoreView @relation(fields: [storeViewId], references: [id])
+  category  Category?  @relation(fields: [categoryId], references: [id])
+  storeView StoreView? @relation(fields: [storeViewId], references: [id])
 
   @@unique([categoryId, storeViewId])
 }
 
 model ProductCategory {
-  productId  Int
-  categoryId Int
+  id         Int      @id @default(autoincrement())
+  productId  Int?
+  categoryId Int?
   createdAt  DateTime @default(now())
 
   /**
    * Relations
    */
-  product  Product  @relation(fields: [productId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  product  Product? @relation(fields: [productId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
 
-  @@id([productId, categoryId])
+  @@unique([productId, categoryId])
 }
 
 enum AttributeDataType {
@@ -144,8 +146,8 @@ model Attribute {
 
 model ProductAttributeValue {
   id           Int      @id @default(autoincrement())
-  productId    Int
-  attributeId  Int
+  productId    Int?
+  attributeId  Int?
   storeViewId  Int? // NULL = global scope, otherwise per store view
   valueString  String?
   valueInt     Int?
@@ -159,15 +161,15 @@ model ProductAttributeValue {
   /**
    * Relations
    */
-  product   Product    @relation(fields: [productId], references: [id])
-  attribute Attribute  @relation(fields: [attributeId], references: [id])
+  product   Product?    @relation(fields: [productId], references: [id])
+  attribute Attribute?  @relation(fields: [attributeId], references: [id])
   storeView StoreView? @relation(fields: [storeViewId], references: [id])
 
 }
 
 model StoreView {
   id        Int      @id @default(autoincrement())
-  storeId   Int
+  storeId   Int?
   code      String   @unique
   name      String
   locale    String
@@ -177,7 +179,7 @@ model StoreView {
   /**
    * Relations
    */
-  store                  Store                   @relation(fields: [storeId], references: [id])
+  store                  Store?                   @relation(fields: [storeId], references: [id])
   productAttributeValues ProductAttributeValue[]
   categoryTranslations   CategoryTranslation[]
 }
