@@ -45,21 +45,19 @@ import {
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { 
-  MoreHorizontalIcon, 
-  FilterIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  MoreHorizontalIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   SearchIcon,
   XIcon,
-  SettingsIcon,
-  CheckIcon,
-  XCircleIcon
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import type ProductAttributeValue from "@/interfaces/productAttributeValue.interface";
 
 interface Attribute {
   id: number;
@@ -72,7 +70,7 @@ interface Attribute {
   isGlobal: boolean;
   createdAt: string;
   updatedAt: string;
-  productAttributeValues?: any[];
+  productAttributeValues?: ProductAttributeValue[];
 }
 
 interface Filters {
@@ -93,71 +91,81 @@ export default function Attribute() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(null);
+  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(
+    null
+  );
   const [filters, setFilters] = useState<Filters>({
-    search: '',
-    dataType: '',
-    inputType: '',
-    isFilterable: '',
-    isGlobal: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    search: "",
+    dataType: "",
+    inputType: "",
+    isFilterable: "",
+    isGlobal: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
 
   const [formData, setFormData] = useState({
-    code: '',
-    label: '',
-    dataType: 'STRING',
-    inputType: 'TEXT',
+    code: "",
+    label: "",
+    dataType: "STRING",
+    inputType: "TEXT",
     isRequired: false,
     isFilterable: false,
-    isGlobal: true
+    isGlobal: true,
   });
 
   const limit = 10;
 
   const dataTypes = [
-    { value: 'BOOLEAN', label: 'Boolean' },
-    { value: 'STRING', label: 'String' },
-    { value: 'INT', label: 'Integer' },
-    { value: 'DECIMAL', label: 'Decimal' },
-    { value: 'TEXT', label: 'Text' },
-    { value: 'JSON', label: 'JSON' }
+    { value: "BOOLEAN", label: "Boolean" },
+    { value: "STRING", label: "String" },
+    { value: "INT", label: "Integer" },
+    { value: "DECIMAL", label: "Decimal" },
+    { value: "TEXT", label: "Text" },
+    { value: "JSON", label: "JSON" },
   ];
 
   const inputTypes = [
-    { value: 'TEXT', label: 'Text' },
-    { value: 'SELECT', label: 'Select' },
-    { value: 'MULTISELECT', label: 'Multi-select' },
-    { value: 'DATE', label: 'Date' },
-    { value: 'MEDIA', label: 'Media' }
+    { value: "TEXT", label: "Text" },
+    { value: "SELECT", label: "Select" },
+    { value: "MULTISELECT", label: "Multi-select" },
+    { value: "DATE", label: "Date" },
+    { value: "MEDIA", label: "Media" },
   ];
 
-  const fetchAttributes = async (page: number = 1, currentFilters: Filters = filters) => {
+  const fetchAttributes = async (
+    page: number = 1,
+    currentFilters: Filters = filters
+  ) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
         sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
+        sortOrder: currentFilters.sortOrder,
       });
 
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.dataType) params.append('dataType', currentFilters.dataType);
-      if (currentFilters.inputType) params.append('inputType', currentFilters.inputType);
-      if (currentFilters.isFilterable !== '') params.append('isFilterable', currentFilters.isFilterable);
-      if (currentFilters.isGlobal !== '') params.append('isGlobal', currentFilters.isGlobal);
+      if (currentFilters.search) params.append("search", currentFilters.search);
+      if (currentFilters.dataType)
+        params.append("dataType", currentFilters.dataType);
+      if (currentFilters.inputType)
+        params.append("inputType", currentFilters.inputType);
+      if (currentFilters.isFilterable !== "")
+        params.append("isFilterable", currentFilters.isFilterable);
+      if (currentFilters.isGlobal !== "")
+        params.append("isGlobal", currentFilters.isGlobal);
 
       const response = await axios.get(
         `http://localhost:3000/api/attributes?${params.toString()}`
       );
-      
+
       setAttributes(response.data.data);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load attributes: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load attributes: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -181,13 +189,13 @@ export default function Attribute() {
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      dataType: '',
-      inputType: '',
-      isFilterable: '',
-      isGlobal: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      search: "",
+      dataType: "",
+      inputType: "",
+      isFilterable: "",
+      isGlobal: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
     fetchAttributes(1, clearedFilters);
@@ -195,56 +203,62 @@ export default function Attribute() {
 
   const handleCreateAttribute = async () => {
     try {
-      await axios.post('http://localhost:3000/api/attributes', formData);
-      toast.success('Attribute created successfully');
+      await axios.post("http://localhost:3000/api/attributes", formData);
+      toast.success("Attribute created successfully");
       setShowCreateDialog(false);
       setFormData({
-        code: '',
-        label: '',
-        dataType: 'STRING',
-        inputType: 'TEXT',
+        code: "",
+        label: "",
+        dataType: "STRING",
+        inputType: "TEXT",
         isRequired: false,
         isFilterable: false,
-        isGlobal: true
+        isGlobal: true,
       });
       fetchAttributes(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create attribute: ${error.message}`);
     }
   };
 
   const handleEditAttribute = async () => {
     if (!editingAttribute) return;
-    
+
     try {
-      await axios.put(`http://localhost:3000/api/attributes/${editingAttribute.id}`, formData);
-      toast.success('Attribute updated successfully');
+      await axios.put(
+        `http://localhost:3000/api/attributes/${editingAttribute.id}`,
+        formData
+      );
+      toast.success("Attribute updated successfully");
       setShowEditDialog(false);
       setEditingAttribute(null);
       setFormData({
-        code: '',
-        label: '',
-        dataType: 'STRING',
-        inputType: 'TEXT',
+        code: "",
+        label: "",
+        dataType: "STRING",
+        inputType: "TEXT",
         isRequired: false,
         isFilterable: false,
-        isGlobal: true
+        isGlobal: true,
       });
       fetchAttributes(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update attribute: ${error.message}`);
     }
   };
 
   const handleDeleteAttribute = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this attribute?')) return;
-    
+    if (!confirm("Are you sure you want to delete this attribute?")) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/attributes/${id}`);
-      toast.success('Attribute deleted successfully');
+      toast.success("Attribute deleted successfully");
       fetchAttributes(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete attribute: ${error.message}`);
     }
   };
 
@@ -257,15 +271,17 @@ export default function Attribute() {
       inputType: attribute.inputType,
       isRequired: attribute.isRequired,
       isFilterable: attribute.isFilterable,
-      isGlobal: attribute.isGlobal
+      isGlobal: attribute.isGlobal,
     });
     setShowEditDialog(true);
   };
 
   if (loading && attributes.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading attributes...</p>
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-blue-500">Loading attributes...</p>
+      </div>
+    );
   }
 
   return (
@@ -292,13 +308,9 @@ export default function Attribute() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
@@ -312,20 +324,23 @@ export default function Attribute() {
               <Input
                 placeholder="Search by code or label..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.dataType} onValueChange={(value) => handleFilterChange('dataType', value)}>
+            <Select
+              value={filters.dataType}
+              onValueChange={(value) => handleFilterChange("dataType", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Data Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 {dataTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || 'none'}>
+                  <SelectItem key={type.value} value={type.value || "none"}>
                     {type.label}
                   </SelectItem>
                 ))}
@@ -333,14 +348,17 @@ export default function Attribute() {
             </Select>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.inputType} onValueChange={(value) => handleFilterChange('inputType', value)}>
+            <Select
+              value={filters.inputType}
+              onValueChange={(value) => handleFilterChange("inputType", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Input Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Input Types</SelectItem>
                 {inputTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || 'none'}>
+                  <SelectItem key={type.value} value={type.value || "none"}>
                     {type.label}
                   </SelectItem>
                 ))}
@@ -353,7 +371,12 @@ export default function Attribute() {
           <div className="flex flex-wrap gap-4 pt-4 border-t">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Filterable</Label>
-              <Select value={filters.isFilterable} onValueChange={(value) => handleFilterChange('isFilterable', value)}>
+              <Select
+                value={filters.isFilterable}
+                onValueChange={(value) =>
+                  handleFilterChange("isFilterable", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Filterable" />
                 </SelectTrigger>
@@ -366,7 +389,10 @@ export default function Attribute() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Global</Label>
-              <Select value={filters.isGlobal} onValueChange={(value) => handleFilterChange('isGlobal', value)}>
+              <Select
+                value={filters.isGlobal}
+                onValueChange={(value) => handleFilterChange("isGlobal", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Global" />
                 </SelectTrigger>
@@ -379,7 +405,10 @@ export default function Attribute() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value) => handleFilterChange("sortBy", value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -392,7 +421,12 @@ export default function Attribute() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={(value) =>
+                  handleFilterChange("sortOrder", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -432,7 +466,7 @@ export default function Attribute() {
                       {attribute.code}
                     </code>
                   </TableCell>
-                  <TableCell>{attribute.label || '-'}</TableCell>
+                  <TableCell>{attribute.label || "-"}</TableCell>
                   <TableCell>
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       {attribute.dataType}
@@ -480,11 +514,13 @@ export default function Attribute() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(attribute)}>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(attribute)}
+                        >
                           <EditIcon className="w-4 h-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteAttribute(attribute.id)}
                           className="text-red-600"
                         >
@@ -514,8 +550,12 @@ export default function Attribute() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -526,7 +566,9 @@ export default function Attribute() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -537,8 +579,14 @@ export default function Attribute() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage < totalPages && handlePageChange(currentPage + 1)
+                }
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -561,7 +609,9 @@ export default function Attribute() {
                 <Input
                   id="code"
                   value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
                   placeholder="attribute_code"
                 />
               </div>
@@ -570,7 +620,9 @@ export default function Attribute() {
                 <Input
                   id="label"
                   value={formData.label}
-                  onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, label: e.target.value })
+                  }
                   placeholder="Attribute Label"
                 />
               </div>
@@ -578,7 +630,12 @@ export default function Attribute() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="dataType">Data Type</Label>
-                <Select value={formData.dataType} onValueChange={(value) => setFormData({ ...formData, dataType: value })}>
+                <Select
+                  value={formData.dataType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, dataType: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -593,7 +650,12 @@ export default function Attribute() {
               </div>
               <div>
                 <Label htmlFor="inputType">Input Type</Label>
-                <Select value={formData.inputType} onValueChange={(value) => setFormData({ ...formData, inputType: value })}>
+                <Select
+                  value={formData.inputType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, inputType: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -613,7 +675,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="isRequired"
                   checked={formData.isRequired}
-                  onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isRequired: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="isRequired">Required</Label>
@@ -623,7 +687,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="isFilterable"
                   checked={formData.isFilterable}
-                  onChange={(e) => setFormData({ ...formData, isFilterable: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isFilterable: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="isFilterable">Filterable</Label>
@@ -633,7 +699,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="isGlobal"
                   checked={formData.isGlobal}
-                  onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isGlobal: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="isGlobal">Global</Label>
@@ -641,12 +709,13 @@ export default function Attribute() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateAttribute}>
-              Create Attribute
-            </Button>
+            <Button onClick={handleCreateAttribute}>Create Attribute</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -656,9 +725,7 @@ export default function Attribute() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Attribute</DialogTitle>
-            <DialogDescription>
-              Update attribute information.
-            </DialogDescription>
+            <DialogDescription>Update attribute information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -667,7 +734,9 @@ export default function Attribute() {
                 <Input
                   id="edit-code"
                   value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
                   placeholder="attribute_code"
                 />
               </div>
@@ -676,7 +745,9 @@ export default function Attribute() {
                 <Input
                   id="edit-label"
                   value={formData.label}
-                  onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, label: e.target.value })
+                  }
                   placeholder="Attribute Label"
                 />
               </div>
@@ -684,7 +755,12 @@ export default function Attribute() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-dataType">Data Type</Label>
-                <Select value={formData.dataType} onValueChange={(value) => setFormData({ ...formData, dataType: value })}>
+                <Select
+                  value={formData.dataType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, dataType: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -699,7 +775,12 @@ export default function Attribute() {
               </div>
               <div>
                 <Label htmlFor="edit-inputType">Input Type</Label>
-                <Select value={formData.inputType} onValueChange={(value) => setFormData({ ...formData, inputType: value })}>
+                <Select
+                  value={formData.inputType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, inputType: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -719,7 +800,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="edit-isRequired"
                   checked={formData.isRequired}
-                  onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isRequired: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="edit-isRequired">Required</Label>
@@ -729,7 +812,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="edit-isFilterable"
                   checked={formData.isFilterable}
-                  onChange={(e) => setFormData({ ...formData, isFilterable: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isFilterable: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="edit-isFilterable">Filterable</Label>
@@ -739,7 +824,9 @@ export default function Attribute() {
                   type="checkbox"
                   id="edit-isGlobal"
                   checked={formData.isGlobal}
-                  onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isGlobal: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="edit-isGlobal">Global</Label>
@@ -750,9 +837,7 @@ export default function Attribute() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditAttribute}>
-              Update Attribute
-            </Button>
+            <Button onClick={handleEditAttribute}>Update Attribute</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
