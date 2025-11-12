@@ -59,6 +59,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { SelectType } from "@/components/app/select-type";
 
 interface StoreView {
   id: number;
@@ -94,60 +95,67 @@ export default function StoreView() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingStoreView, setEditingStoreView] = useState<StoreView | null>(null);
+  const [editingStoreView, setEditingStoreView] = useState<StoreView | null>(
+    null
+  );
   const [filters, setFilters] = useState<Filters>({
-    search: '',
-    storeId: '',
-    locale: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    search: "",
+    storeId: "",
+    locale: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
 
   const [formData, setFormData] = useState({
-    storeId: '',
-    code: '',
-    name: '',
-    locale: ''
+    storeId: "",
+    code: "",
+    name: "",
+    locale: "",
   });
 
   const limit = 10;
 
   const locales = [
-    { value: 'en_US', label: 'English (US)' },
-    { value: 'en_GB', label: 'English (UK)' },
-    { value: 'es_ES', label: 'Spanish (Spain)' },
-    { value: 'fr_FR', label: 'French (France)' },
-    { value: 'de_DE', label: 'German (Germany)' },
-    { value: 'it_IT', label: 'Italian (Italy)' },
-    { value: 'pt_BR', label: 'Portuguese (Brazil)' },
-    { value: 'ja_JP', label: 'Japanese (Japan)' },
-    { value: 'ko_KR', label: 'Korean (Korea)' },
-    { value: 'zh_CN', label: 'Chinese (China)' }
+    { value: "en_US", label: "English (US)" },
+    { value: "en_GB", label: "English (UK)" },
+    { value: "es_ES", label: "Spanish (Spain)" },
+    { value: "fr_FR", label: "French (France)" },
+    { value: "de_DE", label: "German (Germany)" },
+    { value: "it_IT", label: "Italian (Italy)" },
+    { value: "pt_BR", label: "Portuguese (Brazil)" },
+    { value: "ja_JP", label: "Japanese (Japan)" },
+    { value: "ko_KR", label: "Korean (Korea)" },
+    { value: "zh_CN", label: "Chinese (China)" },
   ];
 
-  const fetchStoreViews = async (page: number = 1, currentFilters: Filters = filters) => {
+  const fetchStoreViews = async (
+    page: number = 1,
+    currentFilters: Filters = filters
+  ) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
         sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
+        sortOrder: currentFilters.sortOrder,
       });
 
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.storeId) params.append('storeId', currentFilters.storeId);
-      if (currentFilters.locale) params.append('locale', currentFilters.locale);
+      if (currentFilters.search) params.append("search", currentFilters.search);
+      if (currentFilters.storeId)
+        params.append("storeId", currentFilters.storeId);
+      if (currentFilters.locale) params.append("locale", currentFilters.locale);
 
       const response = await axios.get(
         `http://localhost:3000/api/store-views?${params.toString()}`
       );
-      
+
       setStoreViews(response.data.data);
       setTotalPages(Math.ceil(response.data.meta.total / limit));
       setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load store views: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load store views: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -155,10 +163,13 @@ export default function StoreView() {
 
   const fetchStores = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/stores?limit=100');
+      const response = await axios.get(
+        "http://localhost:3000/api/stores?limit=100"
+      );
       setStores(response.data.data);
-    } catch (err: any) {
-      console.error('Failed to load stores:', err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Failed to load stores:", error.message);
     }
   };
 
@@ -181,11 +192,11 @@ export default function StoreView() {
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      storeId: '',
-      locale: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      search: "",
+      storeId: "",
+      locale: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
     fetchStoreViews(1, clearedFilters);
@@ -197,50 +208,56 @@ export default function StoreView() {
         storeId: parseInt(formData.storeId),
         code: formData.code,
         name: formData.name,
-        locale: formData.locale
+        locale: formData.locale,
       };
-      
-      await axios.post('http://localhost:3000/api/store-views', storeViewData);
-      toast.success('Store view created successfully');
+
+      await axios.post("http://localhost:3000/api/store-views", storeViewData);
+      toast.success("Store view created successfully");
       setShowCreateDialog(false);
-      setFormData({ storeId: '', code: '', name: '', locale: '' });
+      setFormData({ storeId: "", code: "", name: "", locale: "" });
       fetchStoreViews(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create store view: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create store view: ${error.message}`);
     }
   };
 
   const handleEditStoreView = async () => {
     if (!editingStoreView) return;
-    
+
     try {
       const storeViewData = {
         storeId: parseInt(formData.storeId),
         code: formData.code,
         name: formData.name,
-        locale: formData.locale
+        locale: formData.locale,
       };
-      
-      await axios.put(`http://localhost:3000/api/store-views/${editingStoreView.id}`, storeViewData);
-      toast.success('Store view updated successfully');
+
+      await axios.put(
+        `http://localhost:3000/api/store-views/${editingStoreView.id}`,
+        storeViewData
+      );
+      toast.success("Store view updated successfully");
       setShowEditDialog(false);
       setEditingStoreView(null);
-      setFormData({ storeId: '', code: '', name: '', locale: '' });
+      setFormData({ storeId: "", code: "", name: "", locale: "" });
       fetchStoreViews(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update store view: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update store view: ${error.message}`);
     }
   };
 
   const handleDeleteStoreView = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this store view?')) return;
-    
+    if (!confirm("Are you sure you want to delete this store view?")) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/store-views/${id}`);
-      toast.success('Store view deleted successfully');
+      toast.success("Store view deleted successfully");
       fetchStoreViews(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete store view: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete store view: ${error.message}`);
     }
   };
 
@@ -250,15 +267,17 @@ export default function StoreView() {
       storeId: storeView.storeId.toString(),
       code: storeView.code,
       name: storeView.name,
-      locale: storeView.locale
+      locale: storeView.locale,
     });
     setShowEditDialog(true);
   };
 
   if (loading && storeViews.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading store views...</p>
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-blue-500">Loading store views...</p>
+      </div>
+    );
   }
 
   return (
@@ -285,13 +304,9 @@ export default function StoreView() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
@@ -305,40 +320,40 @@ export default function StoreView() {
               <Input
                 placeholder="Search by code or name..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.storeId} onValueChange={(value) => handleFilterChange('storeId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Store" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Stores</SelectItem>
-                {stores.map((store) => (
-                  <SelectItem key={store.id} value={store.id.toString() || "none"}>
-                    {store.name || store.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.storeId}
+              options={[
+                { value: "all", name: "All Stores" },
+                ...stores.map((store) => ({
+                  value: store.id.toString(),
+                  name: store.name || store.code,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("storeId", value === "all" ? "" : value)
+              }
+            />
           </div>
           <div className="min-w-[150px]">
-            <Select value={filters.locale} onValueChange={(value) => handleFilterChange('locale', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Locale" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locales</SelectItem>
-                {locales.map((locale) => (
-                  <SelectItem key={locale.value} value={locale.value || "none"}>
-                    {locale.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectType
+              initialValue={filters.locale}
+              options={[
+                { value: "all", name: "All Locales" },
+                ...locales.map((locale) => ({
+                  value: locale.value || "none",
+                  name: locale.label,
+                })),
+              ]}
+              onValueChange={(value) =>
+                handleFilterChange("locale", value === "all" ? "" : value)
+              }
+            />
           </div>
         </div>
 
@@ -346,9 +361,9 @@ export default function StoreView() {
           <div className="flex flex-wrap gap-4 pt-4 border-t">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <select 
-                value={filters.sortBy} 
-                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange("sortBy", e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="createdAt">Created Date</option>
@@ -359,9 +374,11 @@ export default function StoreView() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <select 
-                value={filters.sortOrder} 
-                onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+              <select
+                value={filters.sortOrder}
+                onChange={(e) =>
+                  handleFilterChange("sortOrder", e.target.value)
+                }
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="asc">Ascending</option>
@@ -404,7 +421,9 @@ export default function StoreView() {
                   </TableCell>
                   <TableCell>
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      {storeView.store?.name || storeView.store?.code || `Store ${storeView.storeId}`}
+                      {storeView.store?.name ||
+                        storeView.store?.code ||
+                        `Store ${storeView.storeId}`}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -428,11 +447,13 @@ export default function StoreView() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(storeView)}>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(storeView)}
+                        >
                           <EditIcon className="w-4 h-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteStoreView(storeView.id)}
                           className="text-red-600"
                         >
@@ -462,8 +483,12 @@ export default function StoreView() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -474,7 +499,9 @@ export default function StoreView() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -485,8 +512,14 @@ export default function StoreView() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage < totalPages && handlePageChange(currentPage + 1)
+                }
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -505,13 +538,21 @@ export default function StoreView() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="storeId">Store</Label>
-              <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
+              <Select
+                value={formData.storeId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, storeId: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select store" />
                 </SelectTrigger>
                 <SelectContent>
                   {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString() || "none"}>
+                    <SelectItem
+                      key={store.id}
+                      value={store.id.toString() || "none"}
+                    >
                       {store.name || store.code}
                     </SelectItem>
                   ))}
@@ -523,7 +564,9 @@ export default function StoreView() {
               <Input
                 id="code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
                 placeholder="store_view_code"
               />
             </div>
@@ -532,19 +575,29 @@ export default function StoreView() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Store View Name"
               />
             </div>
             <div>
               <Label htmlFor="locale">Locale</Label>
-              <Select value={formData.locale} onValueChange={(value) => setFormData({ ...formData, locale: value })}>
+              <Select
+                value={formData.locale}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, locale: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select locale" />
                 </SelectTrigger>
                 <SelectContent>
                   {locales.map((locale) => (
-                    <SelectItem key={locale.value} value={locale.value || "none"}>
+                    <SelectItem
+                      key={locale.value}
+                      value={locale.value || "none"}
+                    >
                       {locale.label}
                     </SelectItem>
                   ))}
@@ -553,12 +606,13 @@ export default function StoreView() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateStoreView}>
-              Create Store View
-            </Button>
+            <Button onClick={handleCreateStoreView}>Create Store View</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -575,13 +629,21 @@ export default function StoreView() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-storeId">Store</Label>
-              <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
+              <Select
+                value={formData.storeId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, storeId: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select store" />
                 </SelectTrigger>
                 <SelectContent>
                   {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString() || "none"}>
+                    <SelectItem
+                      key={store.id}
+                      value={store.id.toString() || "none"}
+                    >
                       {store.name || store.code}
                     </SelectItem>
                   ))}
@@ -593,7 +655,9 @@ export default function StoreView() {
               <Input
                 id="edit-code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
                 placeholder="store_view_code"
               />
             </div>
@@ -602,19 +666,29 @@ export default function StoreView() {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Store View Name"
               />
             </div>
             <div>
               <Label htmlFor="edit-locale">Locale</Label>
-              <Select value={formData.locale} onValueChange={(value) => setFormData({ ...formData, locale: value })}>
+              <Select
+                value={formData.locale}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, locale: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select locale" />
                 </SelectTrigger>
                 <SelectContent>
                   {locales.map((locale) => (
-                    <SelectItem key={locale.value} value={locale.value || "none"}>
+                    <SelectItem
+                      key={locale.value}
+                      value={locale.value || "none"}
+                    >
                       {locale.label}
                     </SelectItem>
                   ))}
@@ -626,9 +700,7 @@ export default function StoreView() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditStoreView}>
-              Update Store View
-            </Button>
+            <Button onClick={handleEditStoreView}>Update Store View</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
