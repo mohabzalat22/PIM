@@ -3,7 +3,19 @@ import client from "./apiClient";
 import type { Filters } from "@/interfaces/attributes.filters.interface";
 
 export const AttributesApi = {
-  getAll: async (page: number, limit: number, filters: Filters) => {
+  getAll: async (
+    page: number,
+    limit: number,
+    filters: Filters = {
+      search: "",
+      dataType: "",
+      inputType: "",
+      isFilterable: "",
+      isGlobal: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    }
+  ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),

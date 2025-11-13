@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
@@ -61,28 +61,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type StoreView from "@/interfaces/storeView.interface";
-import Loading from "@/components/app/loading";
 import { SelectType } from "@/components/app/select-type";
 import type ProductAttributeValue from "@/interfaces/productAttributes/productAttributevalue.interface";
-import type Product from "@/interfaces/productAttributes/product.interface";
-import type Attribute from "@/interfaces/productAttributes/attribute.interface";
 import type Filters from "@/interfaces/productAttributes/filters.interface";
 import type AttributeData from "@/interfaces/productAttributes/attributes.data.interface";
+import { useProductAttributeValues } from "@/hooks/useProductAttributeValues";
+import { useProducts } from "@/hooks/useProducts";
+import { useAttributes } from "@/hooks/useAttributes";
+import { useStoreViews } from "@/hooks/useStoreViews";
 
 export default function ProductAttributes() {
   const navigate = useNavigate();
-  const [productAttributeValues, setProductAttributeValues] = useState<ProductAttributeValue[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [storeViews, setStoreViews] = useState<StoreView[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
-  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingProductAttribute, setEditingProductAttribute] = useState<ProductAttributeValue | null>(null);
+  const limit = 10;
+
   const [filters, setFilters] = useState<Filters>({
     search: '',
     productId: '',
@@ -92,6 +83,17 @@ export default function ProductAttributes() {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [productAttributeValues, productAttributeValuesLoading, productAttributeValuesErrors] = useProductAttributeValues(currentPage, limit, filters);
+  const [products, productsLoading, productsErrors] = useProducts(currentPage, limit);
+  const [attributes, attributesLoading, attributesErrors] = useAttributes(currentPage, limit);
+
+  const [storeViews, storeViewsLoading, storeViewErrors] = useStoreViews(currentPage,limit);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
+  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
+  const [editingProductAttribute, setEditingProductAttribute] = useState<ProductAttributeValue | null>(null);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -104,7 +106,6 @@ export default function ProductAttributes() {
     valueBoolean: false
   });
 
-  const limit = 10;
 
   const dataTypes = [
     { value: 'STRING', label: 'String' },
@@ -114,84 +115,15 @@ export default function ProductAttributes() {
     { value: 'BOOLEAN', label: 'Boolean' }
   ];
 
-  const fetchProductAttributeValues = async (page: number = 1, currentFilters: Filters = filters) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
-      });
-
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.productId) params.append('productId', currentFilters.productId);
-      if (currentFilters.attributeId) params.append('attributeId', currentFilters.attributeId);
-      if (currentFilters.storeViewId) params.append('storeViewId', currentFilters.storeViewId);
-      if (currentFilters.dataType) params.append('dataType', currentFilters.dataType);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/product-attributes?${params.toString()}`
-      );
-      
-      setProductAttributeValues(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load product attributes: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/products?limit=100');
-      setProducts(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load products: ${error.message}`);
-    }
-  };
-
-  const fetchAttributes = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/attributes?limit=100');
-      setAttributes(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load attributes: ${error.message}`);
-    }
-  };
-
-  const fetchStoreViews = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/store-views?limit=100');
-      setStoreViews(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load store views: ${error.message}`);
-    }
-  };
-
-  useEffect(() => {
-    fetchProductAttributeValues(currentPage);
-    fetchProducts();
-    fetchAttributes();
-    fetchStoreViews();
-  }, []);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchProductAttributeValues(page);
-    }
+    setCurrentPage(page);
+  
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchProductAttributeValues(1, newFilters);
   };
 
   const clearFilters = () => {
@@ -205,7 +137,6 @@ export default function ProductAttributes() {
       sortOrder: 'desc'
     };
     setFilters(clearedFilters);
-    fetchProductAttributeValues(1, clearedFilters);
   };
 
   const handleCreateProductAttribute = async () => {
@@ -245,7 +176,6 @@ export default function ProductAttributes() {
       toast.success('Product attribute assigned successfully');
       setShowCreateDialog(false);
       resetFormData();
-      fetchProductAttributeValues(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to assign attribute: ${error.message}`);
@@ -292,7 +222,6 @@ export default function ProductAttributes() {
       setShowEditDialog(false);
       setEditingProductAttribute(null);
       resetFormData();
-      fetchProductAttributeValues(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update attribute: ${error.message}`);
@@ -305,7 +234,6 @@ export default function ProductAttributes() {
     try {
       await axios.delete(`http://localhost:3000/api/product-attributes/${id}`);
       toast.success('Product attribute deleted successfully');
-      fetchProductAttributeValues(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete product attribute: ${error.message}`);
@@ -359,10 +287,6 @@ export default function ProductAttributes() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  if (loading && productAttributeValues.length === 0) {
-    return <Loading />;
-  }
 
   return (
     <div className="max-w-full p-4 space-y-4">
@@ -501,7 +425,7 @@ export default function ProductAttributes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {productAttributeValues.length > 0 ? (
+            {productAttributeValues ? (
               productAttributeValues.map((productAttribute) => (
                 <TableRow key={productAttribute.id}>
                   <TableCell className="font-medium">{productAttribute.id}</TableCell>
