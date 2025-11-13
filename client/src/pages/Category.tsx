@@ -59,49 +59,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type ProductCategory from "@/interfaces/productCategory.interface";
-import type CategoryTranslation from "@/interfaces/categoryTranslation.interface";
 import { SelectType } from "@/components/app/select-type";
-import Loading from "@/components/app/loading";
-
-interface CategoryType {
-  id: number;
-  parentId?: number;
-  createdAt: string;
-  updatedAt: string;
-  parent?: CategoryType;
-  subcategory?: CategoryType[];
-  productCategories?: ProductCategory[];
-  translations?: CategoryTranslation[];
-}
-
-interface StoreView {
-  id: number;
-  code: string;
-  name: string;
-  locale: string;
-}
-
-interface Filters {
-  search: string;
-  parentId: string;
-  sortBy: string;
-  sortOrder: string;
-}
+import { useCategories } from "@/hooks/useCategories";
+import type Filters from "@/interfaces/category/category.filters.interface";
+import type CategoryInterface  from "@/interfaces/category/category.interface";
+import type StoreView from "@/interfaces/category/storeView.interface";
+import { CategoryApi } from "@/api/categories";
+import { StoreViewsApi } from "@/api/storeView";
 
 export default function Category() {
-  const [categories, setCategories] = useState<CategoryType[]>([]);
-  const [filterCategories, setFilterCategories] = useState<CategoryType[]>([]);
-  const [storeViews, setStoreViews] = useState<StoreView[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
-  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(
-    null
-  );
+
   const [filters, setFilters] = useState<Filters>({
     search: "",
     parentId: "",
@@ -109,6 +79,17 @@ export default function Category() {
     sortOrder: "desc",
   });
 
+  const [categories, categoriesLoading, categoriesErrors] = useCategories<CategoryInterface>(currentPage, limit, filters);
+  const [filterCategories, setFilterCategories] = useState<CategoryInterface[]>([]);
+  const [storeViews, setStoreViews] = useState<StoreView[]>([]);
+
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
+  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryInterface | null>(
+    null
+  );
+ 
   const [formData, setFormData] = useState({
     parentId: "",
     translations: [
@@ -121,85 +102,35 @@ export default function Category() {
     ],
   });
 
-  const limit = 10;
-
-  const fetchFilterCategories = async (page: number = 1, parentId = "") => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        parentId: parentId,
-      });
-
-      const response = await axios.get(
-        `http://localhost:3000/api/categories?${params.toString()}`
-      );
-
-      setFilterCategories(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load filter categories: ${error.message}`);
-    }
-  };
-
-  const fetchCategories = async (
-    page: number = 1,
-    currentFilters: Filters = filters
-  ) => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
-      });
-
-      if (currentFilters.search) params.append("search", currentFilters.search);
-      if (currentFilters.parentId !== "")
-        params.append("parentId", currentFilters.parentId);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/categories?${params.toString()}`
-      );
-
-      setCategories(response.data.data);
-      setLoading(false);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load categories: ${error.message}`);
-    }
-  };
 
   const fetchStoreViews = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/api/store-views?limit=100"
-      );
-      setStoreViews(response.data.data);
+     const response = await StoreViewsApi.getAll(currentPage,limit);
+      setStoreViews(response.data);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to load store views: ${error.message}`);
     }
   };
 
+  const fetchFilterCategories = async() => {
+    const response = await CategoryApi.getAll(currentPage,limit);
+    setFilterCategories(response.data);
+  }
+
+
   useEffect(() => {
     fetchFilterCategories();
-    fetchCategories(currentPage);
     fetchStoreViews();
   }, []);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchCategories(page);
-    }
+    setCurrentPage(page);
   };
 
   const handleFilterChange = (key: keyof Filters, value: string | null) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchCategories(1, newFilters);
   };
 
   const clearFilters = () => {
@@ -210,7 +141,6 @@ export default function Category() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchCategories(1, clearedFilters);
   };
 
   const handleCreateCategory = async () => {
@@ -234,7 +164,6 @@ export default function Category() {
           },
         ],
       });
-      fetchCategories(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create category: ${error.message}`);
@@ -281,14 +210,13 @@ export default function Category() {
     try {
       await axios.delete(`http://localhost:3000/api/categories/${id}`);
       toast.success("Category deleted successfully");
-      fetchCategories(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete category: ${error.message}`);
     }
   };
 
-  const openEditDialog = (category: CategoryType) => {
+  const openEditDialog = (category: CategoryInterface) => {
     setEditingCategory(category);
     setFormData({
       parentId: category.parentId?.toString() || "",
@@ -351,9 +279,7 @@ export default function Category() {
     });
   };
 
-  if (loading) {
-    return <Loading />;
-  }
+
 
   return (
     <div className="max-w-full p-4 space-y-4">
@@ -390,7 +316,7 @@ export default function Category() {
 
         {/* Filters Section */}
         <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[200px] mt-6">
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -402,6 +328,7 @@ export default function Category() {
             </div>
           </div>
           <div className="min-w-[150px]">
+            <label className="text-sm font-bold" htmlFor="parent-category">Parent Category</label>
             <SelectType
               initialValue="all"
               options={[
