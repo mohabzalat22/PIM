@@ -1,9 +1,25 @@
+import type Filters  from "@/interfaces/category/category.filters.interface";
 import client from "./apiClient";
 import type Category  from "@/interfaces/category.interface";
 
 export const CategoryApi = {
-    getAll: async (filters?: Record<string, string>) => {
-        const response = await client.get("/categories", { params: filters });
+    getAll: async (page: number, limit: number, filters: Filters={
+        search: "",
+        parentId: "",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      }) => {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            sortBy: filters.sortBy,
+            sortOrder: filters.sortOrder,
+        });
+
+        if (filters.search) params.append("search", filters.search);
+        if (filters.parentId) params.append("parentId", filters.parentId);
+
+        const response = await client.get("/categories", { params: params });
         return response.data;
     },
 
