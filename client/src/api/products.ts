@@ -3,7 +3,18 @@ import client from "./apiClient";
 import type Product from "@/interfaces/product.interface";
 
 export const ProductsApi = {
-  getAll: async (page: number, limit: number, filters: Filters) => {
+  getAll: async (
+    page: number,
+    limit: number,
+    filters: Filters = {
+      search: "",
+      type: "",
+      categoryId: "",
+      attributeFilters: {},
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    }
+  ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -18,7 +29,7 @@ export const ProductsApi = {
       params.append("attributes", JSON.stringify(filters.attributeFilters));
     }
 
-    const response = await client.get(`/products?`, {params: params});
+    const response = await client.get(`/products?`, { params: params });
     return response.data;
   },
 

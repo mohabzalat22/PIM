@@ -3,7 +3,7 @@ import { ProductsApi } from "@/api/products";
 import type Product from "@/interfaces/product.interface";
 import type Filters from "@/interfaces/products.filters.interface";
 
-export function useProducts(page: number, limit: number, filters: Filters) {
+export function useProducts(page: number, limit: number, filters?: Filters) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
