@@ -18,7 +18,7 @@ export const ProductsApi = {
       params.append("attributes", JSON.stringify(filters.attributeFilters));
     }
 
-    const response = await client.get(`/products?${params.toString()}`);
+    const response = await client.get(`/products?`, {params: params});
     return response.data;
   },
 
