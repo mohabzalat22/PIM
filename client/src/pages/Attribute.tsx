@@ -42,8 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
@@ -59,7 +58,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type ProductAttributeValue from "@/interfaces/productAttributeValue.interface";
 import { SelectType } from "@/components/app/select-type";
-
+import type { Filters } from "@/interfaces/attributes.filters.interface";
+import { useAttributes } from "@/hooks/useAttributes";
 interface Attribute {
   id: number;
   code: string;
@@ -74,27 +74,12 @@ interface Attribute {
   productAttributeValues?: ProductAttributeValue[];
 }
 
-interface Filters {
-  search: string;
-  dataType: string;
-  inputType: string;
-  isFilterable: string;
-  isGlobal: string;
-  sortBy: string;
-  sortOrder: string;
-}
+
 
 export default function Attribute() {
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
-  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(
-    null
-  );
   const [filters, setFilters] = useState<Filters>({
     search: "",
     dataType: "",
@@ -104,6 +89,14 @@ export default function Attribute() {
     sortBy: "createdAt",
     sortOrder: "desc",
   });
+  const [attributes, attributesLoading, attributesErrors] = useAttributes(currentPage, limit, filters );
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
+  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
+  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(
+    null
+  );
+
 
   const [formData, setFormData] = useState({
     code: "",
@@ -114,8 +107,6 @@ export default function Attribute() {
     isFilterable: false,
     isGlobal: true,
   });
-
-  const limit = 10;
 
   const dataTypes = [
     { value: "BOOLEAN", label: "Boolean" },
@@ -134,58 +125,13 @@ export default function Attribute() {
     { value: "MEDIA", label: "Media" },
   ];
 
-  const fetchAttributes = async (
-    page: number = 1,
-    currentFilters: Filters = filters
-  ) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
-      });
-
-      if (currentFilters.search) params.append("search", currentFilters.search);
-      if (currentFilters.dataType)
-        params.append("dataType", currentFilters.dataType);
-      if (currentFilters.inputType)
-        params.append("inputType", currentFilters.inputType);
-      if (currentFilters.isFilterable !== "")
-        params.append("isFilterable", currentFilters.isFilterable);
-      if (currentFilters.isGlobal !== "")
-        params.append("isGlobal", currentFilters.isGlobal);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/attributes?${params.toString()}`
-      );
-
-      setAttributes(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load attributes: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAttributes(currentPage);
-  }, []);
-
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchAttributes(page);
-    }
+    setCurrentPage(page);
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchAttributes(1, newFilters);
   };
 
   const clearFilters = () => {
@@ -199,7 +145,6 @@ export default function Attribute() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchAttributes(1, clearedFilters);
   };
 
   const handleCreateAttribute = async () => {
@@ -243,7 +188,6 @@ export default function Attribute() {
         isFilterable: false,
         isGlobal: true,
       });
-      fetchAttributes(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update attribute: ${error.message}`);
@@ -256,7 +200,6 @@ export default function Attribute() {
     try {
       await axios.delete(`http://localhost:3000/api/attributes/${id}`);
       toast.success("Attribute deleted successfully");
-      fetchAttributes(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete attribute: ${error.message}`);
@@ -277,13 +220,6 @@ export default function Attribute() {
     setShowEditDialog(true);
   };
 
-  if (loading && attributes.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-blue-500">Loading attributes...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-full p-4 space-y-4">
