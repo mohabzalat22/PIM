@@ -46,15 +46,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { 
-  MoreHorizontalIcon, 
-  FilterIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  MoreHorizontalIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   SearchIcon,
   XIcon,
-  EyeIcon
+  EyeIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,92 +67,68 @@ import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
 import { useCategories } from "@/hooks/useCategories";
 import { useAttributes } from "@/hooks/useAttributes";
+import { useProducts } from "@/hooks/useProducts";
 
 export default function Product() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<ProductInterface[]>([]);
-  const [categories, categoriesLoading, categoriesError] = useCategories();
-  const [attributes, attributesLoading, attributesError] = useAttributes();   
+  const limit = 10;
+
+  const [filters, setFilters] = useState<Filters>({
+    search: "",
+    type: "",
+    categoryId: "",
+    attributeFilters: {},
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [products, productsLoading, productsError] = useProducts(
+    currentPage,
+    limit,
+    filters
+  );
+  const [categories, categoriesLoading, categoriesError] = useCategories();
+  const [attributes, attributesLoading, attributesError] = useAttributes();
+
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingProduct, setEditingProduct] = useState<ProductInterface | null>(null);
-  const [filters, setFilters] = useState<Filters>({
-    search: '',
-    type: '',
-    categoryId: '',
-    attributeFilters: {},
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-  });
+  const [editingProduct, setEditingProduct] = useState<ProductInterface | null>(
+    null
+  );
 
   const [formData, setFormData] = useState({
-    sku: '',
-    type: 'SIMPLE'
+    sku: "",
+    type: "SIMPLE",
   });
 
-  const limit = 10;
-
   const productTypes = [
-    { value: 'SIMPLE', label: 'Simple' },
-    { value: 'CONFIGURABLE', label: 'Configurable' },
-    { value: 'BUNDLE', label: 'Bundle' },
-    { value: 'VIRTUAL', label: 'Virtual' },
-    { value: 'DOWNLOADABLE', label: 'Downloadable' }
+    { value: "SIMPLE", label: "Simple" },
+    { value: "CONFIGURABLE", label: "Configurable" },
+    { value: "BUNDLE", label: "Bundle" },
+    { value: "VIRTUAL", label: "Virtual" },
+    { value: "DOWNLOADABLE", label: "Downloadable" },
   ];
 
-  const fetchProducts = async (page: number = 1, currentFilters: Filters = filters) => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
-      });
-
-      if (currentFilters.search) params.append('search', currentFilters.search);
-      if (currentFilters.type) params.append('type', currentFilters.type);
-      if (currentFilters.categoryId) params.append('categoryId', currentFilters.categoryId);
-      if (Object.keys(currentFilters.attributeFilters).length > 0) {
-        params.append('attributes', JSON.stringify(currentFilters.attributeFilters));
-      }
-
-      const response = await axios.get(
-        `http://localhost:3000/api/products?${params.toString()}`
-      );
-      
-      setProducts(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load products: ${error.message}`);
-    } 
-  };
-
-  useEffect(() => {
-    fetchProducts(currentPage);
-  },[]);
-
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchProducts(page);
-    }
+    setCurrentPage(page);
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchProducts(1, newFilters);
   };
 
-  const handleAttributeFilterChange = (attributeCode: string, value: string | string[], isMultiSelect: boolean = false) => {
+  const handleAttributeFilterChange = (
+    attributeCode: string,
+    value: string | string[],
+    isMultiSelect: boolean = false
+  ) => {
     const newAttributeFilters = { ...filters.attributeFilters };
 
     if (isMultiSelect && Array.isArray(value)) {
-      const valueArray = value.map(v => v.trim()).filter(v => v !== "");
+      const valueArray = value.map((v) => v.trim()).filter((v) => v !== "");
       if (valueArray.length > 0) {
         newAttributeFilters[attributeCode] = JSON.stringify(valueArray);
       } else {
@@ -160,11 +136,8 @@ export default function Product() {
       }
       const newFilters = { ...filters, attributeFilters: newAttributeFilters };
       setFilters(newFilters);
-      fetchProducts(1, newFilters);
       return;
-      
     } else {
-
       if (value && !Array.isArray(value) && value.trim() !== "") {
         newAttributeFilters[attributeCode] = value;
       } else {
@@ -172,30 +145,27 @@ export default function Product() {
       }
       const newFilters = { ...filters, attributeFilters: newAttributeFilters };
       setFilters(newFilters);
-      fetchProducts(1, newFilters);
     }
   };
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      type: '',
-      categoryId: '',
+      search: "",
+      type: "",
+      categoryId: "",
       attributeFilters: {},
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchProducts(1, clearedFilters);
   };
 
   const handleCreateProduct = async () => {
     try {
-      await axios.post('http://localhost:3000/api/products', formData);
-      toast.success('Product created successfully');
+      await axios.post("http://localhost:3000/api/products", formData);
+      toast.success("Product created successfully");
       setShowCreateDialog(false);
-      setFormData({ sku: '', type: 'SIMPLE' });
-      fetchProducts(currentPage);
+      setFormData({ sku: "", type: "SIMPLE" });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create product: ${error.message}`);
@@ -204,14 +174,16 @@ export default function Product() {
 
   const handleEditProduct = async () => {
     if (!editingProduct) return;
-    
+
     try {
-      await axios.put(`http://localhost:3000/api/products/${editingProduct.id}`, formData);
-      toast.success('Product updated successfully');
+      await axios.put(
+        `http://localhost:3000/api/products/${editingProduct.id}`,
+        formData
+      );
+      toast.success("Product updated successfully");
       setShowEditDialog(false);
       setEditingProduct(null);
-      setFormData({ sku: '', type: 'SIMPLE' });
-      fetchProducts(currentPage);
+      setFormData({ sku: "", type: "SIMPLE" });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update product: ${error.message}`);
@@ -219,15 +191,16 @@ export default function Product() {
   };
 
   const handleDeleteProduct = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
     try {
-      const productDeleted = await axios.delete(`http://localhost:3000/api/products/${id}`);
-      if(!productDeleted.data.success) {
+      const productDeleted = await axios.delete(
+        `http://localhost:3000/api/products/${id}`
+      );
+      if (!productDeleted.data.success) {
         throw new Error(productDeleted.data.message);
       }
-      toast.success('Product deleted successfully');
-      fetchProducts(currentPage);
+      toast.success("Product deleted successfully");
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete product: ${error.message}`);
@@ -238,24 +211,59 @@ export default function Product() {
     setEditingProduct(product);
     setFormData({
       sku: product.sku,
-      type: product.type
+      type: product.type,
     });
     setShowEditDialog(true);
   };
 
   const renderFilterComponent = (attribute: Attribute) => {
     switch (attribute.inputType) {
-      case 'TEXT':
+      case "TEXT":
         return (
-          <Input type="text" value={filters.attributeFilters[attribute.code] || ""} onChange={(e) => handleAttributeFilterChange(attribute.code, e.target.value)} placeholder={attribute.label} />
-        )
-     case 'SELECT':
-      return (
-        <SelectType
-          initialValue={filters.attributeFilters[attribute.code] || "all"} // use current filter or default
-          options={[
-            { name: "all", value: "all" }, // optional default
-            ...attribute.productAttributeValues
+          <Input
+            type="text"
+            value={filters.attributeFilters[attribute.code] || ""}
+            onChange={(e) =>
+              handleAttributeFilterChange(attribute.code, e.target.value)
+            }
+            placeholder={attribute.label}
+          />
+        );
+      case "SELECT":
+        return (
+          <SelectType
+            initialValue={filters.attributeFilters[attribute.code] || "all"} // use current filter or default
+            options={[
+              { name: "all", value: "all" }, // optional default
+              ...attribute.productAttributeValues
+                .map((element) => {
+                  const value =
+                    element.valueString ??
+                    element.valueText ??
+                    element.valueInt?.toString() ??
+                    element.valueDecimal?.toString() ??
+                    element.valueBoolean?.toString();
+                  if (value) return { name: value, value };
+                  return null;
+                })
+                .filter(
+                  (item): item is { name: string; value: string } =>
+                    item !== null
+                ),
+            ]}
+            onValueChange={(value) =>
+              handleAttributeFilterChange(
+                attribute.code,
+                value === "all" ? "" : value
+              )
+            }
+          />
+        );
+
+      case "MULTISELECT":
+        return (
+          <MultiSelectType
+            options={attribute.productAttributeValues
               .map((element) => {
                 const value =
                   element.valueString ??
@@ -263,53 +271,37 @@ export default function Product() {
                   element.valueInt?.toString() ??
                   element.valueDecimal?.toString() ??
                   element.valueBoolean?.toString();
-                if (value) return { name: value, value };
-                return null;
-              })
-              .filter(
-                (item): item is { name: string; value: string } => item !== null
-              ),
-          ]}
-          onValueChange={(value) => handleAttributeFilterChange(attribute.code, value === "all" ? "" : value)}
-        />
-      );
-
-          
-      case 'MULTISELECT':
-        return (  
-        
-        <MultiSelectType  
-        
-        options={
-            attribute.productAttributeValues.map((element) => 
-              { 
-                const value = element.valueString ?? element.valueText ?? element.valueInt?.toString() ?? element.valueDecimal?.toString() ?? element.valueBoolean?.toString();
                 if (value) {
                   return { name: value, value: value };
                 }
 
                 return null;
-              }).filter((item): item is { name: string; value: string } => item !== null)
-
-          }
-        onValueChange={(values) => handleAttributeFilterChange(attribute.code, values, true)}
-          />)
-      case 'MEDIA':
+              })
+              .filter(
+                (item): item is { name: string; value: string } => item !== null
+              )}
+            onValueChange={(values) =>
+              handleAttributeFilterChange(attribute.code, values, true)
+            }
+          />
+        );
+      case "MEDIA":
         // Media attributes are not filterable - they store file references, not filterable values
         return null;
-      case 'DATE':
+      case "DATE":
         return (
           <DateType
             initialValue={filters.attributeFilters[attribute.code] || ""}
-            onValueChange={(value) => handleAttributeFilterChange(attribute.code, value)}
+            onValueChange={(value) =>
+              handleAttributeFilterChange(attribute.code, value)
+            }
             placeholder={attribute.label}
           />
         );
       default:
         return null;
-  }
-}
-
+    }
+  };
 
   return (
     <div className="max-w-full p-4 space-y-4">
@@ -335,13 +327,9 @@ export default function Product() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
@@ -355,7 +343,7 @@ export default function Product() {
               <Input
                 placeholder="Search by SKU..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -365,22 +353,34 @@ export default function Product() {
               initialValue={filters.type || "all"}
               options={[
                 { name: "All Types", value: "all" },
-                ...Object.entries(productTypes).map(([, type]) => ({ name: type.label, value: type.value })),
+                ...Object.entries(productTypes).map(([, type]) => ({
+                  name: type.label,
+                  value: type.value,
+                })),
               ]}
-              onValueChange={(value) => handleFilterChange('type', value === "all" ? "" : value)}
+              onValueChange={(value) =>
+                handleFilterChange("type", value === "all" ? "" : value)
+              }
             />
           </div>
           <div className="min-w-[150px]">
-            {categories && 
-            <SelectType
-              initialValue={filters.categoryId || "all"}
-              options={[
-                { name: "All Categories", value: "all" },
-                ...categories.map((category) => ({ name: category.translations?.[0]?.name || `Category ${category.id}`, value: category.id.toString() })),
-              ]}
-              onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}
-            />
-          }
+            {categories && (
+              <SelectType
+                initialValue={filters.categoryId || "all"}
+                options={[
+                  { name: "All Categories", value: "all" },
+                  ...categories.map((category) => ({
+                    name:
+                      category.translations?.[0]?.name ||
+                      `Category ${category.id}`,
+                    value: category.id.toString(),
+                  })),
+                ]}
+                onValueChange={(value) =>
+                  handleFilterChange("categoryId", value === "all" ? "" : value)
+                }
+              />
+            )}
           </div>
         </div>
 
@@ -388,40 +388,47 @@ export default function Product() {
           <div className="space-y-4 pt-4 border-t">
             {/* Attribute Filters */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Attribute Filters</Label>
-              {attributes &&
+              <Label className="text-sm font-medium mb-2 block">
+                Attribute Filters
+              </Label>
+              {attributes && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {attributes
-                    .filter(attr => 
-                      // Exclude MEDIA: Media attributes store file references and should never be filterable
-                      // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
-                      // 
-                      // DATE attributes are now supported for filtering with date range support
-                      attr.isFilterable && 
-                      attr.inputType !== 'MEDIA'
+                    .filter(
+                      (attr) =>
+                        // Exclude MEDIA: Media attributes store file references and should never be filterable
+                        // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
+                        //
+                        // DATE attributes are now supported for filtering with date range support
+                        attr.isFilterable && attr.inputType !== "MEDIA"
                     )
                     .map((attribute) => {
                       const filterComponent = renderFilterComponent(attribute);
                       // Only render if the component returns something (exclude null returns)
                       if (!filterComponent) return null;
-                      
+
                       return (
                         <div key={attribute.id} className="space-y-1">
-                          <Label className="text-xs text-gray-600">{attribute.label}</Label>
+                          <Label className="text-xs text-gray-600">
+                            {attribute.label}
+                          </Label>
                           {filterComponent}
                         </div>
                       );
                     })
                     .filter(Boolean)}
                 </div>
-              } 
+              )}
             </div>
 
             {/* Sort Options */}
             <div className="flex flex-wrap gap-4">
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Sort By</Label>
-                <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) => handleFilterChange("sortBy", value)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -434,7 +441,12 @@ export default function Product() {
               </div>
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Order</Label>
-                <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
+                <Select
+                  value={filters.sortOrder}
+                  onValueChange={(value) =>
+                    handleFilterChange("sortOrder", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -464,7 +476,7 @@ export default function Product() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.length > 0 ? (
+            {products ? (
               products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.id}</TableCell>
@@ -493,15 +505,19 @@ export default function Product() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => navigate(`/products/${product.id}`)}>
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/products/${product.id}`)}
+                        >
                           <EyeIcon className="w-4 h-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(product)}>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(product)}
+                        >
                           <EditIcon className="w-4 h-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteProduct(product.id)}
                           className="text-red-600"
                         >
@@ -531,8 +547,10 @@ export default function Product() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() => currentPage > 1}
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -543,7 +561,9 @@ export default function Product() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -554,8 +574,12 @@ export default function Product() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() => currentPage < totalPages}
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -577,13 +601,20 @@ export default function Product() {
               <Input
                 id="sku"
                 value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, sku: e.target.value })
+                }
                 placeholder="Enter product SKU"
               />
             </div>
             <div>
               <Label htmlFor="type">Product Type</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <Select
+                value={formData.type}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, type: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -598,12 +629,13 @@ export default function Product() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateProduct}>
-              Create Product
-            </Button>
+            <Button onClick={handleCreateProduct}>Create Product</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -613,9 +645,7 @@ export default function Product() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
-              Update product information.
-            </DialogDescription>
+            <DialogDescription>Update product information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -623,13 +653,20 @@ export default function Product() {
               <Input
                 id="edit-sku"
                 value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, sku: e.target.value })
+                }
                 placeholder="Enter product SKU"
               />
             </div>
             <div>
               <Label htmlFor="edit-type">Product Type</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <Select
+                value={formData.type}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, type: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -647,9 +684,7 @@ export default function Product() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditProduct}>
-              Update Product
-            </Button>
+            <Button onClick={handleEditProduct}>Update Product</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
