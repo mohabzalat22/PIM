@@ -64,59 +64,11 @@ import { Label } from "@/components/ui/label";
 import type StoreView from "@/interfaces/storeView.interface";
 import Loading from "@/components/app/loading";
 import { SelectType } from "@/components/app/select-type";
-interface ProductAttributeValue {
-  id: number;
-  productId: number;
-  attributeId: number;
-  storeViewId: number;
-  valueString?: string;
-  valueText?: string;
-  valueInt?: number;
-  valueDecimal?: number;
-  valueBoolean?: boolean;
-  createdAt: string;
-  updatedAt: string;
-  product?: Product;
-  attribute?: Attribute;
-  storeView?: StoreView;
-}
-
-interface Product {
-  id: number;
-  sku: string;
-  type: string;
-}
-
-interface Attribute {
-  id: number;
-  code: string;
-  label: string;
-  dataType: string;
-  inputType: string;
-  isFilterable: boolean;
-  isGlobal: boolean;
-}
-
-interface Filters {
-  search: string;
-  productId: string;
-  attributeId: string;
-  storeViewId: string;
-  dataType: string;
-  sortBy: string;
-  sortOrder: string;
-}
-
-interface AttributeData {
-  productId: number;
-  attributeId: number;
-  storeViewId: number;
-  valueString?: string;
-  valueText?: string;
-  valueInt?: number;
-  valueDecimal?: number;
-  valueBoolean?: boolean;
-}
+import type ProductAttributeValue from "@/interfaces/productAttributes/productAttributevalue.interface";
+import type Product from "@/interfaces/productAttributes/product.interface";
+import type Attribute from "@/interfaces/productAttributes/attribute.interface";
+import type Filters from "@/interfaces/productAttributes/filters.interface";
+import type AttributeData from "@/interfaces/productAttributes/attributes.data.interface";
 
 export default function ProductAttributes() {
   const navigate = useNavigate();
