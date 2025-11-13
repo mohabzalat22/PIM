@@ -63,14 +63,15 @@ import { SelectType } from "@/components/app/select-type";
 import { MultiSelectType } from "@/components/app/multiselect-type";
 import { DateType } from "@/components/app/date-type";
 import type ProductInterface from "@/interfaces/product.interface";
-import type Category from "@/interfaces/category.interface";
 import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
+
+import { useCategories } from "@/hooks/useCategories";
 
 export default function Product() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<ProductInterface[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, loading, error] = useCategories();
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -131,15 +132,6 @@ export default function Product() {
     } 
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/categories?limit=100');
-      setCategories(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load categories: ${error.message}`);
-    }
-  };
 
   const fetchAttributes = async () => {
     try {
@@ -153,7 +145,6 @@ export default function Product() {
 
   useEffect(() => {
     fetchProducts(currentPage);
-    fetchCategories();
     fetchAttributes();
   },[]);
 
@@ -392,6 +383,7 @@ export default function Product() {
             />
           </div>
           <div className="min-w-[150px]">
+            {categories && 
             <SelectType
               initialValue={filters.categoryId || "all"}
               options={[
@@ -400,6 +392,7 @@ export default function Product() {
               ]}
               onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}
             />
+          }
           </div>
         </div>
 
