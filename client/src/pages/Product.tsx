@@ -65,14 +65,14 @@ import { DateType } from "@/components/app/date-type";
 import type ProductInterface from "@/interfaces/product.interface";
 import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
-
 import { useCategories } from "@/hooks/useCategories";
+import { useAttributes } from "@/hooks/useAttributes";
 
 export default function Product() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<ProductInterface[]>([]);
-  const [categories, loading, error] = useCategories();
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [categories, categoriesLoading, categoriesError] = useCategories();
+  const [attributes, attributesLoading, attributesError] = useAttributes();   
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -132,20 +132,8 @@ export default function Product() {
     } 
   };
 
-
-  const fetchAttributes = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/attributes?limit=100');
-      setAttributes(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load attributes: ${error.message}`);
-    }
-  };
-
   useEffect(() => {
     fetchProducts(currentPage);
-    fetchAttributes();
   },[]);
 
   const handlePageChange = (page: number) => {
@@ -401,30 +389,32 @@ export default function Product() {
             {/* Attribute Filters */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Attribute Filters</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {attributes
-                  .filter(attr => 
-                    // Exclude MEDIA: Media attributes store file references and should never be filterable
-                    // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
-                    // 
-                    // DATE attributes are now supported for filtering with date range support
-                    attr.isFilterable && 
-                    attr.inputType !== 'MEDIA'
-                  )
-                  .map((attribute) => {
-                    const filterComponent = renderFilterComponent(attribute);
-                    // Only render if the component returns something (exclude null returns)
-                    if (!filterComponent) return null;
-                    
-                    return (
-                      <div key={attribute.id} className="space-y-1">
-                        <Label className="text-xs text-gray-600">{attribute.label}</Label>
-                        {filterComponent}
-                      </div>
-                    );
-                  })
-                  .filter(Boolean)}
-              </div>
+              {attributes &&
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {attributes
+                    .filter(attr => 
+                      // Exclude MEDIA: Media attributes store file references and should never be filterable
+                      // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
+                      // 
+                      // DATE attributes are now supported for filtering with date range support
+                      attr.isFilterable && 
+                      attr.inputType !== 'MEDIA'
+                    )
+                    .map((attribute) => {
+                      const filterComponent = renderFilterComponent(attribute);
+                      // Only render if the component returns something (exclude null returns)
+                      if (!filterComponent) return null;
+                      
+                      return (
+                        <div key={attribute.id} className="space-y-1">
+                          <Label className="text-xs text-gray-600">{attribute.label}</Label>
+                          {filterComponent}
+                        </div>
+                      );
+                    })
+                    .filter(Boolean)}
+                </div>
+              } 
             </div>
 
             {/* Sort Options */}
