@@ -21,16 +21,13 @@ import {
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
-  FilterIcon,
   PlusIcon,
   EditIcon,
   TrashIcon,
   SearchIcon,
-  XIcon,
   EyeIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -43,12 +40,16 @@ import { PageLayout } from "@/components/app/PageLayout";
 import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type ProductInterface from "@/interfaces/product.interface";
 import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
 import { useCategories } from "@/hooks/useCategories";
 import { useAttributes } from "@/hooks/useAttributes";
 import { useProducts } from "@/hooks/useProducts";
+import { ProductService } from "@/services/product.service";
+import type Category from "@/interfaces/category.interface";
 
 export default function Product() {
   const navigate = useNavigate();
@@ -65,19 +66,25 @@ export default function Product() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [products, productsLoading, productsError] = useProducts(
+  const [
+    products,
+    productsLoading,
+    productsError,
+    refetchProducts,
+  ] = useProducts(currentPage, limit, filters);
+  const [categories, categoriesLoading, categoriesError] =
+    useCategories<Category>(currentPage, limit);
+  const [attributes, attributesLoading, attributesError] = useAttributes(
     currentPage,
-    limit,
-    filters
+    limit
   );
-  const [categories, categoriesLoading, categoriesError] = useCategories();
-  const [attributes, attributesLoading, attributesError] = useAttributes();
 
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<ProductInterface | null>(
     null
   );
+  const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     sku: "",
@@ -91,6 +98,27 @@ export default function Product() {
     { value: "VIRTUAL", label: "Virtual" },
     { value: "DOWNLOADABLE", label: "Downloadable" },
   ];
+
+  const isLoading =
+    productsLoading || categoriesLoading || attributesLoading;
+
+  useEffect(() => {
+    if (productsError) {
+      toast.error(`Failed to load products: ${productsError.message}`);
+    }
+  }, [productsError]);
+
+  useEffect(() => {
+    if (categoriesError) {
+      toast.error(`Failed to load categories: ${categoriesError.message}`);
+    }
+  }, [categoriesError]);
+
+  useEffect(() => {
+    if (attributesError) {
+      toast.error(`Failed to load attributes: ${attributesError.message}`);
+    }
+  }, [attributesError]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -141,9 +169,14 @@ export default function Product() {
     setFilters(clearedFilters);
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
   const handleCreateProduct = async () => {
     try {
-      await axios.post("http://localhost:3000/api/products", formData);
+      await ProductService.create(formData);
+      await refetchProducts();
       toast.success("Product created successfully");
       setShowCreateDialog(false);
       setFormData({ sku: "", type: "SIMPLE" });
@@ -157,10 +190,8 @@ export default function Product() {
     if (!editingProduct) return;
 
     try {
-      await axios.put(
-        `http://localhost:3000/api/products/${editingProduct.id}`,
-        formData
-      );
+      await ProductService.update(editingProduct.id, formData);
+      await refetchProducts();
       toast.success("Product updated successfully");
       setShowEditDialog(false);
       setEditingProduct(null);
@@ -172,15 +203,9 @@ export default function Product() {
   };
 
   const handleDeleteProduct = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-
     try {
-      const productDeleted = await axios.delete(
-        `http://localhost:3000/api/products/${id}`
-      );
-      if (!productDeleted.data.success) {
-        throw new Error(productDeleted.data.message);
-      }
+      await ProductService.remove(id);
+      await refetchProducts();
       toast.success("Product deleted successfully");
     } catch (err: unknown) {
       const error = err as Error;
@@ -476,7 +501,7 @@ export default function Product() {
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => setProductIdToDelete(product.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -499,6 +524,21 @@ export default function Product() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <DeleteConfirmDialog
+        open={productIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setProductIdToDelete(null);
+        }}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        primaryLabel="Delete Product"
+        onConfirm={() => {
+          if (productIdToDelete !== null) {
+            void handleDeleteProduct(productIdToDelete);
+          }
+        }}
       />
 
       {/* Create Product Dialog */}
