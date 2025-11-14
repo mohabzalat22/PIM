@@ -19,16 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
-  FilterIcon,
   PlusIcon,
   EditIcon,
   TrashIcon,
   SearchIcon,
-  XIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,6 +39,10 @@ import type ProductAttributeValue from "@/interfaces/productAttributeValue.inter
 import { SelectType } from "@/components/app/select-type";
 import type { Filters } from "@/interfaces/attributes.filters.interface";
 import { useAttributes } from "@/hooks/useAttributes";
+import { AttributeService } from "@/services/attribute.service";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
+
 interface Attribute {
   id: number;
   code: string;
@@ -70,11 +72,19 @@ export default function Attribute() {
     sortBy: "createdAt",
     sortOrder: "desc",
   });
-  const [attributes, attributesLoading, attributesErrors] = useAttributes(currentPage, limit, filters );
+  const [
+    attributes,
+    attributesLoading,
+    attributesError,
+    refetchAttributes,
+  ] = useAttributes<Attribute>(currentPage, limit, filters);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(
+    null
+  );
+  const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(
     null
   );
 
@@ -106,6 +116,14 @@ export default function Attribute() {
     { value: "MEDIA", label: "Media" },
   ];
 
+  const isLoading = attributesLoading;
+
+  useEffect(() => {
+    if (attributesError) {
+      toast.error(`Failed to load attributes: ${attributesError.message}`);
+    }
+  }, [attributesError]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -130,7 +148,8 @@ export default function Attribute() {
 
   const handleCreateAttribute = async () => {
     try {
-      await axios.post("http://localhost:3000/api/attributes", formData);
+      await AttributeService.create(formData);
+      await refetchAttributes();
       toast.success("Attribute created successfully");
       setShowCreateDialog(false);
       setFormData({
@@ -142,7 +161,6 @@ export default function Attribute() {
         isFilterable: false,
         isGlobal: true,
       });
-      fetchAttributes(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create attribute: ${error.message}`);
@@ -153,10 +171,8 @@ export default function Attribute() {
     if (!editingAttribute) return;
 
     try {
-      await axios.put(
-        `http://localhost:3000/api/attributes/${editingAttribute.id}`,
-        formData
-      );
+      await AttributeService.update(editingAttribute.id, formData);
+      await refetchAttributes();
       toast.success("Attribute updated successfully");
       setShowEditDialog(false);
       setEditingAttribute(null);
@@ -176,10 +192,9 @@ export default function Attribute() {
   };
 
   const handleDeleteAttribute = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this attribute?")) return;
-
     try {
-      await axios.delete(`http://localhost:3000/api/attributes/${id}`);
+      await AttributeService.remove(id);
+      await refetchAttributes();
       toast.success("Attribute deleted successfully");
     } catch (err: unknown) {
       const error = err as Error;
@@ -201,6 +216,9 @@ export default function Attribute() {
     setShowEditDialog(true);
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <PageLayout
@@ -427,7 +445,7 @@ export default function Attribute() {
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteAttribute(attribute.id)}
+                        onClick={() => setAttributeIdToDelete(attribute.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -450,6 +468,21 @@ export default function Attribute() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <DeleteConfirmDialog
+        open={attributeIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setAttributeIdToDelete(null);
+        }}
+        title="Delete Attribute"
+        description="Are you sure you want to delete this attribute? This action cannot be undone."
+        primaryLabel="Delete Attribute"
+        onConfirm={() => {
+          if (attributeIdToDelete !== null) {
+            void handleDeleteAttribute(attributeIdToDelete);
+          }
+        }}
       />
 
       {/* Create Attribute Dialog */}

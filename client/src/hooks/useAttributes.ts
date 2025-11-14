@@ -1,10 +1,9 @@
 import { AttributesApi } from "@/api/attributes";
-import type AttributeInterface from "@/interfaces/attribute.interface";
 import { useEffect, useState } from "react";
 import type { Filters } from "@/interfaces/attributes.filters.interface";
 
-export function useAttributes(page: number, limit: number, filters?: Filters) {
-  const [attributes, setAttributes] = useState<AttributeInterface[]>([]);
+export function useAttributes<T>(page: number, limit: number, filters?: Filters) {
+  const [attributes, setAttributes] = useState<T[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -12,7 +11,7 @@ export function useAttributes(page: number, limit: number, filters?: Filters) {
     try {
       setLoading(true);
       const response = await AttributesApi.getAll(page, limit, filters);
-      setAttributes(response.data);
+      setAttributes(response.data as T[]);
     } catch (err: unknown) {
       const error = err as Error;
       setError(error);
