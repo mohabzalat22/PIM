@@ -21,7 +21,6 @@ import {
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { 
   MoreHorizontalIcon, 
@@ -43,6 +42,8 @@ import { PageLayout } from "@/components/app/PageLayout";
 import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type ProductAttributeValue from "@/interfaces/productAttributes/productAttributevalue.interface";
 import type Filters from "@/interfaces/productAttributes/filters.interface";
 import type AttributeData from "@/interfaces/productAttributes/attributes.data.interface";
@@ -50,6 +51,9 @@ import { useProductAttributeValues } from "@/hooks/useProductAttributeValues";
 import { useProducts } from "@/hooks/useProducts";
 import { useAttributes } from "@/hooks/useAttributes";
 import { useStoreViews } from "@/hooks/useStoreViews";
+import type Attribute from "@/interfaces/attribute.interface";
+import type StoreView from "@/interfaces/storeView.interface";
+import { ProductAttributeValueService } from "@/services/productAttributeValue.service";
 
 export default function ProductAttributes() {
   const navigate = useNavigate();
@@ -66,15 +70,23 @@ export default function ProductAttributes() {
   });
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [productAttributeValues, productAttributeValuesLoading, productAttributeValuesErrors] = useProductAttributeValues(currentPage, limit, filters);
+  const [
+    productAttributeValues,
+    productAttributeValuesLoading,
+    productAttributeValuesErrors,
+    refetchProductAttributeValues,
+  ] = useProductAttributeValues(currentPage, limit, filters);
   const [products, productsLoading, productsErrors] = useProducts(currentPage, limit);
-  const [attributes, attributesLoading, attributesErrors] = useAttributes(currentPage, limit);
+  const [attributes, attributesLoading, attributesErrors] = useAttributes<Attribute>(currentPage, limit);
 
-  const [storeViews, storeViewsLoading, storeViewErrors] = useStoreViews(currentPage,limit);
+  const [storeViews, storeViewsLoading, storeViewErrors] = useStoreViews<StoreView>(currentPage,limit);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingProductAttribute, setEditingProductAttribute] = useState<ProductAttributeValue | null>(null);
+  const [editingProductAttribute, setEditingProductAttribute] =
+    useState<ProductAttributeValue | null>(null);
+  const [productAttributeIdToDelete, setProductAttributeIdToDelete] =
+    useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -122,7 +134,9 @@ export default function ProductAttributes() {
 
   const handleCreateProductAttribute = async () => {
     try {
-      const selectedAttribute = attributes.find(attr => attr.id.toString() === formData.attributeId);
+      const selectedAttribute = attributes.find(
+        (attr) => attr.id.toString() === formData.attributeId
+      );
       if (!selectedAttribute) {
         toast.error('Please select an attribute');
         return;
@@ -153,7 +167,8 @@ export default function ProductAttributes() {
           break;
       }
 
-      await axios.post('http://localhost:3000/api/product-attributes', attributeData);
+      await ProductAttributeValueService.create(attributeData);
+      await refetchProductAttributeValues();
       toast.success('Product attribute assigned successfully');
       setShowCreateDialog(false);
       resetFormData();
@@ -165,7 +180,7 @@ export default function ProductAttributes() {
 
   const handleEditProductAttribute = async () => {
     if (!editingProductAttribute) return;
-    
+
     try {
       const selectedAttribute = attributes.find(attr => attr.id.toString() === formData.attributeId);
       if (!selectedAttribute) {
@@ -198,7 +213,11 @@ export default function ProductAttributes() {
           break;
       }
 
-      await axios.put(`http://localhost:3000/api/product-attributes/${editingProductAttribute.id}`, attributeData);
+      await ProductAttributeValueService.update(
+        editingProductAttribute.id,
+        attributeData
+      );
+      await refetchProductAttributeValues();
       toast.success('Product attribute updated successfully');
       setShowEditDialog(false);
       setEditingProductAttribute(null);
@@ -210,10 +229,9 @@ export default function ProductAttributes() {
   };
 
   const handleDeleteProductAttribute = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this product attribute?')) return;
-    
     try {
-      await axios.delete(`http://localhost:3000/api/product-attributes/${id}`);
+      await ProductAttributeValueService.remove(id);
+      await refetchProductAttributeValues();
       toast.success('Product attribute deleted successfully');
     } catch (err: unknown) {
       const error = err as Error;
@@ -268,6 +286,16 @@ export default function ProductAttributes() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const isLoading =
+    productAttributeValuesLoading ||
+    productsLoading ||
+    attributesLoading ||
+    storeViewsLoading;
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <PageLayout
@@ -495,7 +523,7 @@ export default function ProductAttributes() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          handleDeleteProductAttribute(productAttribute.id)
+                          setProductAttributeIdToDelete(productAttribute.id)
                         }
                         className="text-red-600"
                       >
@@ -519,6 +547,21 @@ export default function ProductAttributes() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <DeleteConfirmDialog
+        open={productAttributeIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setProductAttributeIdToDelete(null);
+        }}
+        title="Delete Product Attribute"
+        description="Are you sure you want to delete this product attribute? This action cannot be undone."
+        primaryLabel="Delete Product Attribute"
+        onConfirm={() => {
+          if (productAttributeIdToDelete !== null) {
+            void handleDeleteProductAttribute(productAttributeIdToDelete);
+          }
+        }}
       />
 
       {/* Create Product Attribute Dialog */}
