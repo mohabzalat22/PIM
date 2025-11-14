@@ -24,5 +24,5 @@ export function useCategories<T>(page: number, limit: number, filters?: Filters)
         fetchCategories();
     }, [page, limit, filters]);
 
-    return [categories, loading, error] as const;
+    return [categories, loading, error, fetchCategories] as const;
 }

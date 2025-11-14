@@ -25,5 +25,5 @@ export function useAttributes(page: number, limit: number, filters?: Filters) {
     fetchAttributes();
   }, [page, limit, filters]);
 
-  return [attributes, loading, error] as const;
+  return [attributes, loading, error, fetchAttributes] as const;
 }

@@ -25,5 +25,5 @@ export function useProducts(page: number, limit: number, filters?: Filters) {
     fetchProducts();
   }, [page, limit, filters]);
 
-  return [products, loading, error] as const;
+  return [products, loading, error, fetchProducts] as const;
 }

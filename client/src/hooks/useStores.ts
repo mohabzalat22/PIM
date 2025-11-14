@@ -25,5 +25,5 @@ export function useStores(page: number, limit: number, filters?: Filters) {
     fetchStores();
   }, [page, limit, filters]);
 
-  return [stores, loading, error] as const;
+  return [stores, loading, error, fetchStores] as const;
 }

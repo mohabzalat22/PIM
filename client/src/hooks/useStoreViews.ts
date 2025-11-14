@@ -24,5 +24,5 @@ export function useStoreViews <T>(page: number, limit: number, filters?: Filter)
     fetchStoreViews();
   }, [page, limit, filters]);
 
-  return [storeViews, loading, error] as const;
+  return [storeViews, loading, error, fetchStoreViews] as const;
 }

@@ -35,5 +35,5 @@ export function useProductAttributeValues(
     fetchProductAttributeValues();
   }, [page, limit, filters]);
 
-  return [productAttributeValues, loading, error] as const;
+  return [productAttributeValues, loading, error, fetchProductAttributeValues] as const;
 }
