@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
@@ -41,12 +40,14 @@ import { PageLayout } from "@/components/app/PageLayout";
 import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import { useCategories } from "@/hooks/useCategories";
 import type Filters from "@/interfaces/category/category.filters.interface";
-import type CategoryInterface  from "@/interfaces/category/category.interface";
+import type CategoryInterface from "@/interfaces/category/category.interface";
 import type StoreView from "@/interfaces/category/storeView.interface";
-import { CategoryApi } from "@/api/categories";
-import { StoreViewsApi } from "@/api/storeView";
+import { CategoryService } from "@/services/category.service";
+import { StoreViewService } from "@/services/storeView.service";
 
 export default function Category() {
   const limit = 10;
@@ -60,7 +61,8 @@ export default function Category() {
     sortOrder: "desc",
   });
 
-  const [categories, categoriesLoading, categoriesErrors] = useCategories<CategoryInterface>(currentPage, limit, filters);
+  const [categories, categoriesLoading, categoriesErrors, refetchCategories] =
+    useCategories<CategoryInterface>(currentPage, limit, filters);
   const [filterCategories, setFilterCategories] = useState<CategoryInterface[]>([]);
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
 
@@ -68,6 +70,9 @@ export default function Category() {
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingCategory, setEditingCategory] = useState<CategoryInterface | null>(
+    null
+  );
+  const [categoryIdToDelete, setCategoryIdToDelete] = useState<number | null>(
     null
   );
  
@@ -86,7 +91,7 @@ export default function Category() {
 
   const fetchStoreViews = async () => {
     try {
-     const response = await StoreViewsApi.getAll(currentPage,limit);
+      const response = await StoreViewService.getAll(currentPage, limit);
       setStoreViews(response.data);
     } catch (err: unknown) {
       const error = err as Error;
@@ -94,10 +99,15 @@ export default function Category() {
     }
   };
 
-  const fetchFilterCategories = async() => {
-    const response = await CategoryApi.getAll(currentPage,limit);
-    setFilterCategories(response.data);
-  }
+  const fetchFilterCategories = async () => {
+    try {
+      const response = await CategoryService.getAll(currentPage, limit);
+      setFilterCategories(response.data);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to load filter categories: ${error.message}`);
+    }
+  };
 
 
   useEffect(() => {
@@ -126,12 +136,28 @@ export default function Category() {
 
   const handleCreateCategory = async () => {
     try {
+      const cleanedTranslations = formData.translations.filter(
+        (t) => t.name.trim() !== ""
+      );
+
       const categoryData = {
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
-        translations: formData.translations.filter((t) => t.name.trim() !== ""),
+        translations: cleanedTranslations.length
+          ? {
+              create: cleanedTranslations.map((t) => ({
+                name: t.name,
+                slug: t.slug,
+                description: t.description,
+                storeViewId: t.storeViewId,
+              })),
+            }
+          : undefined,
       };
 
-      await axios.post("http://localhost:3000/api/categories", categoryData);
+      await CategoryService.create(
+        categoryData as unknown as Partial<CategoryInterface>
+      );
+      await refetchCategories();
       toast.success("Category created successfully");
       setShowCreateDialog(false);
       setFormData({
@@ -155,15 +181,30 @@ export default function Category() {
     if (!editingCategory) return;
 
     try {
+      const cleanedTranslations = formData.translations.filter(
+        (t) => t.name.trim() !== ""
+      );
+
       const categoryData = {
         parentId: formData.parentId ? parseInt(formData.parentId) : null,
-        translations: formData.translations.filter((t) => t.name.trim() !== ""),
+        translations: cleanedTranslations.length
+          ? {
+              deleteMany: { categoryId: editingCategory.id },
+              create: cleanedTranslations.map((t) => ({
+                name: t.name,
+                slug: t.slug,
+                description: t.description,
+                storeViewId: t.storeViewId,
+              })),
+            }
+          : undefined,
       };
 
-      await axios.put(
-        `http://localhost:3000/api/categories/${editingCategory.id}`,
-        categoryData
+      await CategoryService.update(
+        editingCategory.id,
+        categoryData as unknown as Partial<CategoryInterface>
       );
+      await refetchCategories();
       toast.success("Category updated successfully");
       setShowEditDialog(false);
       setEditingCategory(null);
@@ -178,7 +219,6 @@ export default function Category() {
           },
         ],
       });
-      fetchCategories(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update category: ${error.message}`);
@@ -186,10 +226,9 @@ export default function Category() {
   };
 
   const handleDeleteCategory = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
-
     try {
-      await axios.delete(`http://localhost:3000/api/categories/${id}`);
+      await CategoryService.remove(id);
+      await refetchCategories();
       toast.success("Category deleted successfully");
     } catch (err: unknown) {
       const error = err as Error;
@@ -259,6 +298,10 @@ export default function Category() {
       translations: updatedTranslations,
     });
   };
+
+  if (categoriesLoading) {
+    return <Loading />;
+  }
   return (
     <PageLayout
       title="Categories"
@@ -292,7 +335,7 @@ export default function Category() {
                 Parent Category
               </label>
               <SelectType
-                initialValue="all"
+                initialValue={filters.parentId || "all"}
                 options={[
                   { value: "all", name: "All Categories" },
                   ...filterCategories.map((category) => ({
@@ -303,7 +346,7 @@ export default function Category() {
                   })),
                 ]}
                 onValueChange={(value) =>
-                  handleFilterChange("parentId", value === "all" ? null : value)
+                  handleFilterChange("parentId", value === "all" ? "" : value)
                 }
               />
             </div>
@@ -423,7 +466,7 @@ export default function Category() {
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteCategory(category.id)}
+                        onClick={() => setCategoryIdToDelete(category.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -446,6 +489,21 @@ export default function Category() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <DeleteConfirmDialog
+        open={categoryIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCategoryIdToDelete(null);
+        }}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action cannot be undone."
+        primaryLabel="Delete Category"
+        onConfirm={() => {
+          if (categoryIdToDelete !== null) {
+            void handleDeleteCategory(categoryIdToDelete);
+          }
+        }}
       />
 
       {/* Create Category Dialog */}
