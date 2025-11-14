@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { 
@@ -296,7 +296,15 @@ export default function ProductAttributes() {
     attributesLoading ||
     storeViewsLoading;
 
-  if (isLoading) {
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowPageLoader(false);
+    }
+  }, [isLoading]);
+
+  if (showPageLoader && isLoading) {
     return <Loading />;
   }
 

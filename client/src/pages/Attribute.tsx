@@ -118,11 +118,19 @@ export default function Attribute() {
 
   const isLoading = attributesLoading;
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
   useEffect(() => {
     if (attributesError) {
       toast.error(`Failed to load attributes: ${attributesError.message}`);
     }
   }, [attributesError]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowPageLoader(false);
+    }
+  }, [isLoading]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= attributesTotalPages) {
@@ -220,7 +228,7 @@ export default function Attribute() {
     setShowEditDialog(true);
   };
 
-  if (isLoading) {
+  if (showPageLoader && isLoading) {
     return <Loading />;
   }
 

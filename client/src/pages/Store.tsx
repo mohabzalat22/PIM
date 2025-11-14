@@ -64,11 +64,19 @@ export default function Store() {
     name: "",
   });
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
   useEffect(() => {
     if (storesErrors) {
       toast.error(`Failed to load stores: ${storesErrors.message}`);
     }
   }, [storesErrors]);
+
+  useEffect(() => {
+    if (!storesLoading) {
+      setShowPageLoader(false);
+    }
+  }, [storesLoading]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= storesTotalPages) {
@@ -141,7 +149,7 @@ export default function Store() {
     setShowEditDialog(true);
   };
 
-  if (storesLoading) {
+  if (showPageLoader && storesLoading) {
     return <Loading />;
   }
 

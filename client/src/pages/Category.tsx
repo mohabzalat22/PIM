@@ -119,6 +119,8 @@ export default function Category() {
     fetchStoreViews();
   }, []);
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= categoriesTotalPages) {
       setCurrentPage(page);
@@ -307,7 +309,13 @@ export default function Category() {
     });
   };
 
-  if (categoriesLoading) {
+  useEffect(() => {
+    if (!categoriesLoading) {
+      setShowPageLoader(false);
+    }
+  }, [categoriesLoading]);
+
+  if (showPageLoader && categoriesLoading) {
     return <Loading />;
   }
   return (

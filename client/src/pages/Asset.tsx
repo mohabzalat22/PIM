@@ -80,6 +80,8 @@ export default function Asset() {
     refetchAssets,
   ] = useAssets(currentPage, limit, filters);
 
+  const isLoading = assetsLoading;
+
   const mimeTypes = [
     { value: "image/jpeg", label: "JPEG Image" },
     { value: "image/png", label: "PNG Image" },
@@ -110,11 +112,19 @@ export default function Asset() {
     return "bg-muted text-muted-foreground";
   };
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
   useEffect(() => {
     if (assetsError) {
       toast.error(`Failed to load assets: ${assetsError.message}`);
     }
   }, [assetsError]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowPageLoader(false);
+    }
+  }, [isLoading]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -194,7 +204,7 @@ export default function Asset() {
     setShowEditDialog(true);
   };
 
-  if (assetsLoading) {
+  if (showPageLoader && isLoading) {
     return <Loading />;
   }
 

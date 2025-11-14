@@ -110,6 +110,10 @@ export default function StoreView() {
     { value: "zh_CN", label: "Chinese (China)" },
   ];
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
+  const isLoading = storeViewsLoading;
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= storeViewsTotalPages) {
       setCurrentPage(page);
@@ -145,6 +149,12 @@ export default function StoreView() {
       toast.error(`Failed to load stores: ${storesErrors.message}`);
     }
   }, [storesErrors]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowPageLoader(false);
+    }
+  }, [isLoading]);
 
   const handleCreateStoreView = async () => {
     try {
@@ -214,10 +224,9 @@ export default function StoreView() {
     setShowEditDialog(true);
   };
 
-  const isLoading =
-    storeViewsLoading || storesLoading;
+  
 
-  if (isLoading) {
+  if (showPageLoader && isLoading) {
     return <Loading />;
   }
 

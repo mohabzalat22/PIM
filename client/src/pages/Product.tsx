@@ -102,6 +102,14 @@ export default function Product() {
   const isLoading =
     productsLoading || categoriesLoading || attributesLoading;
 
+  const [showPageLoader, setShowPageLoader] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowPageLoader(false);
+    }
+  }, [isLoading]);
+
   useEffect(() => {
     if (productsError) {
       toast.error(`Failed to load products: ${productsError.message}`);
@@ -173,7 +181,7 @@ export default function Product() {
     setCurrentPage(1);
   };
 
-  if (isLoading) {
+  if (showPageLoader && isLoading) {
     return <Loading />;
   }
 
