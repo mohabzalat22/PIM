@@ -9,8 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
@@ -30,9 +29,12 @@ import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { PaginationBar } from "@/components/app/PaginationBar";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type StoreInterface from "@/interfaces/store.interface";
 import type Filters from "@/interfaces/store/filters.interface";
 import { useStores } from "@/hooks/useStores";
+import { StoreService } from "@/services/store.service";
 
 export default function Store() {
   const limit = 10;
@@ -45,20 +47,28 @@ export default function Store() {
     sortOrder: "desc",
   });
 
-  const [stores, storesLoading, storesErrors] = useStores(
-    currentPage,
-    limit,
-    filters
-  );
+  const [
+    stores,
+    storesLoading,
+    storesErrors,
+    refetchStores,
+  ] = useStores(currentPage, limit, filters);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingStore, setEditingStore] = useState<StoreInterface | null>(null);
+  const [storeIdToDelete, setStoreIdToDelete] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     code: "",
     name: "",
   });
+
+  useEffect(() => {
+    if (storesErrors) {
+      toast.error(`Failed to load stores: ${storesErrors.message}`);
+    }
+  }, [storesErrors]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -80,7 +90,8 @@ export default function Store() {
 
   const handleCreateStore = async () => {
     try {
-      await axios.post("http://localhost:3000/api/stores", formData);
+      await StoreService.create(formData);
+      await refetchStores();
       toast.success("Store created successfully");
       setShowCreateDialog(false);
       setFormData({ code: "", name: "" });
@@ -94,10 +105,8 @@ export default function Store() {
     if (!editingStore) return;
 
     try {
-      await axios.put(
-        `http://localhost:3000/api/stores/${editingStore.id}`,
-        formData
-      );
+      await StoreService.update(editingStore.id, formData);
+      await refetchStores();
       toast.success("Store updated successfully");
       setShowEditDialog(false);
       setEditingStore(null);
@@ -109,11 +118,10 @@ export default function Store() {
   };
 
   const handleDeleteStore = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this store?")) return;
-
     try {
-      await axios.delete(`http://localhost:3000/api/stores/${id}`);
+      await StoreService.remove(id);
       toast.success("Store deleted successfully");
+      await refetchStores();
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete store: ${error.message}`);
@@ -128,6 +136,10 @@ export default function Store() {
     });
     setShowEditDialog(true);
   };
+
+  if (storesLoading) {
+    return <Loading />;
+  }
 
   return (
     <PageLayout
@@ -241,7 +253,7 @@ export default function Store() {
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteStore(store.id)}
+                        onClick={() => setStoreIdToDelete(store.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -335,6 +347,21 @@ export default function Store() {
           </div>
         </div>
       </EntityDialog>
+
+      <DeleteConfirmDialog
+        open={storeIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setStoreIdToDelete(null);
+        }}
+        title="Delete Store"
+        description="Are you sure you want to delete this store? This action cannot be undone."
+        primaryLabel="Delete Store"
+        onConfirm={() => {
+          if (storeIdToDelete !== null) {
+            void handleDeleteStore(storeIdToDelete);
+          }
+        }}
+      />
     </PageLayout>
   );
 }
