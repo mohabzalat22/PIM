@@ -7,7 +7,7 @@ export function useStoreViews(page: number, limit: number) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchStoreViews = async () => {
     setLoading(true);
     try {
       const response = await StoreViewsApi.getAll(page, limit);
@@ -21,8 +21,8 @@ export function useStoreViews(page: number, limit: number) {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [storeViews, limit]);
+    fetchStoreViews();
+  }, [page, limit]);
 
   return [storeViews, loading, error] as const;
 }
