@@ -322,7 +322,7 @@ export default function Asset() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                  <code className="text-sm bg-muted/70 px-2 py-1 rounded">
                     {asset.filePath}
                   </code>
                 </TableCell>
