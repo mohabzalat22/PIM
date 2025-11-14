@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { 
   ArrowLeftIcon,
@@ -37,6 +36,17 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EntityDialog } from "@/components/app/EntityDialog";
+import { SelectType } from "@/components/app/select-type";
+import { SkeletonImage } from "@/components/app/SkeletonImage";
+import { ProductService } from "@/services/product.service";
+import { AttributeService } from "@/services/attribute.service";
+import { StoreViewService } from "@/services/storeView.service";
+import { CategoryService } from "@/services/category.service";
+import { AssetService } from "@/services/asset.service";
+import { ProductAttributeValueService } from "@/services/productAttributeValue.service";
+import { ProductCategoryService } from "@/services/productCategory.service";
+import { ProductAssetService } from "@/services/productAsset.service";
 
 interface Product {
   id: number;
@@ -53,6 +63,7 @@ interface ProductAsset {
   id: number;
   productId: number;
   assetId: number;
+  type: string;
   asset?: Asset;
 }
 
@@ -155,13 +166,43 @@ export default function ProductDetail() {
     assetId: ''
   });
 
+  const [activeTab, setActiveTab] = useState<string>("attributes");
+
+  const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<ProductAsset | null>(null);
+  const [assetToView, setAssetToView] = useState<ProductAsset | null>(null);
+
+  const [showEditProductDialog, setShowEditProductDialog] = useState<boolean>(false);
+  const [productFormData, setProductFormData] = useState({
+    sku: "",
+    type: "SIMPLE",
+  });
+
+  const productTypes = [
+    { value: "SIMPLE", label: "Simple" },
+    { value: "CONFIGURABLE", label: "Configurable" },
+    { value: "BUNDLE", label: "Bundle" },
+    { value: "VIRTUAL", label: "Virtual" },
+    { value: "DOWNLOADABLE", label: "Downloadable" },
+  ];
+
+  const getAssetUrl = (filePath: string) => {
+    if (!filePath) return "";
+    if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+      return filePath;
+    }
+    // Assume backend serves files from http://localhost:3000
+    return `http://localhost:3000${filePath.startsWith("/") ? "" : "/"}${filePath}`;
+  };
+
   const fetchProduct = async () => {
     if (!id) return;
     
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3000/api/products/${id}`);
-      setProduct(response.data.data);
+      const response = await ProductService.getById(parseInt(id, 10));
+      setProduct(response.data as Product);
     } catch (err: any) {
       toast.error(`Failed to load product: ${err.message}`);
       navigate('/products');
@@ -172,17 +213,27 @@ export default function ProductDetail() {
 
   const fetchAvailableData = async () => {
     try {
-      const [attributesResponse, storeViewsResponse, categoriesResponse, assetsResponse] = await Promise.all([
-        axios.get('http://localhost:3000/api/attributes?limit=100'),
-        axios.get('http://localhost:3000/api/store-views?limit=100'),
-        axios.get('http://localhost:3000/api/categories?limit=100'),
-        axios.get('http://localhost:3000/api/assets?limit=100')
+      const [
+        attributesResponse,
+        storeViewsResponse,
+        categoriesResponse,
+        assetsResponse,
+      ] = await Promise.all([
+        AttributeService.getAll(1, 100),
+        StoreViewService.getAll(1, 100),
+        CategoryService.getAll(1, 100),
+        AssetService.getAll(1, 100, {
+          search: "",
+          mimeType: "",
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        }),
       ]);
 
-      setAvailableAttributes(attributesResponse.data.data);
-      setStoreViews(storeViewsResponse.data.data);
-      setAvailableCategories(categoriesResponse.data.data);
-      setAvailableAssets(assetsResponse.data.data);
+      setAvailableAttributes(attributesResponse.data as AvailableAttribute[]);
+      setStoreViews(storeViewsResponse.data as StoreView[]);
+      setAvailableCategories(categoriesResponse.data as Category[]);
+      setAvailableAssets(assetsResponse.data as Asset[]);
     } catch (err: any) {
       console.error('Failed to load available data:', err);
     }
@@ -228,7 +279,7 @@ export default function ProductDetail() {
           break;
       }
 
-      await axios.post('http://localhost:3000/api/product-attributes', attributeData);
+      await ProductAttributeValueService.create(attributeData);
       toast.success('Attribute added successfully');
       setShowAddAttributeDialog(false);
       setAttributeFormData({
@@ -250,9 +301,9 @@ export default function ProductDetail() {
     if (!product) return;
 
     try {
-      await axios.post('http://localhost:3000/api/product-categories', {
+      await ProductCategoryService.create({
         productId: product.id,
-        categoryId: parseInt(categoryFormData.categoryId)
+        categoryId: parseInt(categoryFormData.categoryId, 10),
       });
       toast.success('Category added successfully');
       setShowAddCategoryDialog(false);
@@ -267,9 +318,25 @@ export default function ProductDetail() {
     if (!product) return;
 
     try {
-      await axios.post('http://localhost:3000/api/product-assets', {
+      const selectedAsset = availableAssets.find(
+        (asset) => asset.id === parseInt(assetFormData.assetId, 10)
+      );
+
+      const mimeType = selectedAsset?.mimeType || "";
+      let type = "image";
+
+      if (mimeType.startsWith("video/")) {
+        type = "video";
+      } else if (mimeType.includes("pdf")) {
+        type = "pdf";
+      } else if (!mimeType && !selectedAsset) {
+        type = "manual";
+      }
+
+      await ProductAssetService.create({
         productId: product.id,
-        assetId: parseInt(assetFormData.assetId)
+        assetId: parseInt(assetFormData.assetId, 10),
+        type,
       });
       toast.success('Asset added successfully');
       setShowAddAssetDialog(false);
@@ -281,38 +348,64 @@ export default function ProductDetail() {
   };
 
   const handleRemoveAttribute = async (attributeId: number) => {
-    if (!confirm('Are you sure you want to remove this attribute?')) return;
-
     try {
-      await axios.delete(`http://localhost:3000/api/product-attributes/${attributeId}`);
+      await ProductAttributeValueService.remove(attributeId);
       toast.success('Attribute removed successfully');
+      setAttributeIdToDelete(null);
       fetchProduct();
     } catch (err: any) {
       toast.error(`Failed to remove attribute: ${err.response?.data?.message || err.message}`);
     }
   };
 
-  const handleRemoveCategory = async (categoryId: number) => {
-    if (!confirm('Are you sure you want to remove this category?')) return;
-
+  const handleRemoveCategory = async (productCategory: ProductCategory) => {
     try {
-      await axios.delete(`http://localhost:3000/api/product-categories/${categoryId}`);
+      await ProductCategoryService.remove(
+        productCategory.productId,
+        productCategory.categoryId
+      );
       toast.success('Category removed successfully');
+      setCategoryToDelete(null);
       fetchProduct();
     } catch (err: any) {
       toast.error(`Failed to remove category: ${err.response?.data?.message || err.message}`);
     }
   };
 
-  const handleRemoveAsset = async (assetId: number) => {
-    if (!confirm('Are you sure you want to remove this asset?')) return;
-
+  const handleRemoveAsset = async (productAsset: ProductAsset) => {
     try {
-      await axios.delete(`http://localhost:3000/api/product-assets/${assetId}`);
+      await ProductAssetService.remove(
+        productAsset.productId,
+        productAsset.assetId,
+        productAsset.type
+      );
       toast.success('Asset removed successfully');
+      setAssetToDelete(null);
       fetchProduct();
     } catch (err: any) {
       toast.error(`Failed to remove asset: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  const handleOpenEditProduct = () => {
+    if (!product) return;
+    setProductFormData({
+      sku: product.sku,
+      type: product.type,
+    });
+    setShowEditProductDialog(true);
+  };
+
+  const handleEditProduct = async () => {
+    if (!product) return;
+
+    try {
+      await ProductService.update(product.id, productFormData);
+      toast.success("Product updated successfully");
+      setShowEditProductDialog(false);
+      await fetchProduct();
+    } catch (err: any) {
+      toast.error(`Failed to update product: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -386,7 +479,7 @@ export default function ProductDetail() {
             <p className="text-muted-foreground">Product Details & Management</p>
           </div>
         </div>
-        <Button>
+        <Button onClick={handleOpenEditProduct}>
           <EditIcon className="h-4 w-4 mr-2" />
           Edit Product
         </Button>
@@ -426,7 +519,11 @@ export default function ProductDetail() {
       </Card>
 
       {/* Tabs for different sections */}
-      <Tabs defaultValue="attributes" className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="attributes">Attributes</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -478,7 +575,7 @@ export default function ProductDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveAttribute(productAttribute.id)}
+                          onClick={() => setAttributeIdToDelete(productAttribute.id)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -536,7 +633,7 @@ export default function ProductDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveCategory(productCategory.id)}
+                          onClick={() => setCategoryToDelete(productCategory)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -595,13 +692,17 @@ export default function ProductDetail() {
                           </p>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAssetToView(productAsset)}
+                          >
                             <EyeIcon className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleRemoveAsset(productAsset.id)}
+                            onClick={() => setAssetToDelete(productAsset)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -759,6 +860,129 @@ export default function ProductDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EntityDialog
+        open={attributeIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAttributeIdToDelete(null);
+          }
+        }}
+        title="Remove Attribute"
+        description="Are you sure you want to remove this attribute from the product? This action cannot be undone."
+        primaryLabel="Remove Attribute"
+        onPrimary={() => {
+          if (attributeIdToDelete !== null) {
+            void handleRemoveAttribute(attributeIdToDelete);
+          }
+        }}
+      >
+        <p className="text-sm text-muted-foreground">
+          This will delete the selected attribute value for this product.
+        </p>
+      </EntityDialog>
+
+      <Dialog open={assetToView !== null} onOpenChange={(open) => {
+        if (!open) {
+          setAssetToView(null);
+        }
+      }}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>View Asset</DialogTitle>
+            <DialogDescription>
+              Preview of the selected asset.
+            </DialogDescription>
+          </DialogHeader>
+          {assetToView?.asset && (
+            <div className="mt-4">
+              <SkeletonImage
+                src={getAssetUrl(assetToView.asset.filePath)}
+                alt="Asset preview"
+                className="max-h-[70vh] w-auto mx-auto rounded border"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <EntityDialog
+        open={categoryToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCategoryToDelete(null);
+          }
+        }}
+        title="Remove Category"
+        description="Are you sure you want to remove this category from the product? This action cannot be undone."
+        primaryLabel="Remove Category"
+        onPrimary={() => {
+          if (categoryToDelete !== null) {
+            void handleRemoveCategory(categoryToDelete);
+          }
+        }}
+      >
+        <p className="text-sm text-muted-foreground">
+          This will detach the selected category from this product.
+        </p>
+      </EntityDialog>
+
+      <EntityDialog
+        open={assetToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssetToDelete(null);
+          }
+        }}
+        title="Remove Asset"
+        description="Are you sure you want to remove this asset from the product? This action cannot be undone."
+        primaryLabel="Remove Asset"
+        onPrimary={() => {
+          if (assetToDelete !== null) {
+            void handleRemoveAsset(assetToDelete);
+          }
+        }}
+      >
+        <p className="text-sm text-muted-foreground">
+          This will detach the selected asset from this product.
+        </p>
+      </EntityDialog>
+
+      <EntityDialog
+        open={showEditProductDialog}
+        onOpenChange={setShowEditProductDialog}
+        title="Edit Product"
+        description="Update basic product information."
+        primaryLabel="Update Product"
+        onPrimary={handleEditProduct}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="edit-sku">SKU</Label>
+            <Input
+              id="edit-sku"
+              value={productFormData.sku}
+              onChange={(e) =>
+                setProductFormData({ ...productFormData, sku: e.target.value })
+              }
+              placeholder="Enter product SKU"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-type">Product Type</Label>
+            <SelectType
+              initialValue={productFormData.type}
+              options={productTypes.map((type) => ({
+                name: type.label,
+                value: type.value,
+              }))}
+              onValueChange={(value) =>
+                setProductFormData({ ...productFormData, type: value })
+              }
+            />
+          </div>
+        </div>
+      </EntityDialog>
 
       {/* Add Category Dialog */}
       <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
