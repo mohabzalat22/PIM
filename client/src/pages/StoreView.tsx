@@ -226,7 +226,7 @@ export default function StoreView() {
       </div>
 
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-slate-50">
+      <div className="border rounded-lg p-4 bg-muted/60">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <FilterIcon className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function StoreView() {
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search by code or name..."
                 value={filters.search}

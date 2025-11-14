@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import ProductAttributes from "./pages/ProductAttributes";
 import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/attributes" element={<Attribute></Attribute>}></Route>
           <Route path="/assets" element={<Asset></Asset>}></Route>
           <Route path="/product-attributes" element={<ProductAttributes></ProductAttributes>}></Route>
+          <Route path="/settings" element={<Settings></Settings>}></Route>
           {/* fallback route */}
           <Route path="*" element={<NotFound></NotFound>}></Route>
         </Route>

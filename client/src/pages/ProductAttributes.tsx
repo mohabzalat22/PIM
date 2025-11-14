@@ -300,7 +300,7 @@ export default function ProductAttributes() {
       </div>
 
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-slate-50">
+      <div className="border rounded-lg p-4 bg-muted/60">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <FilterIcon className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function ProductAttributes() {
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search by product SKU or attribute..."
                 value={filters.search}
@@ -386,7 +386,7 @@ export default function ProductAttributes() {
               <select 
                 value={filters.sortBy} 
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="createdAt">Created Date</option>
                 <option value="productId">Product</option>
@@ -399,7 +399,7 @@ export default function ProductAttributes() {
               <select 
                 value={filters.sortOrder} 
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="asc">Ascending</option>
                 <option value="desc">Descending</option>
@@ -529,7 +529,11 @@ export default function ProductAttributes() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
                   >
                     {page}
                   </PaginationLink>

@@ -104,19 +104,20 @@ export default function Asset() {
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith("image/"))
-      return <ImageIcon className="w-4 h-4 text-blue-500" />;
+      return <ImageIcon className="w-4 h-4 text-primary" />;
     if (mimeType.startsWith("video/"))
-      return <VideoIcon className="w-4 h-4 text-red-500" />;
+      return <VideoIcon className="w-4 h-4 text-destructive" />;
     if (mimeType === "application/pdf")
-      return <FileTextIcon className="w-4 h-4 text-red-600" />;
-    return <FileIcon className="w-4 h-4 text-gray-500" />;
+      return <FileTextIcon className="w-4 h-4 text-destructive" />;
+    return <FileIcon className="w-4 h-4 text-muted-foreground" />;
   };
 
   const getFileTypeColor = (mimeType: string) => {
-    if (mimeType.startsWith("image/")) return "bg-blue-100 text-blue-800";
-    if (mimeType.startsWith("video/")) return "bg-red-100 text-red-800";
-    if (mimeType === "application/pdf") return "bg-red-100 text-red-800";
-    return "bg-gray-100 text-gray-800";
+    if (mimeType.startsWith("image/")) return "bg-primary/10 text-primary";
+    if (mimeType.startsWith("video/")) return "bg-destructive/10 text-destructive";
+    if (mimeType === "application/pdf")
+      return "bg-destructive/10 text-destructive";
+    return "bg-muted text-muted-foreground";
   };
 
   const fetchAssets = async (
@@ -258,7 +259,7 @@ export default function Asset() {
       </div>
 
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-slate-50">
+      <div className="border rounded-lg p-4 bg-muted/60">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <FilterIcon className="w-4 h-4" />
@@ -282,7 +283,7 @@ export default function Asset() {
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search by file path..."
                 value={filters.search}

@@ -9,7 +9,9 @@ export default function MainLayout() {
       <AppSidebar />
       <Toaster richColors position="top-right" />
       <main className="w-full border rounded-3xl p-2 m-4">
-        <SidebarTrigger />
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <SidebarTrigger />
+        </div>
         <Outlet />
       </main>
     </SidebarProvider>
