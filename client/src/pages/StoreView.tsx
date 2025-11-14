@@ -42,25 +42,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { 
-  MoreHorizontalIcon, 
-  FilterIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  MoreHorizontalIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   SearchIcon,
   XIcon,
   EyeIcon,
-  GlobeIcon
+  GlobeIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectType } from "@/components/app/select-type";
-
+import type Filter from "@/interfaces/storeView/filters.iterface";
+import { useStoreViews } from "@/hooks/useStoreViews";
+import { useStores } from "@/hooks/useStores";
 interface StoreView {
   id: number;
   storeId: number;
@@ -78,27 +80,10 @@ interface Store {
   name: string;
 }
 
-interface Filters {
-  search: string;
-  storeId: string;
-  locale: string;
-  sortBy: string;
-  sortOrder: string;
-}
-
 export default function StoreView() {
-  const [storeViews, setStoreViews] = useState<StoreView[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
-  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingStoreView, setEditingStoreView] = useState<StoreView | null>(
-    null
-  );
-  const [filters, setFilters] = useState<Filters>({
+  const limit = 10;
+
+  const [filters, setFilters] = useState<Filter>({
     search: "",
     storeId: "",
     locale: "",
@@ -106,14 +91,25 @@ export default function StoreView() {
     sortOrder: "desc",
   });
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  const [storeViews, storeViewsLoading, storeViewsErrors] = useStoreViews<StoreView>(currentPage, limit, filters);
+  const [stores, storesLoading, storesErrors] = useStores(currentPage, limit);
+
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
+  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
+  const [editingStoreView, setEditingStoreView] = useState<StoreView | null>(
+    null
+  );
+
   const [formData, setFormData] = useState({
     storeId: "",
     code: "",
     name: "",
     locale: "",
   });
-
-  const limit = 10;
 
   const locales = [
     { value: "en_US", label: "English (US)" },
@@ -128,66 +124,15 @@ export default function StoreView() {
     { value: "zh_CN", label: "Chinese (China)" },
   ];
 
-  const fetchStoreViews = async (
-    page: number = 1,
-    currentFilters: Filters = filters
-  ) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
-      });
-
-      if (currentFilters.search) params.append("search", currentFilters.search);
-      if (currentFilters.storeId)
-        params.append("storeId", currentFilters.storeId);
-      if (currentFilters.locale) params.append("locale", currentFilters.locale);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/store-views?${params.toString()}`
-      );
-
-      setStoreViews(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load store views: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStores = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:3000/api/stores?limit=100"
-      );
-      setStores(response.data.data);
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error("Failed to load stores:", error.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchStoreViews(currentPage);
-    fetchStores();
-  }, []);
+ 
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchStoreViews(page);
-    }
+   setCurrentPage(page)
   };
 
-  const handleFilterChange = (key: keyof Filters, value: string) => {
+  const handleFilterChange = (key: keyof Filter, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchStoreViews(1, newFilters);
   };
 
   const clearFilters = () => {
@@ -199,7 +144,6 @@ export default function StoreView() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchStoreViews(1, clearedFilters);
   };
 
   const handleCreateStoreView = async () => {
@@ -215,7 +159,6 @@ export default function StoreView() {
       toast.success("Store view created successfully");
       setShowCreateDialog(false);
       setFormData({ storeId: "", code: "", name: "", locale: "" });
-      fetchStoreViews(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create store view: ${error.message}`);
@@ -241,7 +184,6 @@ export default function StoreView() {
       setShowEditDialog(false);
       setEditingStoreView(null);
       setFormData({ storeId: "", code: "", name: "", locale: "" });
-      fetchStoreViews(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update store view: ${error.message}`);
@@ -254,7 +196,6 @@ export default function StoreView() {
     try {
       await axios.delete(`http://localhost:3000/api/store-views/${id}`);
       toast.success("Store view deleted successfully");
-      fetchStoreViews(currentPage);
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete store view: ${error.message}`);
@@ -272,13 +213,6 @@ export default function StoreView() {
     setShowEditDialog(true);
   };
 
-  if (loading && storeViews.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-blue-500">Loading store views...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-full p-4 space-y-4">
