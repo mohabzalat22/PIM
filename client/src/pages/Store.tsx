@@ -34,174 +34,120 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { 
-  MoreHorizontalIcon, 
-  FilterIcon, 
-  PlusIcon, 
-  EditIcon, 
+import {
+  MoreHorizontalIcon,
+  FilterIcon,
+  PlusIcon,
+  EditIcon,
   TrashIcon,
   SearchIcon,
   XIcon,
   StoreIcon,
-  EyeIcon
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-interface Store {
-  id: number;
-  code: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  storeViews?: StoreView[];
-}
-
-interface StoreView {
-  id: number;
-  code: string;
-  name: string;
-  locale: string;
-  storeId: number;
-}
-
-interface Filters {
-  search: string;
-  sortBy: string;
-  sortOrder: string;
-}
+import type StoreInterface from "@/interfaces/store.interface";
+import type Filters from "@/interfaces/store/filters.interface";
+import { useStores } from "@/hooks/useStores";
 
 export default function Store() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+
+  const [filters, setFilters] = useState<Filters>({
+    search: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+
+  const [stores, storesLoading, storesErrors] = useStores(
+    currentPage,
+    limit,
+    filters
+  );
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
-  const [editingStore, setEditingStore] = useState<Store | null>(null);
-  const [filters, setFilters] = useState<Filters>({
-    search: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-  });
+  const [editingStore, setEditingStore] = useState<StoreInterface | null>(null);
 
   const [formData, setFormData] = useState({
-    code: '',
-    name: ''
+    code: "",
+    name: "",
   });
 
-  const limit = 10;
-
-  const fetchStores = async (page: number = 1, currentFilters: Filters = filters) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder
-      });
-
-      if (currentFilters.search) params.append('search', currentFilters.search);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/stores?${params.toString()}`
-      );
-      
-      setStores(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: any) {
-      toast.error(`Failed to load stores: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStores(currentPage);
-  }, []);
-
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchStores(page);
-    }
+    setCurrentPage(page);
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchStores(1, newFilters);
   };
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
+      search: "",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchStores(1, clearedFilters);
   };
 
   const handleCreateStore = async () => {
     try {
-      await axios.post('http://localhost:3000/api/stores', formData);
-      toast.success('Store created successfully');
+      await axios.post("http://localhost:3000/api/stores", formData);
+      toast.success("Store created successfully");
       setShowCreateDialog(false);
-      setFormData({ code: '', name: '' });
-      fetchStores(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to create store: ${err.response?.data?.message || err.message}`);
+      setFormData({ code: "", name: "" });
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to create store: ${error.message}`);
     }
   };
 
   const handleEditStore = async () => {
     if (!editingStore) return;
-    
+
     try {
-      await axios.put(`http://localhost:3000/api/stores/${editingStore.id}`, formData);
-      toast.success('Store updated successfully');
+      await axios.put(
+        `http://localhost:3000/api/stores/${editingStore.id}`,
+        formData
+      );
+      toast.success("Store updated successfully");
       setShowEditDialog(false);
       setEditingStore(null);
-      setFormData({ code: '', name: '' });
-      fetchStores(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to update store: ${err.response?.data?.message || err.message}`);
+      setFormData({ code: "", name: "" });
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to update store: ${error.message}`);
     }
   };
 
   const handleDeleteStore = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this store?')) return;
-    
+    if (!confirm("Are you sure you want to delete this store?")) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/stores/${id}`);
-      toast.success('Store deleted successfully');
-      fetchStores(currentPage);
-    } catch (err: any) {
-      toast.error(`Failed to delete store: ${err.response?.data?.message || err.message}`);
+      toast.success("Store deleted successfully");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete store: ${error.message}`);
     }
   };
 
-  const openEditDialog = (store: Store) => {
+  const openEditDialog = (store: StoreInterface) => {
     setEditingStore(store);
     setFormData({
       code: store.code,
-      name: store.name || ''
+      name: store.name || "",
     });
     setShowEditDialog(true);
   };
-
-  if (loading && stores.length === 0) {
-    return <div className="flex justify-center items-center h-64">
-      <p className="text-blue-500">Loading stores...</p>
-    </div>;
-  }
 
   return (
     <div className="max-w-full p-4 space-y-4">
@@ -227,13 +173,9 @@ export default function Store() {
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
-              {showFilters ? 'Hide' : 'Show'} Filters
+              {showFilters ? "Hide" : "Show"} Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               <XIcon className="w-4 h-4 mr-1" />
               Clear
             </Button>
@@ -247,7 +189,7 @@ export default function Store() {
               <Input
                 placeholder="Search by code or name..."
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -258,9 +200,9 @@ export default function Store() {
           <div className="flex flex-wrap gap-4 pt-4 border-t">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <select 
-                value={filters.sortBy} 
-                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange("sortBy", e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="createdAt">Created Date</option>
@@ -270,9 +212,11 @@ export default function Store() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <select 
-                value={filters.sortOrder} 
-                onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+              <select
+                value={filters.sortOrder}
+                onChange={(e) =>
+                  handleFilterChange("sortOrder", e.target.value)
+                }
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="asc">Ascending</option>
@@ -309,7 +253,7 @@ export default function Store() {
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <StoreIcon className="w-4 h-4 text-blue-500" />
-                      <span>{store.name || 'No name'}</span>
+                      <span>{store.name || "No name"}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -334,7 +278,7 @@ export default function Store() {
                           <EditIcon className="w-4 h-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteStore(store.id)}
                           className="text-red-600"
                         >
@@ -364,8 +308,12 @@ export default function Store() {
             <PaginationItem>
               <PaginationPrevious
                 href="#"
-                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                className={
+                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
+                }
               />
             </PaginationItem>
 
@@ -376,7 +324,9 @@ export default function Store() {
                   <PaginationLink
                     href="#"
                     onClick={() => handlePageChange(page)}
-                    className={page === currentPage ? "bg-blue-600 text-white" : ""}
+                    className={
+                      page === currentPage ? "bg-blue-600 text-white" : ""
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -387,8 +337,14 @@ export default function Store() {
             <PaginationItem>
               <PaginationNext
                 href="#"
-                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                onClick={() =>
+                  currentPage < totalPages && handlePageChange(currentPage + 1)
+                }
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -410,7 +366,9 @@ export default function Store() {
               <Input
                 id="code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
                 placeholder="store_code"
               />
             </div>
@@ -419,18 +377,21 @@ export default function Store() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Store Name"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateStore}>
-              Create Store
-            </Button>
+            <Button onClick={handleCreateStore}>Create Store</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -440,9 +401,7 @@ export default function Store() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Store</DialogTitle>
-            <DialogDescription>
-              Update store information.
-            </DialogDescription>
+            <DialogDescription>Update store information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -450,7 +409,9 @@ export default function Store() {
               <Input
                 id="edit-code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
                 placeholder="store_code"
               />
             </div>
@@ -459,7 +420,9 @@ export default function Store() {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Store Name"
               />
             </div>
@@ -468,9 +431,7 @@ export default function Store() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditStore}>
-              Update Store
-            </Button>
+            <Button onClick={handleEditStore}>Update Store</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
