@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { 
   MoreHorizontalIcon, 
@@ -43,20 +42,22 @@ import { PageLayout } from "@/components/app/PageLayout";
 import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type AssetInterface from "@/interfaces/asset.interface";
 import type Filters from "@/interfaces/categories.filters.interface";
 import type AssetType from "@/interfaces/asset.interface";
 import { SelectType } from "@/components/app/select-type";
+import { AssetService } from "@/services/asset.service";
+import { useAssets } from "@/hooks/useAssets";
 
 export default function Asset() {
-  const [assets, setAssets] = useState<AssetInterface[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
   const [editingAsset, setEditingAsset] = useState<AssetInterface | null>(null);
+  const [assetIdToDelete, setAssetIdToDelete] = useState<number | null>(null);
   const [filters, setFilters] = useState<Filters>({
     search: "",
     mimeType: "",
@@ -70,6 +71,14 @@ export default function Asset() {
   });
 
   const limit = 10;
+
+  const [
+    assets,
+    assetsLoading,
+    assetsError,
+    totalPages,
+    refetchAssets,
+  ] = useAssets(currentPage, limit, filters);
 
   const mimeTypes = [
     { value: "image/jpeg", label: "JPEG Image" },
@@ -101,52 +110,22 @@ export default function Asset() {
     return "bg-muted text-muted-foreground";
   };
 
-  const fetchAssets = async (
-    page: number = 1,
-    currentFilters: Filters = filters
-  ) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
-      });
-
-      if (currentFilters.search) params.append("search", currentFilters.search);
-      if (currentFilters.mimeType)
-        params.append("mimeType", currentFilters.mimeType);
-
-      const response = await axios.get(
-        `http://localhost:3000/api/assets?${params.toString()}`
-      );
-
-      setAssets(response.data.data);
-      setTotalPages(Math.ceil(response.data.meta.total / limit));
-      setCurrentPage(page);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to load assets: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAssets(currentPage);
-  }, []);
+    if (assetsError) {
+      toast.error(`Failed to load assets: ${assetsError.message}`);
+    }
+  }, [assetsError]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      fetchAssets(page);
+      setCurrentPage(page);
     }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    fetchAssets(1, newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -157,19 +136,19 @@ export default function Asset() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
-    fetchAssets(1, clearedFilters);
+    setCurrentPage(1);
   };
 
   const handleCreateAsset = async () => {
     try {
-      await axios.post("http://localhost:3000/api/assets", formData);
+      await AssetService.create(formData);
       toast.success("Asset created successfully");
       setShowCreateDialog(false);
       setFormData({
         filePath: "",
         mimeType: "",
       });
-      fetchAssets(currentPage);
+      await refetchAssets();
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create asset: ${error.message}`);
@@ -180,10 +159,7 @@ export default function Asset() {
     if (!editingAsset) return;
 
     try {
-      await axios.put(
-        `http://localhost:3000/api/assets/${editingAsset.id}`,
-        formData
-      );
+      await AssetService.update(editingAsset.id, formData);
       toast.success("Asset updated successfully");
       setShowEditDialog(false);
       setEditingAsset(null);
@@ -191,7 +167,7 @@ export default function Asset() {
         filePath: "",
         mimeType: "",
       });
-      fetchAssets(currentPage);
+      refetchAssets();
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update asset: ${error.message}`);
@@ -199,12 +175,10 @@ export default function Asset() {
   };
 
   const handleDeleteAsset = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this asset?")) return;
-
     try {
-      await axios.delete(`http://localhost:3000/api/assets/${id}`);
+      await AssetService.remove(id);
       toast.success("Asset deleted successfully");
-      fetchAssets(currentPage);
+      await refetchAssets();
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete asset: ${error.message}`);
@@ -220,12 +194,8 @@ export default function Asset() {
     setShowEditDialog(true);
   };
 
-  if (loading && assets.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-blue-500">Loading assets...</p>
-      </div>
-    );
+  if (assetsLoading) {
+    return <Loading />;
   }
 
   return (
@@ -383,7 +353,7 @@ export default function Asset() {
                         Download
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteAsset(asset.id)}
+                        onClick={() => setAssetIdToDelete(asset.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -495,6 +465,21 @@ export default function Asset() {
           </div>
         </div>
       </EntityDialog>
+
+      <DeleteConfirmDialog
+        open={assetIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setAssetIdToDelete(null);
+        }}
+        title="Delete Asset"
+        description="Are you sure you want to delete this asset? This action cannot be undone."
+        primaryLabel="Delete Asset"
+        onConfirm={() => {
+          if (assetIdToDelete !== null) {
+            void handleDeleteAsset(assetIdToDelete);
+          }
+        }}
+      />
     </PageLayout>
   );
 }
