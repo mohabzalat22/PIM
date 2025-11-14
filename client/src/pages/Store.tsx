@@ -1,11 +1,4 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import {
   DropdownMenu,
@@ -15,24 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 import { useState } from "react";
 import axios from "axios";
@@ -50,6 +25,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { PageLayout } from "@/components/app/PageLayout";
+import { FilterPanel } from "@/components/app/FilterPanel";
+import { DataTable } from "@/components/app/DataTable";
+import { PaginationBar } from "@/components/app/PaginationBar";
+import { EntityDialog } from "@/components/app/EntityDialog";
 import type StoreInterface from "@/interfaces/store.interface";
 import type Filters from "@/interfaces/store/filters.interface";
 import { useStores } from "@/hooks/useStores";
@@ -150,54 +130,37 @@ export default function Store() {
   };
 
   return (
-    <div className="max-w-full p-4 space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Stores</h1>
+    <PageLayout
+      title="Stores"
+      actions={
         <Button onClick={() => setShowCreateDialog(true)}>
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Store
         </Button>
-      </div>
-
+      }
+    >
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-muted/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <FilterIcon className="w-4 h-4" />
-            <span className="font-medium">Filters</span>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? "Hide" : "Show"} Filters
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              <XIcon className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search by code or name..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="pl-10"
-              />
+      <FilterPanel
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        onClear={clearFilters}
+        mainFilters={
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search by code or name..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
-        </div>
-
-        {showFilters && (
-          <div className="flex flex-wrap gap-4 pt-4 border-t">
+        }
+        advancedFilters={
+          <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
               <select
@@ -224,219 +187,154 @@ export default function Store() {
               </select>
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Store Views</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {stores.length > 0 ? (
-              stores.map((store) => (
-                <TableRow key={store.id}>
-                  <TableCell className="font-medium">{store.id}</TableCell>
-                  <TableCell>
-                    <code className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
-                      {store.code}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <StoreIcon className="w-4 h-4 text-blue-500" />
-                      <span>{store.name || "No name"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      {store.storeViews?.length || 0} views
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(store.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontalIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(store)}>
-                          <EditIcon className="w-4 h-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteStore(store.id)}
-                          className="text-red-600"
-                        >
-                          <TrashIcon className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  No stores found
+      <DataTable
+        headerCells={
+          <>
+            <TableHead className="w-[100px]">ID</TableHead>
+            <TableHead>Code</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Store Views</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
+          </>
+        }
+        rows={
+          <>
+            {stores.map((store) => (
+              <TableRow key={store.id}>
+                <TableCell className="font-medium">{store.id}</TableCell>
+                <TableCell>
+                  <code className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                    {store.code}
+                  </code>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <StoreIcon className="w-4 h-4 text-blue-500" />
+                    <span>{store.name || "No name"}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    {store.storeViews?.length || 0} views
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {new Date(store.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontalIcon className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => openEditDialog(store)}>
+                        <EditIcon className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteStore(store.id)}
+                        className="text-red-600"
+                      >
+                        <TrashIcon className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))}
+          </>
+        }
+        colSpan={6}
+        isEmpty={stores.length === 0}
+        emptyMessage="No stores found"
+      />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination className="flex justify-end">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={() =>
-                  currentPage > 1 && handlePageChange(currentPage - 1)
-                }
-                className={
-                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
-                }
-              />
-            </PaginationItem>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <PaginationItem key={page}>
-                  <PaginationLink
-                    href="#"
-                    onClick={() => handlePageChange(page)}
-                    className={
-                      page === currentPage
-                        ? "bg-primary text-primary-foreground"
-                        : ""
-                    }
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              );
-            })}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={() =>
-                  currentPage < totalPages && handlePageChange(currentPage + 1)
-                }
-                className={
-                  currentPage === totalPages
-                    ? "opacity-50 pointer-events-none"
-                    : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Create Store Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Store</DialogTitle>
-            <DialogDescription>
-              Add a new store to your system.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="code">Store Code</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value })
-                }
-                placeholder="store_code"
-              />
-            </div>
-            <div>
-              <Label htmlFor="name">Store Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Store Name"
-              />
-            </div>
+      <EntityDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        title="Create New Store"
+        description="Add a new store to your system."
+        primaryLabel="Create Store"
+        onPrimary={handleCreateStore}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="code">Store Code</Label>
+            <Input
+              id="code"
+              value={formData.code}
+              onChange={(e) =>
+                setFormData({ ...formData, code: e.target.value })
+              }
+              placeholder="store_code"
+            />
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateStore}>Create Store</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div>
+            <Label htmlFor="name">Store Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="Store Name"
+            />
+          </div>
+        </div>
+      </EntityDialog>
 
       {/* Edit Store Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Store</DialogTitle>
-            <DialogDescription>Update store information.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-code">Store Code</Label>
-              <Input
-                id="edit-code"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value })
-                }
-                placeholder="store_code"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-name">Store Name</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Store Name"
-              />
-            </div>
+      <EntityDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        title="Edit Store"
+        description="Update store information."
+        primaryLabel="Update Store"
+        onPrimary={handleEditStore}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="edit-code">Store Code</Label>
+            <Input
+              id="edit-code"
+              value={formData.code}
+              onChange={(e) =>
+                setFormData({ ...formData, code: e.target.value })
+              }
+              placeholder="store_code"
+            />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditStore}>Update Store</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div>
+            <Label htmlFor="edit-name">Store Name</Label>
+            <Input
+              id="edit-name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="Store Name"
+            />
+          </div>
+        </div>
+      </EntityDialog>
+    </PageLayout>
   );
 }

@@ -1,11 +1,4 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import {
   DropdownMenu,
@@ -16,23 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PaginationBar } from "@/components/app/PaginationBar";
 
 import {
   Select,
@@ -60,6 +37,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectType } from "@/components/app/select-type";
+import { PageLayout } from "@/components/app/PageLayout";
+import { FilterPanel } from "@/components/app/FilterPanel";
+import { DataTable } from "@/components/app/DataTable";
+import { EntityDialog } from "@/components/app/EntityDialog";
 import { useCategories } from "@/hooks/useCategories";
 import type Filters from "@/interfaces/category/category.filters.interface";
 import type CategoryInterface  from "@/interfaces/category/category.interface";
@@ -278,77 +259,58 @@ export default function Category() {
       translations: updatedTranslations,
     });
   };
-
-
-
   return (
-    <div className="max-w-full p-4 space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Categories</h1>
+    <PageLayout
+      title="Categories"
+      actions={
         <Button onClick={() => setShowCreateDialog(true)}>
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Category
         </Button>
-      </div>
-
+      }
+    >
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-muted/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <FilterIcon className="w-4 h-4" />
-            <span className="font-medium">Filters</span>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? "Hide" : "Show"} Filters
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              <XIcon className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters Section */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px] mt-6">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search by name..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="pl-10"
+      <FilterPanel
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        onClear={clearFilters}
+        mainFilters={
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex-1 min-w-[200px] mt-6">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search by name..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="min-w-[150px]">
+              <label className="text-sm font-bold" htmlFor="parent-category">
+                Parent Category
+              </label>
+              <SelectType
+                initialValue="all"
+                options={[
+                  { value: "all", name: "All Categories" },
+                  ...filterCategories.map((category) => ({
+                    value: category.id.toString(),
+                    name:
+                      category.translations?.[0]?.name ||
+                      `Category ${category.id}`,
+                  })),
+                ]}
+                onValueChange={(value) =>
+                  handleFilterChange("parentId", value === "all" ? null : value)
+                }
               />
             </div>
           </div>
-          <div className="min-w-[150px]">
-            <label className="text-sm font-bold" htmlFor="parent-category">Parent Category</label>
-            <SelectType
-              initialValue="all"
-              options={[
-                { value: "all", name: "All Categories" },
-                ...filterCategories.map((category) => ({
-                  value: category.id.toString(),
-                  name:
-                    category.translations?.[0]?.name ||
-                    `Category ${category.id}`,
-                })),
-              ]}
-              onValueChange={(value) =>
-                handleFilterChange("parentId", value === "all" ? null : value)
-              }
-            />
-          </div>
-        </div>
-
-        {showFilters && (
-          <div className="flex flex-wrap gap-4 pt-4 border-t">
+        }
+        advancedFilters={
+          <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
               <Select
@@ -382,434 +344,373 @@ export default function Category() {
               </Select>
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Parent</TableHead>
-              <TableHead>Subcategories</TableHead>
-              <TableHead>Products</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.length > 0 ? (
-              categories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.id}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {category.parentId ? (
-                        <FolderIcon className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <FolderOpenIcon className="w-4 h-4 text-blue-500" />
-                      )}
-                      <span>
-                        {category.translations?.[0]?.name || "No name"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {category.translations?.[0]?.slug || "-"}
-                  </TableCell>
-                  <TableCell>
-                    {category.parent ? (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                        {category.parent.translations?.[0]?.name ||
-                          `Category ${category.parent.id}`}
-                      </span>
+      <DataTable
+        headerCells={
+          <>
+            <TableHead className="w-[100px]">ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Slug</TableHead>
+            <TableHead>Parent</TableHead>
+            <TableHead>Subcategories</TableHead>
+            <TableHead>Products</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
+          </>
+        }
+        rows={
+          <>
+            {categories.map((category) => (
+              <TableRow key={category.id}>
+                <TableCell className="font-medium">{category.id}</TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    {category.parentId ? (
+                      <FolderIcon className="w-4 h-4 text-gray-400" />
                     ) : (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                        Root
-                      </span>
+                      <FolderOpenIcon className="w-4 h-4 text-blue-500" />
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      {category.subcategory?.length || 0}
+                    <span>
+                      {category.translations?.[0]?.name || "No name"}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                      {category.productCategories?.length || 0}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {category.translations?.[0]?.slug || "-"}
+                </TableCell>
+                <TableCell>
+                  {category.parent ? (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                      {category.parent.translations?.[0]?.name ||
+                        `Category ${category.parent.id}`}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(category.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontalIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => openEditDialog(category)}
-                        >
-                          <EditIcon className="w-4 h-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="text-red-600"
-                        >
-                          <TrashIcon className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  No categories found
+                  ) : (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      Root
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    {category.subcategory?.length || 0}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                    {category.productCategories?.length || 0}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {new Date(category.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontalIcon className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => openEditDialog(category)}
+                      >
+                        <EditIcon className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="text-red-600"
+                      >
+                        <TrashIcon className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))}
+          </>
+        }
+        colSpan={8}
+        isEmpty={categories.length === 0}
+        emptyMessage="No categories found"
+      />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination className="flex justify-end">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={() =>
-                  currentPage > 1 && handlePageChange(currentPage - 1)
-                }
-                className={
-                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
-                }
-              />
-            </PaginationItem>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <PaginationItem key={page}>
-                  <PaginationLink
-                    href="#"
-                    onClick={() => handlePageChange(page)}
-                    className={
-                      page === currentPage ? "bg-blue-600 text-white" : ""
-                    }
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              );
-            })}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={() =>
-                  currentPage < totalPages && handlePageChange(currentPage + 1)
-                }
-                className={
-                  currentPage === totalPages
-                    ? "opacity-50 pointer-events-none"
-                    : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Create Category Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Category</DialogTitle>
-            <DialogDescription>
-              Add a new category to your catalog.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="parentId">Parent Category</Label>
-              <Select
-                value={formData.parentId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, parentId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select parent category (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">No parent (Root category)</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem
-                      key={category.id}
-                      value={category.id.toString()}
-                    >
-                      {category.translations?.[0]?.name ||
-                        `Category ${category.id}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <EntityDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        title="Create New Category"
+        description="Add a new category to your catalog."
+        primaryLabel="Create Category"
+        onPrimary={handleCreateCategory}
+        contentClassName="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="parentId">Parent Category</Label>
+            <Select
+              value={formData.parentId}
+              onValueChange={(value) =>
+                setFormData({ ...formData, parentId: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select parent category (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">No parent (Root category)</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem
+                    key={category.id}
+                    value={category.id.toString()}
+                  >
+                    {category.translations?.[0]?.name ||
+                      `Category ${category.id}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Translations</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTranslation}
-                >
-                  <PlusIcon className="w-4 h-4 mr-1" />
-                  Add CategoryTranslation
-                </Button>
-              </div>
-              {formData.translations.map((CategoryTranslation, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      CategoryTranslation {index + 1}
-                    </span>
-                    {formData.translations.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeTranslation(index)}
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor={`name-${index}`}>Name</Label>
-                      <Input
-                        id={`name-${index}`}
-                        value={CategoryTranslation.name}
-                        onChange={(e) =>
-                          updateTranslation(index, "name", e.target.value)
-                        }
-                        placeholder="Category name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`slug-${index}`}>Slug</Label>
-                      <Input
-                        id={`slug-${index}`}
-                        value={CategoryTranslation.slug}
-                        onChange={(e) =>
-                          updateTranslation(index, "slug", e.target.value)
-                        }
-                        placeholder="category-slug"
-                      />
-                    </div>
-                  </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Translations</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTranslation}
+              >
+                <PlusIcon className="w-4 h-4 mr-1" />
+                Add CategoryTranslation
+              </Button>
+            </div>
+            {formData.translations.map((CategoryTranslation, index) => (
+              <div key={index} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    CategoryTranslation {index + 1}
+                  </span>
+                  {formData.translations.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeTranslation(index)}
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor={`description-${index}`}>Description</Label>
+                    <Label htmlFor={`name-${index}`}>Name</Label>
                     <Input
-                      id={`description-${index}`}
-                      value={CategoryTranslation.description}
+                      id={`name-${index}`}
+                      value={CategoryTranslation.name}
                       onChange={(e) =>
-                        updateTranslation(index, "description", e.target.value)
+                        updateTranslation(index, "name", e.target.value)
                       }
-                      placeholder="Category description"
+                      placeholder="Category name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`storeView-${index}`}>Store View</Label>
-                    <Select
-                      value={CategoryTranslation.storeViewId.toString()}
-                      onValueChange={(value) =>
-                        updateTranslation(index, "storeViewId", parseInt(value))
+                    <Label htmlFor={`slug-${index}`}>Slug</Label>
+                    <Input
+                      id={`slug-${index}`}
+                      value={CategoryTranslation.slug}
+                      onChange={(e) =>
+                        updateTranslation(index, "slug", e.target.value)
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {storeViews.map((storeView) => (
-                          <SelectItem
-                            key={storeView.id}
-                            value={storeView.id.toString()}
-                          >
-                            {storeView.name} ({storeView.locale})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="category-slug"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <Label htmlFor={`description-${index}`}>Description</Label>
+                  <Input
+                    id={`description-${index}`}
+                    value={CategoryTranslation.description}
+                    onChange={(e) =>
+                      updateTranslation(index, "description", e.target.value)
+                    }
+                    placeholder="Category description"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`storeView-${index}`}>Store View</Label>
+                  <Select
+                    value={CategoryTranslation.storeViewId.toString()}
+                    onValueChange={(value) =>
+                      updateTranslation(index, "storeViewId", parseInt(value))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {storeViews.map((storeView) => (
+                        <SelectItem
+                          key={storeView.id}
+                          value={storeView.id.toString()}
+                        >
+                          {storeView.name} ({storeView.locale})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCategory}>Create Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </EntityDialog>
 
       {/* Edit Category Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>Update category information.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-parentId">Parent Category</Label>
-              <SelectType
-                initialValue={formData.parentId || "all"}
-                options={[
-                  { value: "all", name: "No parent (Root category)" },
-                  ...categories
-                    .filter((c) => c.id !== editingCategory?.id)
-                    .map((category) => ({
-                      value: category.id.toString(),
-                      name:
-                        category.translations?.[0]?.name ||
-                        `Category ${category.id}`,
-                    })),
-                ]}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    parentId: value === "all" ? "" : value,
-                  })
-                }
-              />
-            </div>
+      <EntityDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        title="Edit Category"
+        description="Update category information."
+        primaryLabel="Update Category"
+        onPrimary={handleEditCategory}
+        contentClassName="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="edit-parentId">Parent Category</Label>
+            <SelectType
+              initialValue={formData.parentId || "all"}
+              options={[
+                { value: "all", name: "No parent (Root category)" },
+                ...categories
+                  .filter((c) => c.id !== editingCategory?.id)
+                  .map((category) => ({
+                    value: category.id.toString(),
+                    name:
+                      category.translations?.[0]?.name ||
+                      `Category ${category.id}`,
+                  })),
+              ]}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  parentId: value === "all" ? "" : value,
+                })
+              }
+            />
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Translations</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTranslation}
-                >
-                  <PlusIcon className="w-4 h-4 mr-1" />
-                  Add CategoryTranslation
-                </Button>
-              </div>
-              {formData.translations.map((CategoryTranslation, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      CategoryTranslation {index + 1}
-                    </span>
-                    {formData.translations.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeTranslation(index)}
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor={`edit-name-${index}`}>Name</Label>
-                      <Input
-                        id={`edit-name-${index}`}
-                        value={CategoryTranslation.name}
-                        onChange={(e) =>
-                          updateTranslation(index, "name", e.target.value)
-                        }
-                        placeholder="Category name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`edit-slug-${index}`}>Slug</Label>
-                      <Input
-                        id={`edit-slug-${index}`}
-                        value={CategoryTranslation.slug}
-                        onChange={(e) =>
-                          updateTranslation(index, "slug", e.target.value)
-                        }
-                        placeholder="category-slug"
-                      />
-                    </div>
-                  </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Translations</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTranslation}
+              >
+                <PlusIcon className="w-4 h-4 mr-1" />
+                Add CategoryTranslation
+              </Button>
+            </div>
+            {formData.translations.map((CategoryTranslation, index) => (
+              <div key={index} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    CategoryTranslation {index + 1}
+                  </span>
+                  {formData.translations.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeTranslation(index)}
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor={`edit-description-${index}`}>
-                      Description
-                    </Label>
+                    <Label htmlFor={`edit-name-${index}`}>Name</Label>
                     <Input
-                      id={`edit-description-${index}`}
-                      value={CategoryTranslation.description}
+                      id={`edit-name-${index}`}
+                      value={CategoryTranslation.name}
                       onChange={(e) =>
-                        updateTranslation(index, "description", e.target.value)
+                        updateTranslation(index, "name", e.target.value)
                       }
-                      placeholder="Category description"
+                      placeholder="Category name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`edit-storeView-${index}`}>
-                      Store View
-                    </Label>
-                    <Select
-                      value={CategoryTranslation.storeViewId.toString()}
-                      onValueChange={(value) =>
-                        updateTranslation(index, "storeViewId", parseInt(value))
+                    <Label htmlFor={`edit-slug-${index}`}>Slug</Label>
+                    <Input
+                      id={`edit-slug-${index}`}
+                      value={CategoryTranslation.slug}
+                      onChange={(e) =>
+                        updateTranslation(index, "slug", e.target.value)
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {storeViews.map((storeView) => (
-                          <SelectItem
-                            key={storeView.id}
-                            value={storeView.id.toString() || "none"}
-                          >
-                            {storeView.name} ({storeView.locale})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="category-slug"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <Label htmlFor={`edit-description-${index}`}>
+                    Description
+                  </Label>
+                  <Input
+                    id={`edit-description-${index}`}
+                    value={CategoryTranslation.description}
+                    onChange={(e) =>
+                      updateTranslation(index, "description", e.target.value)
+                    }
+                    placeholder="Category description"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`edit-storeView-${index}`}>
+                    Store View
+                  </Label>
+                  <Select
+                    value={CategoryTranslation.storeViewId.toString()}
+                    onValueChange={(value) =>
+                      updateTranslation(index, "storeViewId", parseInt(value))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {storeViews.map((storeView) => (
+                        <SelectItem
+                          key={storeView.id}
+                          value={storeView.id.toString() || "none"}
+                        >
+                          {storeView.name} ({storeView.locale})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditCategory}>Update Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      </EntityDialog>
+    </PageLayout>
   );
 }

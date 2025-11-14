@@ -1,11 +1,4 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 
 import {
   DropdownMenu,
@@ -16,23 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PaginationBar } from "@/components/app/PaginationBar";
 
 import {
   Select,
@@ -62,6 +39,10 @@ import { Label } from "@/components/ui/label";
 import { SelectType } from "@/components/app/select-type";
 import { MultiSelectType } from "@/components/app/multiselect-type";
 import { DateType } from "@/components/app/date-type";
+import { PageLayout } from "@/components/app/PageLayout";
+import { FilterPanel } from "@/components/app/FilterPanel";
+import { DataTable } from "@/components/app/DataTable";
+import { EntityDialog } from "@/components/app/EntityDialog";
 import type ProductInterface from "@/interfaces/product.interface";
 import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
@@ -304,88 +285,71 @@ export default function Product() {
   };
 
   return (
-    <div className="max-w-full p-4 space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Products</h1>
+    <PageLayout
+      title="Products"
+      actions={
         <Button onClick={() => setShowCreateDialog(true)}>
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Product
         </Button>
-      </div>
-
+      }
+    >
       {/* Filters */}
-      <div className="border rounded-lg p-4 bg-muted/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <FilterIcon className="w-4 h-4" />
-            <span className="font-medium">Filters</span>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? "Hide" : "Show"} Filters
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              <XIcon className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search by SKU..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="pl-10"
-              />
+      <FilterPanel
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        onClear={clearFilters}
+        mainFilters={
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search by SKU..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-          </div>
-          <div className="min-w-[150px]">
-            <SelectType
-              initialValue={filters.type || "all"}
-              options={[
-                { name: "All Types", value: "all" },
-                ...Object.entries(productTypes).map(([, type]) => ({
-                  name: type.label,
-                  value: type.value,
-                })),
-              ]}
-              onValueChange={(value) =>
-                handleFilterChange("type", value === "all" ? "" : value)
-              }
-            />
-          </div>
-          <div className="min-w-[150px]">
-            {categories && (
+            <div className="min-w-[150px]">
               <SelectType
-                initialValue={filters.categoryId || "all"}
+                initialValue={filters.type || "all"}
                 options={[
-                  { name: "All Categories", value: "all" },
-                  ...categories.map((category) => ({
-                    name:
-                      category.translations?.[0]?.name ||
-                      `Category ${category.id}`,
-                    value: category.id.toString(),
+                  { name: "All Types", value: "all" },
+                  ...Object.entries(productTypes).map(([, type]) => ({
+                    name: type.label,
+                    value: type.value,
                   })),
                 ]}
                 onValueChange={(value) =>
-                  handleFilterChange("categoryId", value === "all" ? "" : value)
+                  handleFilterChange("type", value === "all" ? "" : value)
                 }
               />
-            )}
+            </div>
+            <div className="min-w-[150px]">
+              {categories && (
+                <SelectType
+                  initialValue={filters.categoryId || "all"}
+                  options={[
+                    { name: "All Categories", value: "all" },
+                    ...categories.map((category) => ({
+                      name:
+                        category.translations?.[0]?.name ||
+                        `Category ${category.id}`,
+                      value: category.id.toString(),
+                    })),
+                  ]}
+                  onValueChange={(value) =>
+                    handleFilterChange("categoryId", value === "all" ? "" : value)
+                  }
+                />
+              )}
+            </div>
           </div>
-        </div>
-
-        {showFilters && (
-          <div className="space-y-4 pt-4 border-t">
+        }
+        advancedFilters={
+          <div className="space-y-4">
             {/* Attribute Filters */}
             <div>
               <Label className="text-sm font-medium mb-2 block">
@@ -396,15 +360,10 @@ export default function Product() {
                   {attributes
                     .filter(
                       (attr) =>
-                        // Exclude MEDIA: Media attributes store file references and should never be filterable
-                        // (aligns with Magento's behavior - media attributes are excluded from layered navigation)
-                        //
-                        // DATE attributes are now supported for filtering with date range support
                         attr.isFilterable && attr.inputType !== "MEDIA"
                     )
                     .map((attribute) => {
                       const filterComponent = renderFilterComponent(attribute);
-                      // Only render if the component returns something (exclude null returns)
                       if (!filterComponent) return null;
 
                       return (
@@ -458,238 +417,177 @@ export default function Product() {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Categories</TableHead>
-              <TableHead>Attributes</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products ? (
-              products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.id}</TableCell>
-                  <TableCell>{product.sku}</TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      {product.type}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {product.productCategories?.length || 0} categories
-                  </TableCell>
-                  <TableCell>
-                    {product.productAttributeValues?.length || 0} attributes
-                  </TableCell>
-                  <TableCell>
-                    {new Date(product.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontalIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => navigate(`/products/${product.id}`)}
-                        >
-                          <EyeIcon className="w-4 h-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => openEditDialog(product)}
-                        >
-                          <EditIcon className="w-4 h-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-red-600"
-                        >
-                          <TrashIcon className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  No products found
+      <DataTable
+        headerCells={
+          <>
+            <TableHead className="w-[100px]">ID</TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Categories</TableHead>
+            <TableHead>Attributes</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
+          </>
+        }
+        rows={
+          <>
+            {products?.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">{product.id}</TableCell>
+                <TableCell>{product.sku}</TableCell>
+                <TableCell>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    {product.type}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {product.productCategories?.length || 0} categories
+                </TableCell>
+                <TableCell>
+                  {product.productAttributeValues?.length || 0} attributes
+                </TableCell>
+                <TableCell>
+                  {new Date(product.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontalIcon className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => navigate(`/products/${product.id}`)}
+                      >
+                        <EyeIcon className="w-4 h-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => openEditDialog(product)}
+                      >
+                        <EditIcon className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="text-red-600"
+                      >
+                        <TrashIcon className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))}
+          </>
+        }
+        colSpan={7}
+        isEmpty={!products || products.length === 0}
+        emptyMessage="No products found"
+      />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination className="flex justify-end">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={() => currentPage > 1}
-                className={
-                  currentPage === 1 ? "opacity-50 pointer-events-none" : ""
-                }
-              />
-            </PaginationItem>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <PaginationItem key={page}>
-                  <PaginationLink
-                    href="#"
-                    onClick={() => handlePageChange(page)}
-                    className={
-                      page === currentPage
-                        ? "bg-primary text-primary-foreground"
-                        : ""
-                    }
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              );
-            })}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={() => currentPage < totalPages}
-                className={
-                  currentPage === totalPages
-                    ? "opacity-50 pointer-events-none"
-                    : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Create Product Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Product</DialogTitle>
-            <DialogDescription>
-              Add a new product to your inventory.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="sku">SKU</Label>
-              <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) =>
-                  setFormData({ ...formData, sku: e.target.value })
-                }
-                placeholder="Enter product SKU"
-              />
-            </div>
-            <div>
-              <Label htmlFor="type">Product Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, type: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {productTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <EntityDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        title="Create New Product"
+        description="Add a new product to your inventory."
+        primaryLabel="Create Product"
+        onPrimary={handleCreateProduct}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="sku">SKU</Label>
+            <Input
+              id="sku"
+              value={formData.sku}
+              onChange={(e) =>
+                setFormData({ ...formData, sku: e.target.value })
+              }
+              placeholder="Enter product SKU"
+            />
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
+          <div>
+            <Label htmlFor="type">Product Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(value) =>
+                setFormData({ ...formData, type: value })
+              }
             >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateProduct}>Create Product</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </EntityDialog>
 
       {/* Edit Product Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>Update product information.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-sku">SKU</Label>
-              <Input
-                id="edit-sku"
-                value={formData.sku}
-                onChange={(e) =>
-                  setFormData({ ...formData, sku: e.target.value })
-                }
-                placeholder="Enter product SKU"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-type">Product Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, type: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {productTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <EntityDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        title="Edit Product"
+        description="Update product information."
+        primaryLabel="Update Product"
+        onPrimary={handleEditProduct}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="edit-sku">SKU</Label>
+            <Input
+              id="edit-sku"
+              value={formData.sku}
+              onChange={(e) =>
+                setFormData({ ...formData, sku: e.target.value })
+              }
+              placeholder="Enter product SKU"
+            />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditProduct}>Update Product</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div>
+            <Label htmlFor="edit-type">Product Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(value) =>
+                setFormData({ ...formData, type: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </EntityDialog>
+    </PageLayout>
   );
 }
