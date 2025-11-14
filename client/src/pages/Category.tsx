@@ -52,7 +52,6 @@ import { StoreViewService } from "@/services/storeView.service";
 export default function Category() {
   const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
 
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -61,8 +60,13 @@ export default function Category() {
     sortOrder: "desc",
   });
 
-  const [categories, categoriesLoading, categoriesErrors, refetchCategories] =
-    useCategories<CategoryInterface>(currentPage, limit, filters);
+  const [
+    categories,
+    categoriesLoading,
+    categoriesErrors,
+    categoriesTotalPages,
+    refetchCategories,
+  ] = useCategories<CategoryInterface>(currentPage, limit, filters);
   const [filterCategories, setFilterCategories] = useState<CategoryInterface[]>([]);
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
 
@@ -116,12 +120,15 @@ export default function Category() {
   }, []);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= categoriesTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string | null) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -132,6 +139,7 @@ export default function Category() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   const handleCreateCategory = async () => {
@@ -487,7 +495,7 @@ export default function Category() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={categoriesTotalPages}
         onPageChange={handlePageChange}
       />
 

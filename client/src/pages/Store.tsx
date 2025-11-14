@@ -39,7 +39,6 @@ import { StoreService } from "@/services/store.service";
 export default function Store() {
   const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
 
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -51,6 +50,7 @@ export default function Store() {
     stores,
     storesLoading,
     storesErrors,
+    storesTotalPages,
     refetchStores,
   ] = useStores(currentPage, limit, filters);
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -71,12 +71,15 @@ export default function Store() {
   }, [storesErrors]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= storesTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -86,6 +89,7 @@ export default function Store() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   const handleCreateStore = async () => {
@@ -274,7 +278,7 @@ export default function Store() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={storesTotalPages}
         onPageChange={handlePageChange}
       />
 

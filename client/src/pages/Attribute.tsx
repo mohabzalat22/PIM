@@ -62,7 +62,6 @@ interface Attribute {
 export default function Attribute() {
   const limit = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [filters, setFilters] = useState<Filters>({
     search: "",
     dataType: "",
@@ -76,6 +75,7 @@ export default function Attribute() {
     attributes,
     attributesLoading,
     attributesError,
+    attributesTotalPages,
     refetchAttributes,
   ] = useAttributes<Attribute>(currentPage, limit, filters);
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -125,12 +125,15 @@ export default function Attribute() {
   }, [attributesError]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= attributesTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -144,6 +147,7 @@ export default function Attribute() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   const handleCreateAttribute = async () => {
@@ -466,7 +470,7 @@ export default function Attribute() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={attributesTotalPages}
         onPageChange={handlePageChange}
       />
 

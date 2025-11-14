@@ -13,6 +13,7 @@ export function useProductAttributeValues(
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
   const fetchProductAttributeValues = async () => {
     setLoading(true);
@@ -23,6 +24,11 @@ export function useProductAttributeValues(
         filters
       );
       setProductAttributeValues(response.data);
+      if (response.meta?.totalPages) {
+        setTotalPages(response.meta.totalPages);
+      } else if (response.meta?.total) {
+        setTotalPages(Math.ceil(response.meta.total / limit));
+      }
     } catch (err: unknown) {
       const error = err as Error;
       setError(error);
@@ -35,5 +41,5 @@ export function useProductAttributeValues(
     fetchProductAttributeValues();
   }, [page, limit, filters]);
 
-  return [productAttributeValues, loading, error, fetchProductAttributeValues] as const;
+  return [productAttributeValues, loading, error, totalPages, fetchProductAttributeValues] as const;
 }

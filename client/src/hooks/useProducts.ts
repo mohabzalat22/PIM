@@ -7,12 +7,14 @@ export function useProducts(page: number, limit: number, filters?: Filters) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const response = await ProductsApi.getAll(page, limit, filters);
       setProducts(response.data);
+      setTotalPages(response.meta.totalPages);
     } catch (err: unknown) {
       const error = err as Error;
       setError(error);
@@ -25,5 +27,5 @@ export function useProducts(page: number, limit: number, filters?: Filters) {
     fetchProducts();
   }, [page, limit, filters]);
 
-  return [products, loading, error, fetchProducts] as const;
+  return [products, loading, error, totalPages, fetchProducts] as const;
 }

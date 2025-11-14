@@ -72,18 +72,16 @@ export default function StoreView() {
   });
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
 
   const [
     storeViews,
     storeViewsLoading,
     storeViewsErrors,
+    storeViewsTotalPages,
     refetchStoreViews,
   ] = useStoreViews<StoreView>(currentPage, limit, filters);
-  const [stores, storesLoading, storesErrors, refetchStores] = useStores(
-    currentPage,
-    limit
-  );
+  const [stores, storesLoading, storesErrors, storesTotalPages, refetchStores] =
+    useStores(currentPage, limit);
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
@@ -113,12 +111,15 @@ export default function StoreView() {
   ];
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= storeViewsTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filter, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -130,6 +131,7 @@ export default function StoreView() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   useEffect(() => {
@@ -396,7 +398,7 @@ export default function StoreView() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={storeViewsTotalPages}
         onPageChange={handlePageChange}
       />
 

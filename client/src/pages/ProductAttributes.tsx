@@ -69,11 +69,11 @@ export default function ProductAttributes() {
     sortOrder: 'desc'
   });
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [
     productAttributeValues,
     productAttributeValuesLoading,
     productAttributeValuesErrors,
+    productAttributeValuesTotalPages,
     refetchProductAttributeValues,
   ] = useProductAttributeValues(currentPage, limit, filters);
   const [products, productsLoading, productsErrors] = useProducts(currentPage, limit);
@@ -110,13 +110,15 @@ export default function ProductAttributes() {
 
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  
+    if (page >= 1 && page <= productAttributeValuesTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -130,6 +132,7 @@ export default function ProductAttributes() {
       sortOrder: 'desc'
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   const handleCreateProductAttribute = async () => {
@@ -545,7 +548,7 @@ export default function ProductAttributes() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={productAttributeValuesTotalPages}
         onPageChange={handlePageChange}
       />
 

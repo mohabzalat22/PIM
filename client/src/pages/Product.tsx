@@ -64,12 +64,12 @@ export default function Product() {
     sortOrder: "desc",
   });
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [
     products,
     productsLoading,
     productsError,
+    productsTotalPages,
     refetchProducts,
   ] = useProducts(currentPage, limit, filters);
   const [categories, categoriesLoading, categoriesError] =
@@ -121,12 +121,15 @@ export default function Product() {
   }, [attributesError]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= productsTotalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
   };
 
   const handleAttributeFilterChange = (
@@ -167,6 +170,7 @@ export default function Product() {
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
+    setCurrentPage(1);
   };
 
   if (isLoading) {
@@ -522,7 +526,7 @@ export default function Product() {
       {/* Pagination */}
       <PaginationBar
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={productsTotalPages}
         onPageChange={handlePageChange}
       />
 
