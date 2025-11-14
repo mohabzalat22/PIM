@@ -17,8 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
@@ -38,9 +37,12 @@ import { FilterPanel } from "@/components/app/FilterPanel";
 import { DataTable } from "@/components/app/DataTable";
 import { PaginationBar } from "@/components/app/PaginationBar";
 import { EntityDialog } from "@/components/app/EntityDialog";
+import Loading from "@/components/app/loading";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type Filter from "@/interfaces/storeView/filters.iterface";
 import { useStoreViews } from "@/hooks/useStoreViews";
 import { useStores } from "@/hooks/useStores";
+import { StoreViewService } from "@/services/storeView.service";
 interface StoreView {
   id: number;
   storeId: number;
@@ -72,8 +74,16 @@ export default function StoreView() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  const [storeViews, storeViewsLoading, storeViewsErrors] = useStoreViews<StoreView>(currentPage, limit, filters);
-  const [stores, storesLoading, storesErrors] = useStores(currentPage, limit);
+  const [
+    storeViews,
+    storeViewsLoading,
+    storeViewsErrors,
+    refetchStoreViews,
+  ] = useStoreViews<StoreView>(currentPage, limit, filters);
+  const [stores, storesLoading, storesErrors, refetchStores] = useStores(
+    currentPage,
+    limit
+  );
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
@@ -102,10 +112,8 @@ export default function StoreView() {
     { value: "zh_CN", label: "Chinese (China)" },
   ];
 
- 
-
   const handlePageChange = (page: number) => {
-   setCurrentPage(page)
+    setCurrentPage(page);
   };
 
   const handleFilterChange = (key: keyof Filter, value: string) => {
@@ -124,6 +132,18 @@ export default function StoreView() {
     setFilters(clearedFilters);
   };
 
+  useEffect(() => {
+    if (storeViewsErrors) {
+      toast.error(`Failed to load store views: ${storeViewsErrors.message}`);
+    }
+  }, [storeViewsErrors]);
+
+  useEffect(() => {
+    if (storesErrors) {
+      toast.error(`Failed to load stores: ${storesErrors.message}`);
+    }
+  }, [storesErrors]);
+
   const handleCreateStoreView = async () => {
     try {
       const storeViewData = {
@@ -132,8 +152,8 @@ export default function StoreView() {
         name: formData.name,
         locale: formData.locale,
       };
-
-      await axios.post("http://localhost:3000/api/store-views", storeViewData);
+      await StoreViewService.create(storeViewData);
+      await refetchStoreViews();
       toast.success("Store view created successfully");
       setShowCreateDialog(false);
       setFormData({ storeId: "", code: "", name: "", locale: "" });
@@ -154,10 +174,8 @@ export default function StoreView() {
         locale: formData.locale,
       };
 
-      await axios.put(
-        `http://localhost:3000/api/store-views/${editingStoreView.id}`,
-        storeViewData
-      );
+      await StoreViewService.update(editingStoreView.id, storeViewData);
+      await refetchStoreViews();
       toast.success("Store view updated successfully");
       setShowEditDialog(false);
       setEditingStoreView(null);
@@ -168,12 +186,15 @@ export default function StoreView() {
     }
   };
 
-  const handleDeleteStoreView = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this store view?")) return;
+  const [storeViewIdToDelete, setStoreViewIdToDelete] = useState<number | null>(
+    null
+  );
 
+  const handleDeleteStoreView = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:3000/api/store-views/${id}`);
+      await StoreViewService.remove(id);
       toast.success("Store view deleted successfully");
+      await refetchStoreViews();
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to delete store view: ${error.message}`);
@@ -191,6 +212,12 @@ export default function StoreView() {
     setShowEditDialog(true);
   };
 
+  const isLoading =
+    storeViewsLoading || storesLoading;
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <PageLayout
@@ -348,7 +375,7 @@ export default function StoreView() {
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDeleteStoreView(storeView.id)}
+                        onClick={() => setStoreViewIdToDelete(storeView.id)}
                         className="text-red-600"
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
@@ -528,6 +555,21 @@ export default function StoreView() {
           </div>
         </div>
       </EntityDialog>
+
+      <DeleteConfirmDialog
+        open={storeViewIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setStoreViewIdToDelete(null);
+        }}
+        title="Delete Store View"
+        description="Are you sure you want to delete this store view? This action cannot be undone."
+        primaryLabel="Delete Store View"
+        onConfirm={() => {
+          if (storeViewIdToDelete !== null) {
+            void handleDeleteStoreView(storeViewIdToDelete);
+          }
+        }}
+      />
     </PageLayout>
   );
 }
