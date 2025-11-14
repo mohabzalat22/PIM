@@ -3,7 +3,7 @@ import type StoreView from "@/interfaces/storeView.interface";
 import type Filter from "@/interfaces/storeView/filters.iterface";
 
 export const StoreViewService = {
-  async list(page: number, limit: number, filters?: Filter) {
+  async getAll(page: number, limit: number, filters?: Filter) {
     return StoreViewsApi.getAll(page, limit, filters);
   },
 

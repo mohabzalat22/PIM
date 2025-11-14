@@ -3,7 +3,7 @@ import type Attribute from "@/interfaces/attribute.interface";
 import type { Filters } from "@/interfaces/attributes.filters.interface";
 
 export const AttributeService = {
-  async list(page: number, limit: number, filters?: Filters) {
+  async getAll(page: number, limit: number, filters?: Filters) {
     return AttributesApi.getAll(page, limit, filters);
   },
 

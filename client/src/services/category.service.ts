@@ -3,7 +3,7 @@ import type Category from "@/interfaces/category.interface";
 import type Filters from "@/interfaces/category/category.filters.interface";
 
 export const CategoryService = {
-  async list(page: number, limit: number, filters?: Filters) {
+  async getAll(page: number, limit: number, filters?: Filters) {
     return CategoryApi.getAll(page, limit, filters);
   },
 

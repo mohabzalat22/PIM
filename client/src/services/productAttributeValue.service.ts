@@ -3,7 +3,7 @@ import type ProductAttributeValue from "@/interfaces/productAttributes/productAt
 import type Filters from "@/interfaces/productAttributes/filters.interface";
 
 export const ProductAttributeValueService = {
-  async list(page: number, limit: number, filters: Filters) {
+  async getAll(page: number, limit: number, filters: Filters) {
     return ProductAttibuteValuesApi.getAll(page, limit, filters);
   },
 

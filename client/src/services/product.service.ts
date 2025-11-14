@@ -3,7 +3,7 @@ import type Product from "@/interfaces/product.interface";
 import type Filters from "@/interfaces/products.filters.interface";
 
 export const ProductService = {
-  async list(page: number, limit: number, filters?: Filters) {
+  async getAll(page: number, limit: number, filters?: Filters) {
     return ProductsApi.getAll(page, limit, filters);
   },
 
