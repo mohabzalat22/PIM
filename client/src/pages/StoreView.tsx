@@ -42,6 +42,7 @@ import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import type Filter from "@/interfaces/storeView/filters.iterface";
 import { useStoreViews } from "@/hooks/useStoreViews";
 import { useStores } from "@/hooks/useStores";
+import { useLocales } from "@/hooks/useLocales";
 import { StoreViewService } from "@/services/storeView.service";
 interface StoreView {
   id: number;
@@ -82,6 +83,13 @@ export default function StoreView() {
   ] = useStoreViews<StoreView>(currentPage, limit, filters);
   const [stores, storesLoading, storesErrors, storesTotalPages, refetchStores] =
     useStores(currentPage, limit);
+  const [
+    locales,
+    localesLoading,
+    localesError,
+    localesTotalPages,
+    refetchLocales,
+  ] = useLocales(1, 100, { sortBy: "value", sortOrder: "asc" });
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
@@ -97,22 +105,9 @@ export default function StoreView() {
     locale: "",
   });
 
-  const locales = [
-    { value: "en_US", label: "English (US)" },
-    { value: "en_GB", label: "English (UK)" },
-    { value: "es_ES", label: "Spanish (Spain)" },
-    { value: "fr_FR", label: "French (France)" },
-    { value: "de_DE", label: "German (Germany)" },
-    { value: "it_IT", label: "Italian (Italy)" },
-    { value: "pt_BR", label: "Portuguese (Brazil)" },
-    { value: "ja_JP", label: "Japanese (Japan)" },
-    { value: "ko_KR", label: "Korean (Korea)" },
-    { value: "zh_CN", label: "Chinese (China)" },
-  ];
-
   const [showPageLoader, setShowPageLoader] = useState(true);
 
-  const isLoading = storeViewsLoading;
+  const isLoading = storeViewsLoading || storesLoading || localesLoading;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= storeViewsTotalPages) {
@@ -149,6 +144,12 @@ export default function StoreView() {
       toast.error(`Failed to load stores: ${storesErrors.message}`);
     }
   }, [storesErrors]);
+
+  useEffect(() => {
+    if (localesError) {
+      toast.error(`Failed to load locales: ${localesError.message}`);
+    }
+  }, [localesError]);
 
   useEffect(() => {
     if (!isLoading) {

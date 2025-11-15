@@ -9,6 +9,7 @@ import categoryTranslationRoutes from "./routes/categoryTranslationRoute.js";
 import productCategoryRoutes from "./routes/productCategoryRoute.js";
 import storeRoutes from "./routes/storeRoute.js";
 import storeViewRoutes from "./routes/storeViewRoute.js";
+import localeRoutes from "./routes/localeRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import cors from "cors";
 
@@ -42,6 +43,9 @@ app.use("/api/product-categories", productCategoryRoutes);
 // Store related routes
 app.use("/api/stores", storeRoutes);
 app.use("/api/store-views", storeViewRoutes);
+
+// Locale related routes
+app.use("/api/locales", localeRoutes);
 
 // grouped routes
 

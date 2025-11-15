@@ -11,6 +11,7 @@ import ProductAttributes from "./pages/ProductAttributes";
 import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import LocalePage from "./pages/Locale";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard></Dashboard>}></Route>
           <Route path="/stores" element={<Store></Store>}></Route>
           <Route path="/store-views" element={<StoreView></StoreView>}></Route>
+          <Route path="/locales" element={<LocalePage></LocalePage>}></Route>
           <Route path="/products" element={<Product></Product>}></Route>
           <Route path="/products/:id" element={<ProductDetail></ProductDetail>}></Route>
           <Route path="/categories" element={<Category></Category>}></Route>

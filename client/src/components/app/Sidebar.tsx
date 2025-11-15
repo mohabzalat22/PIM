@@ -98,6 +98,12 @@ const menuItems = {
         url: "/store-views",
         icon: Globe,
         description: "Multi-language support"
+      },
+      {
+        title: "Locales",
+        url: "/locales",
+        icon: Globe,
+        description: "Locale definitions (value & label)"
       }
     ]
   }

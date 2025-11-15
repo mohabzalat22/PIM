@@ -196,3 +196,11 @@ model Store {
    */
   storeViews StoreView[]
 }
+
+model Locale {
+  id        Int      @id @default(autoincrement())
+  value     String   @unique
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
