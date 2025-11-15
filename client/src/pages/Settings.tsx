@@ -1,6 +1,7 @@
 import { ModeToggle } from "@/components/mode-toggle";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { UserButton } from "@clerk/clerk-react";
 
 export default function Settings() {
   return (
@@ -12,8 +13,8 @@ export default function Settings() {
         </p>
       </div>
 
-      <Card className="p-4 space-y-4">
-        <div>
+      <Card className="p-4 space-y-6">
+        <div className="space-y-1">
           <h2 className="text-sm font-medium">Appearance</h2>
           <p className="text-xs text-muted-foreground">
             Choose between light and dark mode for the interface.
@@ -23,6 +24,19 @@ export default function Settings() {
         <div className="flex items-center justify-between">
           <span className="text-sm">Theme</span>
           <ModeToggle />
+        </div>
+
+        <Separator />
+
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium">Account</h2>
+          <p className="text-xs text-muted-foreground">
+            Manage your profile and sign out of XStore PIM.
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">User</span>
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </Card>
     </div>

@@ -1,5 +1,5 @@
 import MainLayout from "./layout/MainLayout";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Store from "./pages/Store";
 import StoreView from "./pages/StoreView";
 import Product from "./pages/Product";
@@ -12,13 +12,31 @@ import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import LocalePage from "./pages/Locale";
+import Home from "./pages/Home";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
 function App() {
   return (
     <>
       <Routes>
-        <Route element={<MainLayout></MainLayout>}>
-          <Route path="/" element={<Dashboard></Dashboard>}></Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+
+        <Route
+          element={
+            <>
+              <SignedIn>
+                <MainLayout></MainLayout>
+              </SignedIn>
+              <SignedOut>
+                <Navigate to="/sign-in" replace />
+              </SignedOut>
+            </>
+          }
+        >
           <Route path="/dashboard" element={<Dashboard></Dashboard>}></Route>
           <Route path="/stores" element={<Store></Store>}></Route>
           <Route path="/store-views" element={<StoreView></StoreView>}></Route>
@@ -30,9 +48,10 @@ function App() {
           <Route path="/assets" element={<Asset></Asset>}></Route>
           <Route path="/product-attributes" element={<ProductAttributes></ProductAttributes>}></Route>
           <Route path="/settings" element={<Settings></Settings>}></Route>
-          {/* fallback route */}
-          <Route path="*" element={<NotFound></NotFound>}></Route>
         </Route>
+
+        {/* fallback route */}
+        <Route path="*" element={<NotFound></NotFound>}></Route>
       </Routes>
     </>
   );
