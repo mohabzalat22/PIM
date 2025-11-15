@@ -89,7 +89,7 @@ export default function StoreView() {
     localesError,
     localesTotalPages,
     refetchLocales,
-  ] = useLocales(1, 100, { sortBy: "value", sortOrder: "asc" });
+  ] = useLocales(1, 100);
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
