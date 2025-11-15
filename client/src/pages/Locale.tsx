@@ -30,11 +30,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { type LocaleFilters } from "@/api/locale";
 
 export default function LocalePage() {
   const limit = 10;
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<LocaleFilters>({
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
@@ -80,8 +81,8 @@ export default function LocalePage() {
   const clearFilters = () => {
     const clearedFilters = {
       search: "",
-      sortBy: "createdAt" as "createdAt" | "value",
-      sortOrder: "desc" as "asc" | "desc",
+      sortBy: "createdAt",
+      sortOrder: "desc",
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
@@ -231,8 +232,8 @@ export default function LocalePage() {
               <TableRow key={locale.id}>
                 <TableCell className="font-medium">{locale.id}</TableCell>
                 <TableCell>
-                  <code className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm flex items-center space-x-2">
-                    <GlobeIcon className="w-4 h-4 text-green-500" />
+                  <code className="px-2 py-1 bg-muted/60 text-gray-800 dark:text-gray-100 rounded text-sm flex items-center space-x-2">
+                    <GlobeIcon className="w-4 h-4 text-green-500 dark:text-green-400" />
                     <span>{locale.value}</span>
                   </code>
                 </TableCell>
