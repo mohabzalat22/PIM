@@ -77,6 +77,18 @@ const menuItems = {
         description: "Attribute definitions"
       },
       {
+        title: "Attribute Sets",
+        url: "/attribute-sets",
+        icon: Layers,
+        description: "Attribute set configurations"
+      },
+      {
+        title: "Attribute Groups",
+        url: "/attribute-groups",
+        icon: FileText,
+        description: "Group attributes within sets"
+      },
+      {
         title: "Assets",
         url: "/assets",
         icon: Video,

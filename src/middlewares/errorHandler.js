@@ -10,6 +10,7 @@ const createErrorResponse = (message, statusCode, error = null) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
+  console.log(err)
   // Database errors handling
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {

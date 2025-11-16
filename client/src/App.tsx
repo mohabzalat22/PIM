@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Store from "./pages/Store";
 import StoreView from "./pages/StoreView";
 import Product from "./pages/Product";
+import AttributeSetPage from "./pages/AttributeSet";
+import AttributeGroupPage from "./pages/AttributeGroup";
 import Category from "./pages/Category";
 import Attribute from "./pages/Attribute";
 import Asset from "./pages/Asset";
@@ -45,6 +47,8 @@ function App() {
           <Route path="/products/:id" element={<ProductDetail></ProductDetail>}></Route>
           <Route path="/categories" element={<Category></Category>}></Route>
           <Route path="/attributes" element={<Attribute></Attribute>}></Route>
+          <Route path="/attribute-sets" element={<AttributeSetPage></AttributeSetPage>}></Route>
+          <Route path="/attribute-groups" element={<AttributeGroupPage></AttributeGroupPage>}></Route>
           <Route path="/assets" element={<Asset></Asset>}></Route>
           <Route path="/product-attributes" element={<ProductAttributes></ProductAttributes>}></Route>
           <Route path="/settings" element={<Settings></Settings>}></Route>

@@ -10,6 +10,8 @@ import productCategoryRoutes from "./routes/productCategoryRoute.js";
 import storeRoutes from "./routes/storeRoute.js";
 import storeViewRoutes from "./routes/storeViewRoute.js";
 import localeRoutes from "./routes/localeRoute.js";
+import attributeSetRoutes from "./routes/attributeSetRoute.js";
+import attributeGroupRoutes from "./routes/attributeGroupRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import cors from "cors";
 
@@ -30,6 +32,8 @@ app.use(express.json());
 app.use("/api/products", productRoutes);
 app.use("/api/attributes", attributeRoutes);
 app.use("/api/product-attributes", productAttributeRoute);
+app.use("/api/attribute-sets", attributeSetRoutes);
+app.use("/api/attribute-groups", attributeGroupRoutes);
 
 // Asset related routes
 app.use("/api/assets", assetRoutes);

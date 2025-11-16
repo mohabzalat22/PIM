@@ -29,7 +29,7 @@ model Product {
   productAssets          ProductAsset[]
   productCategories      ProductCategory[]
   productAttributeValues ProductAttributeValue[]
-  attributeSet           AttributeSet?        @relation(fields: [attributeSetId], references: [id])
+  attributeSet           AttributeSet?        @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
 }
 
 model Asset {
@@ -229,7 +229,7 @@ model AttributeSet {
 
 model AttributeGroup {
   id            Int          @id @default(autoincrement())
-  attributeSetId Int
+  attributeSetId Int?
   code          String
   label         String
   sortOrder     Int          @default(0)
@@ -239,7 +239,7 @@ model AttributeGroup {
   /**
    * Relations
    */
-  attributeSet AttributeSet @relation(fields: [attributeSetId], references: [id])
+  attributeSet AttributeSet? @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
   groupAttributes AttributeSetGroupAttribute[]
 
   @@unique([attributeSetId, code])
@@ -247,14 +247,14 @@ model AttributeGroup {
 
 model AttributeSetAttribute {
   id             Int        @id @default(autoincrement())
-  attributeSetId Int
+  attributeSetId Int?
   attributeId    Int
   sortOrder      Int        @default(0)
 
   /**
    * Relations
    */
-  attributeSet AttributeSet @relation(fields: [attributeSetId], references: [id])
+  attributeSet AttributeSet? @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
   attribute    Attribute    @relation(fields: [attributeId], references: [id])
 
   @@unique([attributeSetId, attributeId])
@@ -262,16 +262,16 @@ model AttributeSetAttribute {
 
 model AttributeSetGroupAttribute {
   id                 Int             @id @default(autoincrement())
-  attributeGroupId   Int
-  attributeSetId     Int
+  attributeGroupId   Int?
+  attributeSetId     Int?
   attributeId        Int
   sortOrder          Int             @default(0)
 
   /**
    * Relations
    */
-  attributeGroup AttributeGroup       @relation(fields: [attributeGroupId], references: [id])
-  attributeSet   AttributeSet         @relation(fields: [attributeSetId], references: [id])
+  attributeGroup AttributeGroup?      @relation(fields: [attributeGroupId], references: [id], onDelete: SetNull)
+  attributeSet   AttributeSet?        @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
   attribute      Attribute            @relation(fields: [attributeId], references: [id])
 
   @@unique([attributeSetId, attributeId])
