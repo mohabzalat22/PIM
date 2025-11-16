@@ -19,6 +19,7 @@ model Product {
   id        Int         @id @default(autoincrement())
   sku       String      @unique
   type      ProductType @default(SIMPLE)
+  attributeSetId Int?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -28,6 +29,7 @@ model Product {
   productAssets          ProductAsset[]
   productCategories      ProductCategory[]
   productAttributeValues ProductAttributeValue[]
+  attributeSet           AttributeSet?        @relation(fields: [attributeSetId], references: [id])
 }
 
 model Asset {
@@ -142,6 +144,8 @@ model Attribute {
    * Relations
    */
   productAttributeValues ProductAttributeValue[]
+  attributeSetAttributes AttributeSetAttribute[]
+  attributeSetGroupAttributes AttributeSetGroupAttribute[]
 }
 
 model ProductAttributeValue {
@@ -203,4 +207,72 @@ model Locale {
   label     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AttributeSet {
+  id          Int           @id @default(autoincrement())
+  code        String        @unique
+  label       String
+  productType ProductType?  // optional: restrict to a specific product type
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  /**
+   * Relations
+   */
+  products        Product[]
+  groups          AttributeGroup[]
+  setAttributes   AttributeSetAttribute[]
+  groupAttributes AttributeSetGroupAttribute[]
+}
+
+model AttributeGroup {
+  id            Int          @id @default(autoincrement())
+  attributeSetId Int
+  code          String
+  label         String
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  /**
+   * Relations
+   */
+  attributeSet AttributeSet @relation(fields: [attributeSetId], references: [id])
+  groupAttributes AttributeSetGroupAttribute[]
+
+  @@unique([attributeSetId, code])
+}
+
+model AttributeSetAttribute {
+  id             Int        @id @default(autoincrement())
+  attributeSetId Int
+  attributeId    Int
+  sortOrder      Int        @default(0)
+
+  /**
+   * Relations
+   */
+  attributeSet AttributeSet @relation(fields: [attributeSetId], references: [id])
+  attribute    Attribute    @relation(fields: [attributeId], references: [id])
+
+  @@unique([attributeSetId, attributeId])
+}
+
+model AttributeSetGroupAttribute {
+  id                 Int             @id @default(autoincrement())
+  attributeGroupId   Int
+  attributeSetId     Int
+  attributeId        Int
+  sortOrder          Int             @default(0)
+
+  /**
+   * Relations
+   */
+  attributeGroup AttributeGroup       @relation(fields: [attributeGroupId], references: [id])
+  attributeSet   AttributeSet         @relation(fields: [attributeSetId], references: [id])
+  attribute      Attribute            @relation(fields: [attributeId], references: [id])
+
+  @@unique([attributeSetId, attributeId])
 }
