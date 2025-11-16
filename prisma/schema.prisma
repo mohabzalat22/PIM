@@ -229,7 +229,7 @@ model AttributeSet {
 
 model AttributeGroup {
   id            Int          @id @default(autoincrement())
-  attributeSetId Int?
+  attributeSetId Int
   code          String
   label         String
   sortOrder     Int          @default(0)
@@ -239,7 +239,7 @@ model AttributeGroup {
   /**
    * Relations
    */
-  attributeSet AttributeSet? @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
+  attributeSet AttributeSet  @relation(fields: [attributeSetId], references: [id], onDelete: Cascade)
   groupAttributes AttributeSetGroupAttribute[]
 
   @@unique([attributeSetId, code])
