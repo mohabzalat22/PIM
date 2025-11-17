@@ -8,11 +8,31 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 export default function Home() {
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 }
+  };
+
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/40">
-      <header className="flex items-center justify-between px-8 py-6 max-w-6xl mx-auto">
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="flex items-center justify-between px-8 py-6 max-w-6xl mx-auto"
+      >
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <span className="text-primary text-lg font-bold">X</span>
@@ -40,15 +60,29 @@ export default function Home() {
             </Button>
           </Link>
         </nav>
-      </header>
+      </motion.header>
 
       <main className="max-w-6xl mx-auto px-8 pb-20">
-        <section className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-center pt-12 pb-16">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        <motion.section 
+          initial="initial"
+          animate="animate"
+          variants={staggerContainer}
+          className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-center pt-12 pb-16"
+        >
+          <motion.div variants={fadeInUp} className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground shadow-sm"
+            >
+              <motion.span 
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="h-2 w-2 rounded-full bg-emerald-500" 
+              />
               <span>Centralized EAV catalog for modern commerce</span>
-            </div>
+            </motion.div>
             <div className="space-y-4">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">
                 Keep all your product data in one reliable place.
@@ -85,9 +119,12 @@ export default function Home() {
                 <p>Collaborate on data changes and keep everything versioned and auditable.</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="relative mt-4 lg:mt-0">
+          <motion.div 
+            variants={fadeInUp}
+            className="relative mt-4 lg:mt-0"
+          >
             <div className="absolute inset-0 blur-3xl bg-primary/20 -z-10 rounded-3xl" />
             <Card className="border shadow-lg shadow-primary/10">
               <CardHeader>
@@ -124,10 +161,17 @@ export default function Home() {
                 </Link>
               </CardFooter>
             </Card>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section id="features" className="py-10 space-y-6">
+        <motion.section 
+          id="features"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="py-10 space-y-6"
+        >
           <div className="space-y-2 max-w-2xl">
             <h2 className="text-2xl font-semibold tracking-tight">Everything you need for PIM.</h2>
             <p className="text-muted-foreground text-sm sm:text-base">
@@ -135,8 +179,17 @@ export default function Home() {
               product data.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            <Card>
+          <motion.div 
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid gap-5 md:grid-cols-3"
+          >
+            <motion.div variants={fadeInUp}>
+            <Card
+              className="cursor-pointer transition-shadow hover:shadow-lg"
+            >
               <CardHeader>
                 <CardTitle>Unified EAV model</CardTitle>
                 <CardDescription>
@@ -144,15 +197,23 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+            <Card
+              className="cursor-pointer transition-shadow hover:shadow-lg"
+            >
               <CardHeader>
                 <CardTitle>Store & locale aware</CardTitle>
                 <CardDescription>
-                  Manage localized labels, currencies, and store views the way Magento doesbut with a cleaner UI.
+                  Manage localized labels, currencies, and store views the way Magento doesbut with a cleaner UI.
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+            <Card
+              className="cursor-pointer transition-shadow hover:shadow-lg"
+            >
               <CardHeader>
                 <CardTitle>Built for integrations</CardTitle>
                 <CardDescription>
@@ -160,17 +221,36 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
             </Card>
-          </div>
-        </section>
+            </motion.div>
+          </motion.div>
+        </motion.section>
 
-        <section id="pricing" className="py-10 space-y-6">
+        <motion.section 
+          id="pricing"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="py-10 space-y-6"
+        >
           <div className="space-y-2 max-w-2xl">
             <h2 className="text-2xl font-semibold tracking-tight">Simple pricing that scales with you.</h2>
             <p className="text-muted-foreground text-sm sm:text-base">
               Start free and upgrade only when your catalog and team grow.
             </p>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          <motion.div 
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid gap-6 md:grid-cols-3"
+          >
+            <motion.div 
+              variants={fadeInUp}
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
             <Card>
               <CardHeader>
                 <CardTitle>Starter</CardTitle>
@@ -193,6 +273,12 @@ export default function Home() {
               </CardFooter>
             </Card>
 
+            </motion.div>
+            <motion.div 
+              variants={fadeInUp}
+              whileHover={{ scale: 1.05, y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
             <Card className="border-primary/40 shadow-md shadow-primary/20 relative overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-emerald-500" />
               <CardHeader>
@@ -214,6 +300,12 @@ export default function Home() {
               </CardFooter>
             </Card>
 
+            </motion.div>
+            <motion.div 
+              variants={fadeInUp}
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
             <Card>
               <CardHeader>
                 <CardTitle>Enterprise</CardTitle>
@@ -235,8 +327,9 @@ export default function Home() {
                 </Link>
               </CardFooter>
             </Card>
-          </div>
-        </section>
+            </motion.div>
+          </motion.div>
+        </motion.section>
 
         <footer className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t pt-6 mt-8 text-xs text-muted-foreground">
           <p> 2025 MOLAB PIM. All rights reserved.</p>
