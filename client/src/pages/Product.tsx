@@ -1,4 +1,5 @@
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   DropdownMenu,
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { PaginationBar } from "@/components/app/PaginationBar";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
 import {
   Select,
@@ -74,7 +77,7 @@ export default function Product() {
   ] = useProducts(currentPage, limit, filters);
   const [categories, categoriesLoading, categoriesError] =
     useCategories<Category>(currentPage, limit);
-  const [attributes, attributesLoading, attributesError] = useAttributes(
+  const [attributes, attributesLoading, attributesError] = useAttributes<Attribute>(
     currentPage,
     limit
   );
@@ -85,6 +88,24 @@ export default function Product() {
     null
   );
   const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "sku", label: "SKU", visible: true, locked: true },
+    { id: "type", label: "Type", visible: true, locked: false },
+    { id: "categories", label: "Categories", visible: true, locked: false },
+    { id: "attributes", label: "Attributes", visible: true, locked: false },
+    { id: "created", label: "Created", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
 
   const [formData, setFormData] = useState({
     sku: "",
@@ -179,6 +200,70 @@ export default function Product() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedProductIds(new Set());
+  }, [currentPage, filters]);
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && products) {
+      const allIds = new Set(products.map((p) => p.id));
+      setSelectedProductIds(allIds);
+    } else {
+      setSelectedProductIds(new Set());
+    }
+  };
+
+  const handleSelectProduct = (productId: number, checked: boolean) => {
+    const newSelected = new Set(selectedProductIds);
+    if (checked) {
+      newSelected.add(productId);
+    } else {
+      newSelected.delete(productId);
+    }
+    setSelectedProductIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.size === 0) return;
+    
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedProductIds).map((id) =>
+        ProductService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchProducts();
+      const count = selectedProductIds.size;
+      setSelectedProductIds(new Set());
+      toast.success(`Successfully deleted ${count} product${count > 1 ? "s" : ""}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete products: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProductIds(new Set());
+  };
+
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
   };
 
   if (showPageLoader && isLoading) {
@@ -325,12 +410,22 @@ export default function Product() {
     <PageLayout
       title="Products"
       actions={
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedProductIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Filters */}
       <FilterPanel
         showFilters={showFilters}
@@ -461,72 +556,105 @@ export default function Product() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Categories</TableHead>
-            <TableHead>Attributes</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    products && products.length > 0 && 
+                    products.every((p) => selectedProductIds.has(p.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
+            {isColumnVisible("sku") && <TableHead>SKU</TableHead>}
+            {isColumnVisible("type") && <TableHead>Type</TableHead>}
+            {isColumnVisible("categories") && <TableHead>Categories</TableHead>}
+            {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
+            {isColumnVisible("created") && <TableHead>Created</TableHead>}
+            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
           </>
         }
         rows={
           <>
             {products?.map((product) => (
               <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.id}</TableCell>
-                <TableCell>{product.sku}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {product.type}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {product.productCategories?.length || 0} categories
-                </TableCell>
-                <TableCell>
-                  {product.productAttributeValues?.length || 0} attributes
-                </TableCell>
-                <TableCell>
-                  {new Date(product.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => navigate(`/products/${product.id}`)}
-                      >
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => openEditDialog(product)}
-                      >
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setProductIdToDelete(product.id)}
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProductIds.has(product.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectProduct(product.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">{product.id}</TableCell>
+                )}
+                {isColumnVisible("sku") && <TableCell>{product.sku}</TableCell>}
+                {isColumnVisible("type") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      {product.type}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("categories") && (
+                  <TableCell>
+                    {product.productCategories?.length || 0} categories
+                  </TableCell>
+                )}
+                {isColumnVisible("attributes") && (
+                  <TableCell>
+                    {product.productAttributeValues?.length || 0} attributes
+                  </TableCell>
+                )}
+                {isColumnVisible("created") && (
+                  <TableCell>
+                    {new Date(product.createdAt).toLocaleDateString()}
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/products/${product.id}`)}
+                        >
+                          <EyeIcon className="w-4 h-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(product)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setProductIdToDelete(product.id)}
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={7}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={!products || products.length === 0}
         emptyMessage="No products found"
       />
@@ -551,6 +679,16 @@ export default function Product() {
             void handleDeleteProduct(productIdToDelete);
           }
         }}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Products"
+        description={`Are you sure you want to delete ${selectedProductIds.size} product${selectedProductIds.size !== 1 ? "s" : ""}? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedProductIds.size} Product${selectedProductIds.size !== 1 ? "s" : ""}`}
+        onConfirm={confirmBulkDelete}
       />
 
       {/* Create Product Dialog */}
