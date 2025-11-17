@@ -40,25 +40,28 @@ async function main() {
   // ]);
 
   // Seed locales (used across store views and frontend filters)
-  const locales = [
-    { value: "en_US", label: "English (US)" },
-    { value: "en_GB", label: "English (UK)" },
-    { value: "es_ES", label: "Spanish (Spain)" },
-    { value: "fr_FR", label: "French (France)" },
-    { value: "de_DE", label: "German (Germany)" },
-    { value: "it_IT", label: "Italian (Italy)" },
-    { value: "pt_BR", label: "Portuguese (Brazil)" },
-    { value: "ja_JP", label: "Japanese (Japan)" },
-    { value: "ko_KR", label: "Korean (Korea)" },
-    { value: "zh_CN", label: "Chinese (China)" },
-  ];
+  // Since localeId is unique in StoreView, we need one locale per store view
+  const locales = [];
+  const localeCount = 50; // Create 50 locales to match 50 store views
 
-  await prisma.locale.createMany({
-    data: locales,
-    skipDuplicates: true,
-  });
+  for (let i = 0; i < localeCount; i++) {
+    const localeData = createLocale();
+    const locale = await prisma.locale.upsert({
+      where: { value: localeData.value },
+      update: {},
+      create: localeData,
+    });
+    locales.push(locale);
+  }
 
   console.log("✅ Created locales");
+
+  // Verify we have locales before proceeding
+  if (locales.length === 0) {
+    throw new Error("No locales were created. Cannot proceed with seeding.");
+  }
+
+  console.log(`📊 Created ${locales.length} locales`);
 
   // Create some reusable attributes
   const attributes = [];
@@ -112,8 +115,16 @@ async function main() {
   // Main seeding loop
   for (let i = 0; i < 50; i++) {
     const store = await prisma.store.create({ data: createStore() });
+    
+    // Pick a random locale for this store view
+    const locale = locales[i % locales.length];
+    
+    if (!locale) {
+      throw new Error(`Locale not found at index ${i % locales.length}`);
+    }
+    
     const storeView = await prisma.storeView.create({
-      data: createStoreView(store.id),
+      data: createStoreView(store.id, locale.id),
     });
 
     const category = await prisma.category.create({ data: createCategory() });

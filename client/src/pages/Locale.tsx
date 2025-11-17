@@ -135,8 +135,10 @@ export default function LocalePage() {
       toast.success("Locale deleted successfully");
       await refetchLocales();
     } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete locale: ${error.message}`);
+      // TODO create error interface
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error occurred";
+      toast.error(`Failed to delete locale: ${errorMessage}`);
     }
   };
 

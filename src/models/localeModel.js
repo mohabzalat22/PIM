@@ -33,11 +33,15 @@ export const findAll = async (skip = 0, limit = 10, filters = {}) => {
 };
 
 export const findById = async (id) => {
-  return await prisma.locale.findUnique({ where: { id } });
+  return await prisma.locale.findUnique({
+    where: { id },
+  });
 };
 
 export const findByValue = async (value) => {
-  return await prisma.locale.findUnique({ where: { value } });
+  return await prisma.locale.findUnique({
+    where: { value },
+  });
 };
 
 export const create = async (data) => {

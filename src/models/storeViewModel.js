@@ -19,8 +19,8 @@ export const findAll = async (skip = 0, limit = 10, filters = {}) => {
   }
 
   // Locale filter
-  if (filters.locale) {
-    where.locale = filters.locale;
+  if (filters.localeId) {
+    where.localeId = parseInt(filters.localeId);
   }
 
   // Sorting
@@ -30,7 +30,9 @@ export const findAll = async (skip = 0, limit = 10, filters = {}) => {
   } else if (filters.sortBy === 'name') {
     orderBy.name = filters.sortOrder || 'asc';
   } else if (filters.sortBy === 'locale') {
-    orderBy.locale = filters.sortOrder || 'asc';
+    orderBy.locale = {
+      value: filters.sortOrder || 'asc'
+    };
   } else {
     orderBy.createdAt = filters.sortOrder || 'desc';
   }
@@ -42,6 +44,7 @@ export const findAll = async (skip = 0, limit = 10, filters = {}) => {
       where,
       include: {
         store: true,
+        locale: true,
         productAttributeValues: {
           include: {
             product: true,
@@ -65,6 +68,7 @@ export const findById = async (id) => {
     where: { id: id },
     include: {
       store: true,
+      locale: true,
       productAttributeValues: {
         include: {
           product: true,
@@ -85,6 +89,7 @@ export const findByCode = async (code) => {
     where: { code: code },
     include: {
       store: true,
+      locale: true,
       productAttributeValues: {
         include: {
           product: true,
@@ -105,6 +110,7 @@ export const findByStoreId = async (storeId) => {
     where: { storeId: storeId },
     include: {
       store: true,
+      locale: true,
       productAttributeValues: {
         include: {
           product: true,
@@ -125,6 +131,7 @@ export const create = async (data) => {
     data: data,
     include: {
       store: true,
+      locale: true,
       productAttributeValues: {
         include: {
           product: true,
@@ -146,6 +153,7 @@ export const update = async (id, data) => {
     data: data,
     include: {
       store: true,
+      locale: true,
       productAttributeValues: {
         include: {
           product: true,

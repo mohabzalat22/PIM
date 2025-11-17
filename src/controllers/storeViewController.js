@@ -18,7 +18,7 @@ export const getStoreViews = async (req, res) => {
   const filters = {
     search: req.query.search || null,
     storeId: req.query.storeId || null,
-    locale: req.query.locale || null,
+    localeId: req.query.localeId || null,
     sortBy: req.query.sortBy || 'createdAt',
     sortOrder: req.query.sortOrder || 'desc'
   };
@@ -77,7 +77,7 @@ export const updateStoreView = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update store view"));
+    return res.json(errorMessage("Failed to update store view"));
   }
   res.json(successMessage("Store view updated successfully"));
 };
@@ -86,7 +86,7 @@ export const deleteStoreView = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete store view"));
+    return res.json(errorMessage("Failed to delete store view"));
   }
   res.json(successMessage("Store view deleted successfully"));
 };

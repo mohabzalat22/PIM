@@ -9,7 +9,7 @@ export const StoreViewsApi = {
     filters: Filter = {
       search: "",
       storeId: "",
-      locale: "",
+      localeId: "",
       sortBy: "createdAt",
       sortOrder: "desc",
     }
@@ -23,7 +23,7 @@ export const StoreViewsApi = {
 
     if (filters.search) params.append("search", filters.search);
     if (filters.storeId) params.append("storeId", filters.storeId);
-    if (filters.locale) params.append("locale", filters.locale);
+    if (filters.localeId) params.append("localeId", filters.localeId);
 
 
     const response = await client.get("/store-views", { params: params });

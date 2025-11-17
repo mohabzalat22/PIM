@@ -49,10 +49,11 @@ interface StoreView {
   storeId: number;
   code: string;
   name: string;
-  locale: string;
+  localeId: number;
   createdAt: string;
   updatedAt: string;
   store?: Store;
+  locale?: Locale;
 }
 
 interface Store {
@@ -61,13 +62,19 @@ interface Store {
   name: string;
 }
 
+interface Locale {
+  id: number;
+  value: string;
+  label: string;
+}
+
 export default function StoreView() {
   const limit = 10;
 
   const [filters, setFilters] = useState<Filter>({
     search: "",
     storeId: "",
-    locale: "",
+    localeId: "",
     sortBy: "createdAt",
     sortOrder: "desc",
   });
@@ -81,14 +88,12 @@ export default function StoreView() {
     storeViewsTotalPages,
     refetchStoreViews,
   ] = useStoreViews<StoreView>(currentPage, limit, filters);
-  const [stores, storesLoading, storesErrors, storesTotalPages, refetchStores] =
+  const [stores, storesLoading, storesErrors] =
     useStores(currentPage, limit);
   const [
     locales,
     localesLoading,
     localesError,
-    localesTotalPages,
-    refetchLocales,
   ] = useLocales(1, 100);
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -102,12 +107,20 @@ export default function StoreView() {
     storeId: "",
     code: "",
     name: "",
-    locale: "",
+    localeId: "",
   });
 
   const [showPageLoader, setShowPageLoader] = useState(true);
 
   const isLoading = storeViewsLoading || storesLoading || localesLoading;
+
+  // Get available locales (not already assigned to a store view)
+  const usedLocaleIds = new Set(
+    storeViews
+      .filter(sv => sv.localeId && sv.id !== editingStoreView?.id)
+      .map(sv => sv.localeId)
+  );
+  const availableLocales = locales.filter(locale => !usedLocaleIds.has(locale.id));
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= storeViewsTotalPages) {
@@ -125,7 +138,7 @@ export default function StoreView() {
     const clearedFilters = {
       search: "",
       storeId: "",
-      locale: "",
+      localeId: "",
       sortBy: "createdAt",
       sortOrder: "desc",
     };
@@ -159,17 +172,29 @@ export default function StoreView() {
 
   const handleCreateStoreView = async () => {
     try {
+      // Validate form data
+      if (!formData.storeId || !formData.code || !formData.name || !formData.localeId) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      // Check if there are available locales
+      if (availableLocales.length === 0) {
+        toast.error("No available locales. All locales are already assigned to store views.");
+        return;
+      }
+
       const storeViewData = {
         storeId: parseInt(formData.storeId),
         code: formData.code,
         name: formData.name,
-        locale: formData.locale,
+        localeId: parseInt(formData.localeId),
       };
       await StoreViewService.create(storeViewData);
       await refetchStoreViews();
       toast.success("Store view created successfully");
       setShowCreateDialog(false);
-      setFormData({ storeId: "", code: "", name: "", locale: "" });
+      setFormData({ storeId: "", code: "", name: "", localeId: "" });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create store view: ${error.message}`);
@@ -180,11 +205,17 @@ export default function StoreView() {
     if (!editingStoreView) return;
 
     try {
+      // Validate form data
+      if (!formData.storeId || !formData.code || !formData.name || !formData.localeId) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
       const storeViewData = {
         storeId: parseInt(formData.storeId),
         code: formData.code,
         name: formData.name,
-        locale: formData.locale,
+        localeId: parseInt(formData.localeId),
       };
 
       await StoreViewService.update(editingStoreView.id, storeViewData);
@@ -192,7 +223,7 @@ export default function StoreView() {
       toast.success("Store view updated successfully");
       setShowEditDialog(false);
       setEditingStoreView(null);
-      setFormData({ storeId: "", code: "", name: "", locale: "" });
+      setFormData({ storeId: "", code: "", name: "", localeId: "" });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update store view: ${error.message}`);
@@ -220,7 +251,7 @@ export default function StoreView() {
       storeId: storeView.storeId.toString(),
       code: storeView.code,
       name: storeView.name,
-      locale: storeView.locale,
+      localeId: storeView.localeId.toString(),
     });
     setShowEditDialog(true);
   };
@@ -276,16 +307,16 @@ export default function StoreView() {
             </div>
             <div className="min-w-[150px]">
               <SelectType
-                initialValue={filters.locale}
+                initialValue={filters.localeId}
                 options={[
                   { value: "all", name: "All Locales" },
                   ...locales.map((locale) => ({
-                    value: locale.value || "none",
+                    value: locale.id.toString() || "none",
                     name: locale.label,
                   })),
                 ]}
                 onValueChange={(value) =>
-                  handleFilterChange("locale", value === "all" ? "" : value)
+                  handleFilterChange("localeId", value === "all" ? "" : value)
                 }
               />
             </div>
@@ -363,7 +394,7 @@ export default function StoreView() {
                   <div className="flex items-center space-x-2">
                     <GlobeIcon className="w-4 h-4 text-green-500" />
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      {storeView.locale}
+                      {storeView.locale?.label || storeView.locale?.value || `Locale ${storeView.localeId}`}
                     </span>
                   </div>
                 </TableCell>
@@ -470,17 +501,17 @@ export default function StoreView() {
           <div>
             <Label htmlFor="locale">Locale</Label>
             <Select
-              value={formData.locale}
+              value={formData.localeId}
               onValueChange={(value) =>
-                setFormData({ ...formData, locale: value })
+                setFormData({ ...formData, localeId: value })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select locale" />
               </SelectTrigger>
               <SelectContent>
-                {locales.map((locale) => (
-                  <SelectItem key={locale.value} value={locale.value || "none"}>
+                {availableLocales.map((locale) => (
+                  <SelectItem key={locale.id} value={locale.id.toString() || "none"}>
                     {locale.label}
                   </SelectItem>
                 ))}
@@ -548,17 +579,17 @@ export default function StoreView() {
           <div>
             <Label htmlFor="edit-locale">Locale</Label>
             <Select
-              value={formData.locale}
+              value={formData.localeId}
               onValueChange={(value) =>
-                setFormData({ ...formData, locale: value })
+                setFormData({ ...formData, localeId: value })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select locale" />
               </SelectTrigger>
               <SelectContent>
-                {locales.map((locale) => (
-                  <SelectItem key={locale.value} value={locale.value || "none"}>
+                {availableLocales.map((locale) => (
+                  <SelectItem key={locale.id} value={locale.id.toString() || "none"}>
                     {locale.label}
                   </SelectItem>
                 ))}

@@ -1,7 +1,7 @@
 export default interface Filter {
   search: string;
   storeId: string;
-  locale: string;
+  localeId: string;
   sortBy: string;
   sortOrder: string;
 }

@@ -4,4 +4,9 @@ export default interface Locale {
   label: string;
   createdAt: string;
   updatedAt: string;
+  storeView?: {
+    id: number;
+    code: string;
+    name: string;
+  };
 }

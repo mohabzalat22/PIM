@@ -174,9 +174,9 @@ model ProductAttributeValue {
 model StoreView {
   id        Int      @id @default(autoincrement())
   storeId   Int?
+  localeId  Int?     @unique
   code      String   @unique
   name      String
-  locale    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -184,6 +184,7 @@ model StoreView {
    * Relations
    */
   store                  Store?                   @relation(fields: [storeId], references: [id])
+  locale                 Locale?                  @relation(fields: [localeId], references: [id], onDelete: SetNull)
   productAttributeValues ProductAttributeValue[]
   categoryTranslations   CategoryTranslation[]
 }
@@ -203,6 +204,7 @@ model Store {
 
 model Locale {
   id        Int      @id @default(autoincrement())
+  storeView StoreView?
   value     String   @unique
   label     String
   createdAt DateTime @default(now())

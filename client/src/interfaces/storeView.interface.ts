@@ -2,5 +2,10 @@ export default interface StoreView {
   id: number;
   code: string;
   name: string;
-  locale: string;
+  localeId: number;
+  locale?: {
+    id: number;
+    value: string;
+    label: string;
+  };
 }
