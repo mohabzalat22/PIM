@@ -45,7 +45,7 @@ import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import { useCategories } from "@/hooks/useCategories";
 import type Filters from "@/interfaces/category/category.filters.interface";
 import type CategoryInterface from "@/interfaces/category/category.interface";
-import type StoreView from "@/interfaces/category/storeView.interface";
+import type StoreView from "@/interfaces/storeView.interface";
 import { CategoryService } from "@/services/category.service";
 import { StoreViewService } from "@/services/storeView.service";
 
@@ -641,7 +641,7 @@ export default function Category() {
                           key={storeView.id}
                           value={storeView.id.toString()}
                         >
-                          {storeView.name} ({storeView.locale})
+                          {storeView.name} ({storeView.locale?.label || storeView.locale?.value || 'No locale'})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -774,7 +774,7 @@ export default function Category() {
                           key={storeView.id}
                           value={storeView.id.toString() || "none"}
                         >
-                          {storeView.name} ({storeView.locale})
+                          {storeView.name} ({storeView.locale?.label || storeView.locale?.value || 'No locale'})
                         </SelectItem>
                       ))}
                     </SelectContent>
