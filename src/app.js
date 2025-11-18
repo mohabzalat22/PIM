@@ -12,6 +12,7 @@ import storeViewRoutes from "./routes/storeViewRoute.js";
 import localeRoutes from "./routes/localeRoute.js";
 import attributeSetRoutes from "./routes/attributeSetRoute.js";
 import attributeGroupRoutes from "./routes/attributeGroupRoute.js";
+import analyticsRoutes from "./routes/analyticsRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import cors from "cors";
 
@@ -50,6 +51,9 @@ app.use("/api/store-views", storeViewRoutes);
 
 // Locale related routes
 app.use("/api/locales", localeRoutes);
+
+// Analytics routes
+app.use("/api/analytics", analyticsRoutes);
 
 // grouped routes
 
