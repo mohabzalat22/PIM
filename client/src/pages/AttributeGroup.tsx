@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/app/PaginationBar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -43,7 +52,10 @@ import { AttributeGroupService } from "@/services/attributeGroup.service";
 
 export default function AttributeGroupPage() {
   const location = useLocation();
-  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const queryParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
   const initialAttributeSetId = queryParams.get("attributeSetId") || "";
 
   const limit = 10;
@@ -61,7 +73,8 @@ export default function AttributeGroupPage() {
   const [groups, groupsLoading, groupsError, groupsTotalPages, refetchGroups] =
     useAttributeGroups(currentPage, limit, filters);
   const [attributeSets, attributeSetsLoading] = useAttributeSets(1, 100);
-  const [attributes, attributesLoading, attributesError] = useAttributes<Attribute>(1, 200);
+  const [attributes, attributesLoading, attributesError] =
+    useAttributes<Attribute>(1, 200);
 
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
@@ -70,6 +83,30 @@ export default function AttributeGroupPage() {
   const [editingGroup, setEditingGroup] = useState<AttributeGroup | null>(null);
   const [viewGroup, setViewGroup] = useState<AttributeGroup | null>(null);
   const [groupIdToDelete, setGroupIdToDelete] = useState<number | null>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] =
+    useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "code", label: "Code", visible: true, locked: true },
+    { id: "label", label: "Label", visible: true, locked: false },
+    {
+      id: "attributeSet",
+      label: "Attribute Set",
+      visible: true,
+      locked: false,
+    },
+    { id: "sortOrder", label: "Sort Order", visible: true, locked: false },
+    { id: "attributes", label: "Attributes", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
 
   const [formData, setFormData] = useState({
     attributeSetId: "",
@@ -107,7 +144,10 @@ export default function AttributeGroupPage() {
     }
   };
 
-  const handleFilterChange = (key: keyof AttributeGroupFilters, value: string) => {
+  const handleFilterChange = (
+    key: keyof AttributeGroupFilters,
+    value: string
+  ) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     setCurrentPage(1);
@@ -122,6 +162,72 @@ export default function AttributeGroupPage() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedGroupIds(new Set());
+  }, [currentPage, filters]);
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && groups) {
+      const allIds = new Set(groups.map((g) => g.id));
+      setSelectedGroupIds(allIds);
+    } else {
+      setSelectedGroupIds(new Set());
+    }
+  };
+
+  const handleSelectGroup = (groupId: number, checked: boolean) => {
+    const newSelected = new Set(selectedGroupIds);
+    if (checked) {
+      newSelected.add(groupId);
+    } else {
+      newSelected.delete(groupId);
+    }
+    setSelectedGroupIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedGroupIds.size === 0) return;
+
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedGroupIds).map((id) =>
+        AttributeGroupService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchGroups();
+      const count = selectedGroupIds.size;
+      setSelectedGroupIds(new Set());
+      toast.success(
+        `Successfully deleted ${count} attribute group${count > 1 ? "s" : ""}`
+      );
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete attribute groups: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedGroupIds(new Set());
+  };
+
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
   };
 
   const resetForm = () => {
@@ -203,9 +309,13 @@ export default function AttributeGroupPage() {
         const setId = newAttributeSetId || editingGroup.attributeSet.id;
         const groupId = editingGroup.id;
         const currentAttributes = editingGroup.groupAttributes || [];
-        const currentIds = currentAttributes.map((ga) => ga.attributeId.toString());
+        const currentIds = currentAttributes.map((ga) =>
+          ga.attributeId.toString()
+        );
 
-        const addedIds = attributeSelection.filter((id) => !currentIds.includes(id));
+        const addedIds = attributeSelection.filter(
+          (id) => !currentIds.includes(id)
+        );
         const removed = currentAttributes.filter(
           (ga) => !attributeSelection.includes(ga.attributeId.toString())
         );
@@ -260,13 +370,17 @@ export default function AttributeGroupPage() {
   const openEditDialog = (group: AttributeGroup) => {
     setEditingGroup(group);
     setFormData({
-      attributeSetId: group.attributeSet ? group.attributeSet.id.toString() : filters.attributeSetId || "",
+      attributeSetId: group.attributeSet
+        ? group.attributeSet.id.toString()
+        : filters.attributeSetId || "",
       code: group.code,
       label: group.label,
       sortOrder: group.sortOrder,
     });
     const currentAttributes = group.groupAttributes || [];
-    setAttributeSelection(currentAttributes.map((ga) => ga.attributeId.toString()));
+    setAttributeSelection(
+      currentAttributes.map((ga) => ga.attributeId.toString())
+    );
     setShowEditDialog(true);
   };
 
@@ -282,10 +396,7 @@ export default function AttributeGroupPage() {
     if (!attributeSets) return null;
 
     return (
-      <Select
-        value={value || ""}
-        onValueChange={(val) => onChange(val)}
-      >
+      <Select value={value || ""} onValueChange={(val) => onChange(val)}>
         <SelectTrigger>
           <SelectValue placeholder="Select attribute set" />
         </SelectTrigger>
@@ -323,12 +434,24 @@ export default function AttributeGroupPage() {
     <PageLayout
       title="Attribute Groups"
       actions={
-        <Button onClick={openCreateDialog}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Attribute Group
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector
+            columns={columns}
+            onColumnChange={handleColumnChange}
+          />
+          <Button onClick={openCreateDialog}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Attribute Group
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedGroupIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
       <FilterPanel
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters(!showFilters)}
@@ -372,7 +495,9 @@ export default function AttributeGroupPage() {
                 <Label className="text-sm font-medium">Order</Label>
                 <Select
                   value={filters.sortOrder || "asc"}
-                  onValueChange={(value) => handleFilterChange("sortOrder", value)}
+                  onValueChange={(value) =>
+                    handleFilterChange("sortOrder", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -391,62 +516,104 @@ export default function AttributeGroupPage() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[80px]">ID</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Label</TableHead>
-            <TableHead>Attribute Set</TableHead>
-            <TableHead>Sort Order</TableHead>
-            <TableHead>Attributes</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    groups &&
+                    groups.length > 0 &&
+                    groups.every((g) => selectedGroupIds.has(g.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && (
+              <TableHead className="w-[80px]">ID</TableHead>
+            )}
+            {isColumnVisible("code") && <TableHead>Code</TableHead>}
+            {isColumnVisible("label") && <TableHead>Label</TableHead>}
+            {isColumnVisible("attributeSet") && (
+              <TableHead>Attribute Set</TableHead>
+            )}
+            {isColumnVisible("sortOrder") && <TableHead>Sort Order</TableHead>}
+            {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
+            {isColumnVisible("actions") && (
+              <TableHead className="w-[100px]">Actions</TableHead>
+            )}
           </>
         }
         rows={
           <>
             {groups?.map((group) => (
               <TableRow key={group.id}>
-                <TableCell className="font-medium">{group.id}</TableCell>
-                <TableCell>{group.code}</TableCell>
-                <TableCell>{group.label}</TableCell>
-                <TableCell>
-                  {group.attributeSet
-                    ? `${group.attributeSet.label} (${group.attributeSet.code})`
-                    : "-"}
-                </TableCell>
-                <TableCell>{group.sortOrder}</TableCell>
-                <TableCell>{group.groupAttributes?.length || 0} attributes</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => openViewDialog(group)}>
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openEditDialog(group)}>
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setGroupIdToDelete(group.id)}
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedGroupIds.has(group.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectGroup(group.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">{group.id}</TableCell>
+                )}
+                {isColumnVisible("code") && <TableCell>{group.code}</TableCell>}
+                {isColumnVisible("label") && (
+                  <TableCell>{group.label}</TableCell>
+                )}
+                {isColumnVisible("attributeSet") && (
+                  <TableCell>
+                    {group.attributeSet
+                      ? `${group.attributeSet.label} (${group.attributeSet.code})`
+                      : "-"}
+                  </TableCell>
+                )}
+                {isColumnVisible("sortOrder") && (
+                  <TableCell>{group.sortOrder}</TableCell>
+                )}
+                {isColumnVisible("attributes") && (
+                  <TableCell>
+                    {group.groupAttributes?.length || 0} attributes
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => openViewDialog(group)}>
+                          <EyeIcon className="w-4 h-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(group)}>
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setGroupIdToDelete(group.id)}
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={7}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={!groups || groups.length === 0}
         emptyMessage="No attribute groups found"
       />
@@ -472,6 +639,22 @@ export default function AttributeGroupPage() {
         }}
       />
 
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Attribute Groups"
+        description={`Are you sure you want to delete ${
+          selectedGroupIds.size
+        } attribute group${
+          selectedGroupIds.size !== 1 ? "s" : ""
+        }? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedGroupIds.size} Attribute Group${
+          selectedGroupIds.size !== 1 ? "s" : ""
+        }`}
+        onConfirm={confirmBulkDelete}
+      />
+
       <EntityDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
@@ -492,7 +675,9 @@ export default function AttributeGroupPage() {
             <Input
               id="create-code"
               value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, code: e.target.value })
+              }
               placeholder="Enter group code"
             />
           </div>
@@ -501,7 +686,9 @@ export default function AttributeGroupPage() {
             <Input
               id="create-label"
               value={formData.label}
-              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, label: e.target.value })
+              }
               placeholder="Enter group label"
             />
           </div>
@@ -512,7 +699,10 @@ export default function AttributeGroupPage() {
               type="number"
               value={formData.sortOrder}
               onChange={(e) =>
-                setFormData({ ...formData, sortOrder: Number(e.target.value) || 0 })
+                setFormData({
+                  ...formData,
+                  sortOrder: Number(e.target.value) || 0,
+                })
               }
             />
           </div>
@@ -543,7 +733,9 @@ export default function AttributeGroupPage() {
             <Input
               id="edit-code"
               value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, code: e.target.value })
+              }
               placeholder="Enter group code"
             />
           </div>
@@ -552,7 +744,9 @@ export default function AttributeGroupPage() {
             <Input
               id="edit-label"
               value={formData.label}
-              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, label: e.target.value })
+              }
               placeholder="Enter group label"
             />
           </div>
@@ -563,7 +757,10 @@ export default function AttributeGroupPage() {
               type="number"
               value={formData.sortOrder}
               onChange={(e) =>
-                setFormData({ ...formData, sortOrder: Number(e.target.value) || 0 })
+                setFormData({
+                  ...formData,
+                  sortOrder: Number(e.target.value) || 0,
+                })
               }
             />
           </div>
@@ -607,16 +804,20 @@ export default function AttributeGroupPage() {
             <div>
               <Label>Attributes</Label>
               <div className="mt-1 text-sm">
-                {viewGroup.groupAttributes && viewGroup.groupAttributes.length > 0 ? (
+                {viewGroup.groupAttributes &&
+                viewGroup.groupAttributes.length > 0 ? (
                   <ul className="list-disc list-inside space-y-1 text-sm">
                     {viewGroup.groupAttributes.map((ga) => (
                       <li key={ga.id}>
-                        {ga.attribute.label || ga.attribute.code} (Sort: {ga.sortOrder})
+                        {ga.attribute.label || ga.attribute.code} (Sort:{" "}
+                        {ga.sortOrder})
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-muted-foreground">No attributes assigned</span>
+                  <span className="text-muted-foreground">
+                    No attributes assigned
+                  </span>
                 )}
               </div>
             </div>
