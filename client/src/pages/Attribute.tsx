@@ -1,4 +1,5 @@
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   DropdownMenu,
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { PaginationBar } from "@/components/app/PaginationBar";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
 import {
   Select,
@@ -87,6 +90,26 @@ export default function Attribute() {
   const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(
     null
   );
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedAttributeIds, setSelectedAttributeIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "code", label: "Code", visible: true, locked: true },
+    { id: "label", label: "Label", visible: true, locked: false },
+    { id: "dataType", label: "Data Type", visible: true, locked: false },
+    { id: "inputType", label: "Input Type", visible: true, locked: false },
+    { id: "properties", label: "Properties", visible: true, locked: false },
+    { id: "values", label: "Values", visible: true, locked: false },
+    { id: "created", label: "Created", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
 
 
   const [formData, setFormData] = useState({
@@ -132,6 +155,11 @@ export default function Attribute() {
     }
   }, [isLoading]);
 
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedAttributeIds(new Set());
+  }, [currentPage, filters]);
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= attributesTotalPages) {
       setCurrentPage(page);
@@ -156,6 +184,65 @@ export default function Attribute() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && attributes) {
+      const allIds = new Set(attributes.map((a) => a.id));
+      setSelectedAttributeIds(allIds);
+    } else {
+      setSelectedAttributeIds(new Set());
+    }
+  };
+
+  const handleSelectAttribute = (attributeId: number, checked: boolean) => {
+    const newSelected = new Set(selectedAttributeIds);
+    if (checked) {
+      newSelected.add(attributeId);
+    } else {
+      newSelected.delete(attributeId);
+    }
+    setSelectedAttributeIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAttributeIds.size === 0) return;
+    
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedAttributeIds).map((id) =>
+        AttributeService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchAttributes();
+      const count = selectedAttributeIds.size;
+      setSelectedAttributeIds(new Set());
+      toast.success(`Successfully deleted ${count} attribute${count > 1 ? "s" : ""}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete attributes: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedAttributeIds(new Set());
+  };
+
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
   };
 
   const handleCreateAttribute = async () => {
@@ -236,12 +323,22 @@ export default function Attribute() {
     <PageLayout
       title="Attributes"
       actions={
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Attribute
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Attribute
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedAttributeIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Filters */}
       <FilterPanel
         showFilters={showFilters}
@@ -381,96 +478,135 @@ export default function Attribute() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Label</TableHead>
-            <TableHead>Data Type</TableHead>
-            <TableHead>Input Type</TableHead>
-            <TableHead>Properties</TableHead>
-            <TableHead>Values</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    attributes && attributes.length > 0 && 
+                    attributes.every((a) => selectedAttributeIds.has(a.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
+            {isColumnVisible("code") && <TableHead>Code</TableHead>}
+            {isColumnVisible("label") && <TableHead>Label</TableHead>}
+            {isColumnVisible("dataType") && <TableHead>Data Type</TableHead>}
+            {isColumnVisible("inputType") && <TableHead>Input Type</TableHead>}
+            {isColumnVisible("properties") && <TableHead>Properties</TableHead>}
+            {isColumnVisible("values") && <TableHead>Values</TableHead>}
+            {isColumnVisible("created") && <TableHead>Created</TableHead>}
+            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
           </>
         }
         rows={
           <>
             {attributes.map((attribute) => (
               <TableRow key={attribute.id}>
-                <TableCell className="font-medium">{attribute.id}</TableCell>
-                <TableCell>
-                  <code className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
-                    {attribute.code}
-                  </code>
-                </TableCell>
-                <TableCell>{attribute.label || "-"}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {attribute.dataType}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    {attribute.inputType}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {attribute.isRequired && (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
-                        Required
-                      </span>
-                    )}
-                    {attribute.isFilterable && (
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                        Filterable
-                      </span>
-                    )}
-                    {attribute.isGlobal && (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                        Global
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                    {attribute.productAttributeValues?.length || 0}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {new Date(attribute.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => openEditDialog(attribute)}
-                      >
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setAttributeIdToDelete(attribute.id)}
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedAttributeIds.has(attribute.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectAttribute(attribute.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">{attribute.id}</TableCell>
+                )}
+                {isColumnVisible("code") && (
+                  <TableCell>
+                    <code className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                      {attribute.code}
+                    </code>
+                  </TableCell>
+                )}
+                {isColumnVisible("label") && (
+                  <TableCell>{attribute.label || "-"}</TableCell>
+                )}
+                {isColumnVisible("dataType") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      {attribute.dataType}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("inputType") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                      {attribute.inputType}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("properties") && (
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {attribute.isRequired && (
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                          Required
+                        </span>
+                      )}
+                      {attribute.isFilterable && (
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                          Filterable
+                        </span>
+                      )}
+                      {attribute.isGlobal && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                          Global
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
+                {isColumnVisible("values") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                      {attribute.productAttributeValues?.length || 0}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("created") && (
+                  <TableCell>
+                    {new Date(attribute.createdAt).toLocaleDateString()}
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(attribute)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setAttributeIdToDelete(attribute.id)}
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={9}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={attributes.length === 0}
         emptyMessage="No attributes found"
       />
@@ -495,6 +631,16 @@ export default function Attribute() {
             void handleDeleteAttribute(attributeIdToDelete);
           }
         }}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Attributes"
+        description={`Are you sure you want to delete ${selectedAttributeIds.size} attribute${selectedAttributeIds.size !== 1 ? "s" : ""}? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedAttributeIds.size} Attribute${selectedAttributeIds.size !== 1 ? "s" : ""}`}
+        onConfirm={confirmBulkDelete}
       />
 
       {/* Create Attribute Dialog */}
