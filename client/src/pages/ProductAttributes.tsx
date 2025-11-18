@@ -24,12 +24,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { 
   MoreHorizontalIcon, 
-  FilterIcon, 
   PlusIcon, 
   EditIcon, 
   TrashIcon,
   SearchIcon,
-  XIcon,
   TagIcon,
   PackageIcon,
   EyeIcon
@@ -72,14 +70,14 @@ export default function ProductAttributes() {
   const [
     productAttributeValues,
     productAttributeValuesLoading,
-    productAttributeValuesErrors,
+    ,
     productAttributeValuesTotalPages,
     refetchProductAttributeValues,
   ] = useProductAttributeValues(currentPage, limit, filters);
-  const [products, productsLoading, productsErrors] = useProducts(currentPage, limit);
-  const [attributes, attributesLoading, attributesErrors] = useAttributes<Attribute>(currentPage, limit);
+  const [products, productsLoading] = useProducts(currentPage, limit);
+  const [attributes, attributesLoading] = useAttributes<Attribute>(currentPage, limit);
 
-  const [storeViews, storeViewsLoading, storeViewErrors] = useStoreViews<StoreView>(currentPage,limit);
+  const [storeViews, storeViewsLoading] = useStoreViews<StoreView>(currentPage,limit);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
@@ -501,7 +499,7 @@ export default function ProductAttributes() {
                       {productAttribute.storeView?.name}
                     </span>
                     <span className="text-xs text-gray-500">
-                      ({productAttribute.storeView?.locale})
+                      ({productAttribute.storeView?.locale?.value})
                     </span>
                   </div>
                 </TableCell>
@@ -651,7 +649,7 @@ export default function ProductAttributes() {
                     key={storeView.id}
                     value={storeView.id.toString() || "none"}
                   >
-                    {storeView.name} ({storeView.locale})
+                    {storeView.name} ({storeView.locale?.value})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -830,7 +828,7 @@ export default function ProductAttributes() {
                     key={storeView.id}
                     value={storeView.id.toString() || "none"}
                   >
-                    {storeView.name} ({storeView.locale})
+                    {storeView.name} ({storeView.locale?.value})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -58,6 +58,7 @@ export const findAll = async (skip = 0, limit = 10, filters = {}) => {
         storeView: {
           include: {
             store: true,
+            locale: true,
           },
         },
       },
@@ -76,6 +77,7 @@ export const findById = async (id) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -91,6 +93,7 @@ export const create = async (data) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -107,6 +110,7 @@ export const update = async (id, data) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -122,6 +126,7 @@ export const findByProductId = async (productId) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -137,6 +142,7 @@ export const findByAttributeId = async (attributeId) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -152,6 +158,7 @@ export const findByStoreViewId = async (storeViewId) => {
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
@@ -177,6 +184,7 @@ export const findByCompositeKey = async (
       storeView: {
         include: {
           store: true,
+          locale: true,
         },
       },
     },
