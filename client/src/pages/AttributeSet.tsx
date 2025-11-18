@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PaginationBar } from "@/components/app/PaginationBar";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,6 @@ import { useAttributes } from "@/hooks/useAttributes";
 import { AttributeSetService } from "@/services/attributeSet.service";
 
 export default function AttributeSetPage() {
-  const navigate = useNavigate();
   const limit = 10;
 
   const [filters, setFilters] = useState<AttributeSetFilters>({
@@ -67,6 +68,26 @@ export default function AttributeSetPage() {
   const [editingAttributeSet, setEditingAttributeSet] = useState<AttributeSet | null>(null);
   const [viewAttributeSet, setViewAttributeSet] = useState<AttributeSet | null>(null);
   const [attributeSetIdToDelete, setAttributeSetIdToDelete] = useState<number | null>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedAttributeSetIds, setSelectedAttributeSetIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "code", label: "Code", visible: true, locked: true },
+    { id: "label", label: "Label", visible: true, locked: false },
+    { id: "productType", label: "Product Type", visible: true, locked: false },
+    { id: "default", label: "Default", visible: true, locked: false },
+    { id: "groups", label: "Groups", visible: true, locked: false },
+    { id: "attributes", label: "Attributes", visible: true, locked: false },
+    { id: "created", label: "Created", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -127,6 +148,70 @@ export default function AttributeSetPage() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedAttributeSetIds(new Set());
+  }, [currentPage, filters]);
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && attributeSets) {
+      const allIds = new Set(attributeSets.map((set) => set.id));
+      setSelectedAttributeSetIds(allIds);
+    } else {
+      setSelectedAttributeSetIds(new Set());
+    }
+  };
+
+  const handleSelectAttributeSet = (attributeSetId: number, checked: boolean) => {
+    const newSelected = new Set(selectedAttributeSetIds);
+    if (checked) {
+      newSelected.add(attributeSetId);
+    } else {
+      newSelected.delete(attributeSetId);
+    }
+    setSelectedAttributeSetIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAttributeSetIds.size === 0) return;
+    
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedAttributeSetIds).map((id) =>
+        AttributeSetService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchAttributeSets();
+      const count = selectedAttributeSetIds.size;
+      setSelectedAttributeSetIds(new Set());
+      toast.success(`Successfully deleted ${count} attribute set${count > 1 ? "s" : ""}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete attribute sets: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedAttributeSetIds(new Set());
+  };
+
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
   };
 
   const resetForm = () => {
@@ -268,12 +353,21 @@ export default function AttributeSetPage() {
     <PageLayout
       title="Attribute Sets"
       actions={
-        <Button onClick={openCreateDialog}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Attribute Set
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <Button onClick={openCreateDialog}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Attribute Set
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedAttributeSetIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
       <FilterPanel
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters(!showFilters)}
@@ -372,74 +466,109 @@ export default function AttributeSetPage() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[80px]">ID</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Label</TableHead>
-            <TableHead>Product Type</TableHead>
-            <TableHead>Default</TableHead>
-            <TableHead>Groups</TableHead>
-            <TableHead>Attributes</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    attributeSets && attributeSets.length > 0 && 
+                    attributeSets.every((set) => selectedAttributeSetIds.has(set.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && <TableHead className="w-[80px]">ID</TableHead>}
+            {isColumnVisible("code") && <TableHead>Code</TableHead>}
+            {isColumnVisible("label") && <TableHead>Label</TableHead>}
+            {isColumnVisible("productType") && <TableHead>Product Type</TableHead>}
+            {isColumnVisible("default") && <TableHead>Default</TableHead>}
+            {isColumnVisible("groups") && <TableHead>Groups</TableHead>}
+            {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
+            {isColumnVisible("created") && <TableHead>Created</TableHead>}
+            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
           </>
         }
         rows={
           <>
             {attributeSets?.map((set) => (
               <TableRow key={set.id}>
-                <TableCell className="font-medium">{set.id}</TableCell>
-                <TableCell>{set.code}</TableCell>
-                <TableCell>{set.label}</TableCell>
-                <TableCell>{set.productType || "All"}</TableCell>
-                <TableCell>
-                  {set.isDefault ? (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Default
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                      No
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>{set.groups?.length || 0} groups</TableCell>
-                <TableCell>{set.setAttributes?.length || 0} attributes</TableCell>
-                <TableCell>
-                  {set.createdAt ? new Date(set.createdAt).toLocaleDateString() : "-"}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => openViewDialog(set)}>
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openEditDialog(set)}>
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setAttributeSetIdToDelete(set.id)}
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedAttributeSetIds.has(set.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectAttributeSet(set.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">{set.id}</TableCell>
+                )}
+                {isColumnVisible("code") && <TableCell>{set.code}</TableCell>}
+                {isColumnVisible("label") && <TableCell>{set.label}</TableCell>}
+                {isColumnVisible("productType") && (
+                  <TableCell>{set.productType || "All"}</TableCell>
+                )}
+                {isColumnVisible("default") && (
+                  <TableCell>
+                    {set.isDefault ? (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                        Default
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                        No
+                      </span>
+                    )}
+                  </TableCell>
+                )}
+                {isColumnVisible("groups") && (
+                  <TableCell>{set.groups?.length || 0} groups</TableCell>
+                )}
+                {isColumnVisible("attributes") && (
+                  <TableCell>{set.setAttributes?.length || 0} attributes</TableCell>
+                )}
+                {isColumnVisible("created") && (
+                  <TableCell>
+                    {set.createdAt ? new Date(set.createdAt).toLocaleDateString() : "-"}
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => openViewDialog(set)}>
+                          <EyeIcon className="w-4 h-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(set)}>
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setAttributeSetIdToDelete(set.id)}
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={9}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={!attributeSets || attributeSets.length === 0}
         emptyMessage="No attribute sets found"
       />
@@ -463,6 +592,16 @@ export default function AttributeSetPage() {
             void handleDeleteAttributeSet(attributeSetIdToDelete);
           }
         }}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Attribute Sets"
+        description={`Are you sure you want to delete ${selectedAttributeSetIds.size} attribute set${selectedAttributeSetIds.size !== 1 ? "s" : ""}? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedAttributeSetIds.size} Attribute Set${selectedAttributeSetIds.size !== 1 ? "s" : ""}`}
+        onConfirm={confirmBulkDelete}
       />
 
       <EntityDialog
