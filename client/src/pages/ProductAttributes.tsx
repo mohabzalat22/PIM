@@ -1,4 +1,5 @@
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   DropdownMenu,
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { PaginationBar } from "@/components/app/PaginationBar";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
 import {
   Select,
@@ -85,6 +88,25 @@ export default function ProductAttributes() {
     useState<ProductAttributeValue | null>(null);
   const [productAttributeIdToDelete, setProductAttributeIdToDelete] =
     useState<number | null>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedProductAttributeIds, setSelectedProductAttributeIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "product", label: "Product", visible: true, locked: true },
+    { id: "attribute", label: "Attribute", visible: true, locked: true },
+    { id: "value", label: "Value", visible: true, locked: false },
+    { id: "dataType", label: "Data Type", visible: true, locked: false },
+    { id: "storeView", label: "Store View", visible: true, locked: false },
+    { id: "created", label: "Created", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -131,6 +153,70 @@ export default function ProductAttributes() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedProductAttributeIds(new Set());
+  }, [currentPage, filters]);
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && productAttributeValues) {
+      const allIds = new Set(productAttributeValues.map((p) => p.id));
+      setSelectedProductAttributeIds(allIds);
+    } else {
+      setSelectedProductAttributeIds(new Set());
+    }
+  };
+
+  const handleSelectProductAttribute = (id: number, checked: boolean) => {
+    const newSelected = new Set(selectedProductAttributeIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedProductAttributeIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductAttributeIds.size === 0) return;
+    
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedProductAttributeIds).map((id) =>
+        ProductAttributeValueService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchProductAttributeValues();
+      const count = selectedProductAttributeIds.size;
+      setSelectedProductAttributeIds(new Set());
+      toast.success(`Successfully deleted ${count} product attribute${count > 1 ? "s" : ""}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete product attributes: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProductAttributeIds(new Set());
+  };
+
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
   };
 
   const handleCreateProductAttribute = async () => {
@@ -310,12 +396,21 @@ export default function ProductAttributes() {
     <PageLayout
       title="Product Attributes"
       actions={
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Assign Attribute
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Assign Attribute
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedProductAttributeIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
       {/* Filters */}
       <FilterPanel
         showFilters={showFilters}
@@ -439,114 +534,151 @@ export default function ProductAttributes() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>Product</TableHead>
-            <TableHead>Attribute</TableHead>
-            <TableHead>Value</TableHead>
-            <TableHead>Data Type</TableHead>
-            <TableHead>Store View</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    productAttributeValues && productAttributeValues.length > 0 && 
+                    productAttributeValues.every((p) => selectedProductAttributeIds.has(p.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
+            {isColumnVisible("product") && <TableHead>Product</TableHead>}
+            {isColumnVisible("attribute") && <TableHead>Attribute</TableHead>}
+            {isColumnVisible("value") && <TableHead>Value</TableHead>}
+            {isColumnVisible("dataType") && <TableHead>Data Type</TableHead>}
+            {isColumnVisible("storeView") && <TableHead>Store View</TableHead>}
+            {isColumnVisible("created") && <TableHead>Created</TableHead>}
+            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
           </>
         }
         rows={
           <>
             {productAttributeValues?.map((productAttribute) => (
               <TableRow key={productAttribute.id}>
-                <TableCell className="font-medium">
-                  {productAttribute.id}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <PackageIcon className="w-4 h-4 text-blue-500" />
-                    <button
-                      onClick={() =>
-                        navigate(`/products/${productAttribute.productId}`)
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProductAttributeIds.has(productAttribute.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectProductAttribute(productAttribute.id, checked as boolean)
                       }
-                      className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {productAttribute.product?.sku}
-                    </button>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <TagIcon className="w-4 h-4 text-green-500" />
-                    <span>{productAttribute.attribute?.label}</span>
-                    <code className="px-1 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                      {productAttribute.attribute?.code}
-                    </code>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="font-medium">
-                    {getAttributeValue(productAttribute)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${getDataTypeColor(
-                      productAttribute.attribute?.dataType || ""
-                    )}`}
-                  >
-                    {productAttribute.attribute?.dataType}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <EyeIcon className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm">
-                      {productAttribute.storeView?.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({productAttribute.storeView?.locale?.value})
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {new Date(productAttribute.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">
+                    {productAttribute.id}
+                  </TableCell>
+                )}
+                {isColumnVisible("product") && (
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <PackageIcon className="w-4 h-4 text-blue-500" />
+                      <button
                         onClick={() =>
                           navigate(`/products/${productAttribute.productId}`)
                         }
+                        className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
                       >
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        View Product
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => openEditDialog(productAttribute)}
-                      >
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setProductAttributeIdToDelete(productAttribute.id)
-                        }
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                        {productAttribute.product?.sku}
+                      </button>
+                    </div>
+                  </TableCell>
+                )}
+                {isColumnVisible("attribute") && (
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <TagIcon className="w-4 h-4 text-green-500" />
+                      <span>{productAttribute.attribute?.label}</span>
+                      <code className="px-1 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                        {productAttribute.attribute?.code}
+                      </code>
+                    </div>
+                  </TableCell>
+                )}
+                {isColumnVisible("value") && (
+                  <TableCell>
+                    <span className="font-medium">
+                      {getAttributeValue(productAttribute)}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("dataType") && (
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${getDataTypeColor(
+                        productAttribute.attribute?.dataType || ""
+                      )}`}
+                    >
+                      {productAttribute.attribute?.dataType}
+                    </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("storeView") && (
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <EyeIcon className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm">
+                        {productAttribute.storeView?.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({productAttribute.storeView?.locale?.value})
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+                {isColumnVisible("created") && (
+                  <TableCell>
+                    {new Date(productAttribute.createdAt).toLocaleDateString()}
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate(`/products/${productAttribute.productId}`)
+                          }
+                        >
+                          <EyeIcon className="w-4 h-4 mr-2" />
+                          View Product
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(productAttribute)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setProductAttributeIdToDelete(productAttribute.id)
+                          }
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={8}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={!productAttributeValues || productAttributeValues.length === 0}
         emptyMessage="No product attributes found"
       />
@@ -571,6 +703,16 @@ export default function ProductAttributes() {
             void handleDeleteProductAttribute(productAttributeIdToDelete);
           }
         }}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Product Attributes"
+        description={`Are you sure you want to delete ${selectedProductAttributeIds.size} product attribute${selectedProductAttributeIds.size !== 1 ? "s" : ""}? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedProductAttributeIds.size} Product Attribute${selectedProductAttributeIds.size !== 1 ? "s" : ""}`}
+        onConfirm={confirmBulkDelete}
       />
 
       {/* Create Product Attribute Dialog */}
