@@ -1,4 +1,5 @@
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   DropdownMenu,
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { PaginationBar } from "@/components/app/PaginationBar";
+import { BulkActionBar } from "@/components/app/BulkActionBar";
+import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
 import {
   Select,
@@ -23,7 +26,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
-  FilterIcon,
   PlusIcon,
   EditIcon,
   TrashIcon,
@@ -79,6 +81,25 @@ export default function Category() {
   const [categoryIdToDelete, setCategoryIdToDelete] = useState<number | null>(
     null
   );
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState<boolean>(false);
+
+  // Bulk actions state
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Column visibility state
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "checkbox", label: "Select", visible: true, locked: true },
+    { id: "id", label: "ID", visible: true, locked: false },
+    { id: "name", label: "Name", visible: true, locked: true },
+    { id: "slug", label: "Slug", visible: true, locked: false },
+    { id: "parent", label: "Parent", visible: true, locked: false },
+    { id: "subcategories", label: "Subcategories", visible: true, locked: false },
+    { id: "products", label: "Products", visible: true, locked: false },
+    { id: "created", label: "Created", visible: true, locked: false },
+    { id: "actions", label: "Actions", visible: true, locked: true },
+  ]);
  
   const [formData, setFormData] = useState({
     parentId: "",
@@ -121,6 +142,12 @@ export default function Category() {
 
   const [showPageLoader, setShowPageLoader] = useState(true);
 
+  useEffect(() => {
+    if (categoriesErrors) {
+      toast.error(`Failed to load categories: ${categoriesErrors.message}`);
+    }
+  }, [categoriesErrors]);
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= categoriesTotalPages) {
       setCurrentPage(page);
@@ -142,6 +169,58 @@ export default function Category() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
+  };
+
+  // Clear selections when page or filters change
+  useEffect(() => {
+    setSelectedCategoryIds(new Set());
+  }, [currentPage, filters]);
+
+  // Bulk action handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && categories) {
+      const allIds = new Set(categories.map((c) => c.id));
+      setSelectedCategoryIds(allIds);
+    } else {
+      setSelectedCategoryIds(new Set());
+    }
+  };
+
+  const handleSelectCategory = (categoryId: number, checked: boolean) => {
+    const newSelected = new Set(selectedCategoryIds);
+    if (checked) {
+      newSelected.add(categoryId);
+    } else {
+      newSelected.delete(categoryId);
+    }
+    setSelectedCategoryIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCategoryIds.size === 0) return;
+    
+    // Open confirmation dialog
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedCategoryIds).map((id) =>
+        CategoryService.remove(id)
+      );
+      await Promise.all(deletePromises);
+      await refetchCategories();
+      const count = selectedCategoryIds.size;
+      setSelectedCategoryIds(new Set());
+      toast.success(`Successfully deleted ${count} category${count > 1 ? "ies" : "y"}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(`Failed to delete categories: ${error.message}`);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCategoryIds(new Set());
   };
 
   const handleCreateCategory = async () => {
@@ -309,6 +388,18 @@ export default function Category() {
     });
   };
 
+  // Column visibility handlers
+  const handleColumnChange = (columnId: string, visible: boolean) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, visible } : col))
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    const column = columns.find((col) => col.id === columnId);
+    return column?.visible ?? true;
+  };
+
   useEffect(() => {
     if (!categoriesLoading) {
       setShowPageLoader(false);
@@ -322,12 +413,22 @@ export default function Category() {
     <PageLayout
       title="Categories"
       actions={
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Category
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
       }
     >
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedCategoryIds.size}
+        onDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Filters */}
       <FilterPanel
         showFilters={showFilters}
@@ -410,92 +511,129 @@ export default function Category() {
       <DataTable
         headerCells={
           <>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Parent</TableHead>
-            <TableHead>Subcategories</TableHead>
-            <TableHead>Products</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            {isColumnVisible("checkbox") && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    categories && categories.length > 0 && 
+                    categories.every((c) => selectedCategoryIds.has(c.id))
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+            )}
+            {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
+            {isColumnVisible("name") && <TableHead>Name</TableHead>}
+            {isColumnVisible("slug") && <TableHead>Slug</TableHead>}
+            {isColumnVisible("parent") && <TableHead>Parent</TableHead>}
+            {isColumnVisible("subcategories") && <TableHead>Subcategories</TableHead>}
+            {isColumnVisible("products") && <TableHead>Products</TableHead>}
+            {isColumnVisible("created") && <TableHead>Created</TableHead>}
+            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
           </>
         }
         rows={
           <>
             {categories.map((category) => (
               <TableRow key={category.id}>
-                <TableCell className="font-medium">{category.id}</TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    {category.parentId ? (
-                      <FolderIcon className="w-4 h-4 text-gray-400" />
+                {isColumnVisible("checkbox") && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedCategoryIds.has(category.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectCategory(category.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("id") && (
+                  <TableCell className="font-medium">{category.id}</TableCell>
+                )}
+                {isColumnVisible("name") && (
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      {category.parentId ? (
+                        <FolderIcon className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <FolderOpenIcon className="w-4 h-4 text-blue-500" />
+                      )}
+                      <span>
+                        {category.translations?.[0]?.name || "No name"}
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+                {isColumnVisible("slug") && (
+                  <TableCell>
+                    {category.translations?.[0]?.slug || "-"}
+                  </TableCell>
+                )}
+                {isColumnVisible("parent") && (
+                  <TableCell>
+                    {category.parent ? (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                        {category.parent.translations?.[0]?.name ||
+                          `Category ${category.parent.id}`}
+                      </span>
                     ) : (
-                      <FolderOpenIcon className="w-4 h-4 text-blue-500" />
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                        Root
+                      </span>
                     )}
-                    <span>
-                      {category.translations?.[0]?.name || "No name"}
+                  </TableCell>
+                )}
+                {isColumnVisible("subcategories") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                      {category.subcategory?.length || 0}
                     </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {category.translations?.[0]?.slug || "-"}
-                </TableCell>
-                <TableCell>
-                  {category.parent ? (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                      {category.parent.translations?.[0]?.name ||
-                        `Category ${category.parent.id}`}
+                  </TableCell>
+                )}
+                {isColumnVisible("products") && (
+                  <TableCell>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                      {category.productCategories?.length || 0}
                     </span>
-                  ) : (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      Root
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    {category.subcategory?.length || 0}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                    {category.productCategories?.length || 0}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {new Date(category.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontalIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => openEditDialog(category)}
-                      >
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setCategoryIdToDelete(category.id)}
-                        className="text-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                  </TableCell>
+                )}
+                {isColumnVisible("created") && (
+                  <TableCell>
+                    {new Date(category.createdAt).toLocaleDateString()}
+                  </TableCell>
+                )}
+                {isColumnVisible("actions") && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontalIcon className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(category)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setCategoryIdToDelete(category.id)}
+                          className="text-red-600"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </>
         }
-        colSpan={8}
+        colSpan={columns.filter((col) => col.visible).length}
         isEmpty={categories.length === 0}
         emptyMessage="No categories found"
       />
@@ -520,6 +658,16 @@ export default function Category() {
             void handleDeleteCategory(categoryIdToDelete);
           }
         }}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        title="Delete Multiple Categories"
+        description={`Are you sure you want to delete ${selectedCategoryIds.size} category${selectedCategoryIds.size !== 1 ? "ies" : "y"}? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedCategoryIds.size} Category${selectedCategoryIds.size !== 1 ? "ies" : "y"}`}
+        onConfirm={confirmBulkDelete}
       />
 
       {/* Create Category Dialog */}
