@@ -152,7 +152,8 @@ export default function ProductDetail() {
     valueText: '',
     valueInt: '',
     valueDecimal: '',
-    valueBoolean: false
+    valueBoolean: false,
+    valueJson: ''
   });
 
   const [categoryFormData, setCategoryFormData] = useState({
@@ -276,7 +277,7 @@ export default function ProductDetail() {
         case 'TEXT':
           attributeData.valueText = attributeFormData.valueText;
           break;
-        case 'INTEGER':
+        case 'INT':
           attributeData.valueInt = parseInt(attributeFormData.valueInt) || 0;
           break;
         case 'DECIMAL':
@@ -284,6 +285,14 @@ export default function ProductDetail() {
           break;
         case 'BOOLEAN':
           attributeData.valueBoolean = attributeFormData.valueBoolean;
+          break;
+        case 'JSON':
+          try {
+            attributeData.valueJson = JSON.parse(attributeFormData.valueJson);
+          } catch {
+            toast.error('Invalid JSON format. Please check your input.');
+            return;
+          }
           break;
       }
 
@@ -297,7 +306,8 @@ export default function ProductDetail() {
         valueText: '',
         valueInt: '',
         valueDecimal: '',
-        valueBoolean: false
+        valueBoolean: false,
+        valueJson: ''
       });
       fetchProduct();
     } catch (err: any) {
@@ -430,10 +440,10 @@ export default function ProductDetail() {
     switch (dataType) {
       case 'STRING': return 'bg-blue-100 text-blue-800';
       case 'TEXT': return 'bg-green-100 text-green-800';
-      case 'INTEGER': return 'bg-purple-100 text-purple-800';
+      case 'INT': return 'bg-purple-100 text-purple-800';
       case 'DECIMAL': return 'bg-orange-100 text-orange-800';
       case 'BOOLEAN': return 'bg-pink-100 text-pink-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted/60 text-gray-800';
     }
   };
 
@@ -565,7 +575,7 @@ export default function ProductDetail() {
                             <Badge className={getDataTypeColor(productAttribute.attribute?.dataType || '')}>
                               {productAttribute.attribute?.dataType}
                             </Badge>
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                            <code className="text-xs bg-muted/60 px-2 py-1 rounded">
                               {productAttribute.attribute?.code}
                             </code>
                           </div>
@@ -810,7 +820,7 @@ export default function ProductDetail() {
                       />
                     </div>
                   );
-                case 'INTEGER':
+                case 'INT':
                   return (
                     <div>
                       <Label htmlFor="valueInt">Value (Integer)</Label>
@@ -851,6 +861,23 @@ export default function ProductDetail() {
                         />
                         <span className="text-sm">True/False</span>
                       </div>
+                    </div>
+                  );
+                case 'JSON':
+                  return (
+                    <div>
+                      <Label htmlFor="valueJson">Value (JSON)</Label>
+                      <textarea
+                        id="valueJson"
+                        value={attributeFormData.valueJson}
+                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueJson: e.target.value })}
+                        placeholder='Enter valid JSON (e.g., {"key": "value"} or [1, 2, 3])'
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                        rows={4}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Must be valid JSON format
+                      </p>
                     </div>
                   );
                 default:
