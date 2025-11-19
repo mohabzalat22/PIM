@@ -723,7 +723,6 @@ export default function Product() {
           <div>
             <Label htmlFor="type">Product Type</Label>
             <SelectType
-              initialValue={formData.type}
               options={productTypes.map((type) => ({
                 value: type.value,
                 name: type.label,
@@ -737,7 +736,6 @@ export default function Product() {
             <Label htmlFor="attributeSet">Attribute Set (Optional)</Label>
             {attributeSets && (
               <SelectType
-                initialValue={formData.attributeSetId?.toString() || "none"}
                 options={[
                   { name: "No Attribute Set", value: "none" },
                   ...attributeSets.map((attributeSet) => ({
@@ -781,7 +779,6 @@ export default function Product() {
           <div>
             <Label htmlFor="edit-type">Product Type</Label>
             <SelectType
-              initialValue={formData.type}
               options={productTypes.map((type) => ({
                 value: type.value,
                 name: type.label,
@@ -795,7 +792,6 @@ export default function Product() {
             <Label htmlFor="edit-attributeSet">Attribute Set (Optional)</Label>
             {attributeSets && (
               <SelectType
-                initialValue={formData.attributeSetId?.toString() || "none"}
                 options={[
                   { name: "No Attribute Set", value: "none" },
                   ...attributeSets.map((attributeSet) => ({

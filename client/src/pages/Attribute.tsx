@@ -657,7 +657,6 @@ export default function Attribute() {
             <div>
               <Label htmlFor="dataType">Data Type</Label>
               <SelectType
-                initialValue={formData.dataType}
                 options={dataTypes.map((type) => ({
                   value: type.value,
                   name: type.label,
@@ -670,7 +669,6 @@ export default function Attribute() {
             <div>
               <Label htmlFor="inputType">Input Type</Label>
               <SelectType
-                initialValue={formData.inputType}
                 options={inputTypes.map((type) => ({
                   value: type.value,
                   name: type.label,
@@ -760,7 +758,6 @@ export default function Attribute() {
             <div>
               <Label htmlFor="edit-dataType">Data Type</Label>
               <SelectType
-                initialValue={formData.dataType}
                 options={dataTypes.map((type) => ({
                   value: type.value,
                   name: type.label,
@@ -773,7 +770,6 @@ export default function Attribute() {
             <div>
               <Label htmlFor="edit-inputType">Input Type</Label>
               <SelectType
-                initialValue={formData.inputType}
                 options={inputTypes.map((type) => ({
                   value: type.value,
                   name: type.label,

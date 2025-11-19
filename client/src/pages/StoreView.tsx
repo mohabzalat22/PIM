@@ -448,7 +448,6 @@ export default function StoreView() {
           <div>
             <Label htmlFor="storeId">Store</Label>
             <SelectType
-              initialValue={formData.storeId}
               options={stores.map((store) => ({
                 value: store.id.toString() || "none",
                 name: store.name || store.code,
@@ -483,7 +482,6 @@ export default function StoreView() {
           <div>
             <Label htmlFor="locale">Locale</Label>
             <SelectType
-              initialValue={formData.localeId}
               options={availableLocales.map((locale) => ({
                 value: locale.id.toString() || "none",
                 name: locale.label,
@@ -509,7 +507,6 @@ export default function StoreView() {
           <div>
             <Label htmlFor="edit-storeId">Store</Label>
             <SelectType
-              initialValue={formData.storeId}
               options={stores.map((store) => ({
                 value: store.id.toString() || "none",
                 name: store.name || store.code,
@@ -544,7 +541,6 @@ export default function StoreView() {
           <div>
             <Label htmlFor="edit-locale">Locale</Label>
             <SelectType
-              initialValue={formData.localeId}
               options={availableLocales.map((locale) => ({
                 value: locale.id.toString() || "none",
                 name: locale.label,

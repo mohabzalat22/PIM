@@ -401,6 +401,22 @@ export default function AttributeGroupPage() {
     );
   };
 
+  const renderAttributeSetSelectForForm = (
+    onChange: (val: string) => void
+  ) => {
+    if (!attributeSets) return null;
+
+    return (
+      <SelectType
+        options={attributeSets.map((set: AttributeSet) => ({
+          value: set.id.toString(),
+          name: `${set.label} (${set.code})`,
+        }))}
+        onValueChange={(val) => onChange(val)}
+      />
+    );
+  };
+
   const renderAttributeMultiSelect = () => {
     if (!attributes) return null;
 
@@ -648,7 +664,7 @@ export default function AttributeGroupPage() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="create-attribute-set">Attribute Set</Label>
-            {renderAttributeSetSelect(formData.attributeSetId, (val) =>
+            {renderAttributeSetSelectForForm((val) =>
               setFormData({ ...formData, attributeSetId: val })
             )}
           </div>
@@ -706,7 +722,7 @@ export default function AttributeGroupPage() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="edit-attribute-set">Attribute Set</Label>
-            {renderAttributeSetSelect(formData.attributeSetId, (val) =>
+            {renderAttributeSetSelectForForm((val) =>
               setFormData({ ...formData, attributeSetId: val })
             )}
           </div>

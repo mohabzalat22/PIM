@@ -396,7 +396,6 @@ export default function Asset() {
           <div>
             <Label htmlFor="mimeType">MIME Type</Label>
             <SelectType
-              initialValue={formData.mimeType}
               options={mimeTypes.map((type) => ({
                 value: type.value || "none",
                 name: type.label,
@@ -433,7 +432,6 @@ export default function Asset() {
           <div>
             <Label htmlFor="edit-mimeType">MIME Type</Label>
             <SelectType
-              initialValue={formData.mimeType}
               options={mimeTypes.map((type) => ({
                 value: type.value || "none",
                 name: type.label,

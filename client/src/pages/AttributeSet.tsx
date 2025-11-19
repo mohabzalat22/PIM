@@ -617,7 +617,6 @@ export default function AttributeSetPage() {
           <div>
             <Label htmlFor="productType">Product Type (optional)</Label>
             <SelectType
-              initialValue={formData.productType || "all"}
               options={[
                 { value: "all", name: "All Product Types" },
                 ...productTypes.map((type) => ({
@@ -681,7 +680,6 @@ export default function AttributeSetPage() {
           <div>
             <Label htmlFor="edit-productType">Product Type (optional)</Label>
             <SelectType
-              initialValue={formData.productType || "all"}
               options={[
                 { value: "all", name: "All Product Types" },
                 ...productTypes.map((type) => ({

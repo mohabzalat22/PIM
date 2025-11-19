@@ -668,7 +668,6 @@ export default function Category() {
           <div>
             <Label htmlFor="parentId">Parent Category</Label>
             <SelectType
-              initialValue={formData.parentId}
               options={[
                 { value: "all", name: "No parent (Root category)" },
                 ...categories.map((category) => ({
@@ -750,7 +749,6 @@ export default function Category() {
                 <div>
                   <Label htmlFor={`storeView-${index}`}>Store View</Label>
                   <SelectType
-                    initialValue={CategoryTranslation.storeViewId.toString()}
                     options={storeViews.map((storeView) => ({
                       value: storeView.id.toString(),
                       name: `${storeView.name} (${storeView.locale?.label || storeView.locale?.value || 'No locale'})`,
@@ -780,7 +778,6 @@ export default function Category() {
           <div>
             <Label htmlFor="edit-parentId">Parent Category</Label>
             <SelectType
-              initialValue={formData.parentId || "all"}
               options={[
                 { value: "all", name: "No parent (Root category)" },
                 ...categories
@@ -873,7 +870,6 @@ export default function Category() {
                     Store View
                   </Label>
                   <SelectType
-                    initialValue={CategoryTranslation.storeViewId.toString()}
                     options={storeViews.map((storeView) => ({
                       value: storeView.id.toString() || "none",
                       name: `${storeView.name} (${storeView.locale?.label || storeView.locale?.value || 'No locale'})`,

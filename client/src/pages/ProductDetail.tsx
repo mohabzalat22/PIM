@@ -775,7 +775,6 @@ export default function ProductDetail() {
           <div>
             <Label htmlFor="edit-type">Product Type</Label>
             <SelectType
-              initialValue={productFormData.type}
               options={productTypes.map((type) => ({
                 name: type.label,
                 value: type.value,
@@ -863,7 +862,6 @@ export default function ProductDetail() {
           <div>
             <Label htmlFor="attribute-set">Attribute Set</Label>
             <SelectType
-              initialValue={attributeSetFormData}
               options={availableAttributeSets.map((set) => ({
                 name: `${set.label} (${set.code})`,
                 value: set.id.toString(),

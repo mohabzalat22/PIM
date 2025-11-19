@@ -722,7 +722,6 @@ export default function ProductAttributes() {
             <div>
               <Label htmlFor="productId">Product</Label>
               <SelectType
-                initialValue={formData.productId}
                 options={products.map((product) => ({
                   value: product.id.toString() || "none",
                   name: `${product.sku} (${product.type})`,
@@ -735,7 +734,6 @@ export default function ProductAttributes() {
             <div>
               <Label htmlFor="attributeId">Attribute</Label>
               <SelectType
-                initialValue={formData.attributeId}
                 options={attributes.map((attribute) => ({
                   value: attribute.id.toString() || "none",
                   name: `${attribute.label} (${attribute.dataType})`,
@@ -749,7 +747,6 @@ export default function ProductAttributes() {
           <div>
             <Label htmlFor="storeViewId">Store View</Label>
             <SelectType
-              initialValue={formData.storeViewId}
               options={storeViews.map((storeView) => ({
                 value: storeView.id.toString() || "none",
                 name: `${storeView.name} (${storeView.locale?.value})`,
@@ -871,7 +868,6 @@ export default function ProductAttributes() {
             <div>
               <Label htmlFor="edit-productId">Product</Label>
               <SelectType
-                initialValue={formData.productId}
                 options={products.map((product) => ({
                   value: product.id.toString() || "none",
                   name: `${product.sku} (${product.type})`,
@@ -884,7 +880,6 @@ export default function ProductAttributes() {
             <div>
               <Label htmlFor="edit-attributeId">Attribute</Label>
               <SelectType
-                initialValue={formData.attributeId}
                 options={attributes.map((attribute) => ({
                   value: attribute.id.toString() || "none",
                   name: `${attribute.label} (${attribute.dataType})`,
@@ -898,7 +893,6 @@ export default function ProductAttributes() {
           <div>
             <Label htmlFor="edit-storeViewId">Store View</Label>
             <SelectType
-              initialValue={formData.storeViewId}
               options={storeViews.map((storeView) => ({
                 value: storeView.id.toString() || "none",
                 name: `${storeView.name} (${storeView.locale?.value})`,

@@ -15,7 +15,7 @@ interface option {
 }
 
 interface selectProps {
-    initialValue: string;
+    initialValue?: string;
     options: option[];
     onValueChange?: (value: string) => void;
 }
@@ -26,7 +26,7 @@ export function SelectType(props: selectProps) {
     
     // Use first valid option as default if initialValue is empty/invalid, or use initialValue if it's valid
     // If no valid options exist, defaultValue will be undefined (uncontrolled)
-    const defaultValue = validOptions.length > 0
+    const defaultValue = (validOptions.length > 0 && initialValue)
       ? ((initialValue && initialValue.trim() !== "" && validOptions.some(opt => opt.value === initialValue)) 
           ? initialValue 
           : validOptions[0].value)
@@ -57,7 +57,7 @@ export function SelectType(props: selectProps) {
   return (
     <Select value={value} onValueChange={handleValueChange}>
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select a fruit" />
+        <SelectValue placeholder="Select an option" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
