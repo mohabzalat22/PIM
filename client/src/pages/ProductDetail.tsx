@@ -124,15 +124,12 @@ interface StoreView {
   id: number;
   code: string;
   name: string;
-  locale: string;
-}
-
-interface AvailableAttribute {
-  id: number;
-  code: string;
-  label: string;
-  dataType: string;
-  inputType: string;
+  localeId: number;
+  locale?: {
+    id: number;
+    value: string;
+    label: string;
+  };
 }
 
 export default function ProductDetail() {
@@ -140,7 +137,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [availableAttributes, setAvailableAttributes] = useState<AvailableAttribute[]>([]);
+  const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([]);
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
   const [showAddAttributeDialog, setShowAddAttributeDialog] = useState<boolean>(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState<boolean>(false);
@@ -230,7 +227,18 @@ export default function ProductDetail() {
         }),
       ]);
 
-      setAvailableAttributes(attributesResponse.data as AvailableAttribute[]);
+      // Map to clean attribute objects without nested relations
+      const cleanAttributes = (attributesResponse.data as any[]).map((attr: any) => ({
+        id: attr.id,
+        code: attr.code,
+        label: attr.label,
+        dataType: attr.dataType,
+        inputType: attr.inputType,
+        isFilterable: attr.isFilterable,
+        isGlobal: attr.isGlobal
+      }));
+      
+      setAvailableAttributes(cleanAttributes as Attribute[]);
       setStoreViews(storeViewsResponse.data as StoreView[]);
       setAvailableCategories(categoriesResponse.data as Category[]);
       setAvailableAssets(assetsResponse.data as Asset[]);
@@ -565,7 +573,7 @@ export default function ProductDetail() {
                             <div className="flex items-center space-x-1">
                               <GlobeIcon className="h-3 w-3" />
                               <span>{productAttribute.storeView?.name}</span>
-                              <span>({productAttribute.storeView?.locale})</span>
+                              <span>({productAttribute.storeView?.locale?.value || productAttribute.storeView?.locale?.label || 'No locale'})</span>
                             </div>
                           </div>
                           <p className="mt-2 text-lg font-medium">
@@ -747,7 +755,7 @@ export default function ProductDetail() {
                   <SelectContent>
                     {availableAttributes.map((attribute) => (
                       <SelectItem key={attribute.id} value={attribute.id.toString()}>
-                        {attribute.label} ({attribute.dataType})
+                        {attribute.label || attribute.code} ({attribute.dataType})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -762,7 +770,7 @@ export default function ProductDetail() {
                   <SelectContent>
                     {storeViews.map((storeView) => (
                       <SelectItem key={storeView.id} value={storeView.id.toString()}>
-                        {storeView.name} ({storeView.locale})
+                        {storeView.name} ({storeView.locale?.value || storeView.locale?.label || 'No locale'})
                       </SelectItem>
                     ))}
                   </SelectContent>
