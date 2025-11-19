@@ -539,7 +539,7 @@ When working on this project, always consult these files:
 - **`.ai/tasks/`** - Directory for tasks with checkpoints (create before implementing)
 
 ### Implementation Process
-1. Read `.ai/rules/implementation.md` for the complete workflow
+1. Read `.ai/rules/` for the complete workflow
 2. Follow `.ai/workflow.md` for code quality standards
 3. Create plan and task files before starting
 4. Request user validation before implementation
