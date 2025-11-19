@@ -219,6 +219,7 @@ export const findAll = async (skip, limit, filters = {}) => {
       take: limit,
       where,
       include: {
+        attributeSet: true,
         productAssets: {
           include: {
             asset: true,
@@ -250,6 +251,7 @@ export const findBySku = async (sku) => {
   return await prisma.product.findUnique({
     where: { sku: sku },
     include: {
+      attributeSet: true,
       productAssets: {
         include: {
           asset: true,
@@ -278,6 +280,7 @@ export const findById = async (id) => {
   return await prisma.product.findUnique({
     where: { id: id },
     include: {
+      attributeSet: true,
       productAssets: {
         include: {
           asset: true,
@@ -306,6 +309,7 @@ export const create = async (data) => {
   return await prisma.product.create({
     data: data,
     include: {
+      attributeSet: true,
       productAssets: {
         include: {
           asset: true,
@@ -335,6 +339,7 @@ export const update = async (id, data) => {
     where: { id: id },
     data: data,
     include: {
+      attributeSet: true,
       productAssets: {
         include: {
           asset: true,

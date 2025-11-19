@@ -50,6 +50,7 @@ import type Attribute from "@/interfaces/attribute.interface";
 import type Filters from "@/interfaces/products.filters.interface";
 import { useCategories } from "@/hooks/useCategories";
 import { useAttributes } from "@/hooks/useAttributes";
+import { useAttributeSets } from "@/hooks/useAttributeSets";
 import { useProducts } from "@/hooks/useProducts";
 import { ProductService } from "@/services/product.service";
 import type Category from "@/interfaces/category.interface";
@@ -81,6 +82,8 @@ export default function Product() {
     currentPage,
     limit
   );
+  const [attributeSets, attributeSetsLoading, attributeSetsError] =
+    useAttributeSets(currentPage, limit);
 
   const [showCreateDialog, setShowCreateDialog] = useState<boolean>(false);
   const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
@@ -101,6 +104,7 @@ export default function Product() {
     { id: "id", label: "ID", visible: true, locked: false },
     { id: "sku", label: "SKU", visible: true, locked: true },
     { id: "type", label: "Type", visible: true, locked: false },
+    { id: "attributeSet", label: "Attribute Set", visible: true, locked: false },
     { id: "categories", label: "Categories", visible: true, locked: false },
     { id: "attributes", label: "Attributes", visible: true, locked: false },
     { id: "created", label: "Created", visible: true, locked: false },
@@ -110,6 +114,7 @@ export default function Product() {
   const [formData, setFormData] = useState({
     sku: "",
     type: "SIMPLE",
+    attributeSetId: null as number | null,
   });
 
   const productTypes = [
@@ -121,7 +126,7 @@ export default function Product() {
   ];
 
   const isLoading =
-    productsLoading || categoriesLoading || attributesLoading;
+    productsLoading || categoriesLoading || attributesLoading || attributeSetsLoading;
 
   const [showPageLoader, setShowPageLoader] = useState(true);
 
@@ -148,6 +153,12 @@ export default function Product() {
       toast.error(`Failed to load attributes: ${attributesError.message}`);
     }
   }, [attributesError]);
+
+  useEffect(() => {
+    if (attributeSetsError) {
+      toast.error(`Failed to load attribute sets: ${attributeSetsError.message}`);
+    }
+  }, [attributeSetsError]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= productsTotalPages) {
@@ -276,7 +287,7 @@ export default function Product() {
       await refetchProducts();
       toast.success("Product created successfully");
       setShowCreateDialog(false);
-      setFormData({ sku: "", type: "SIMPLE" });
+      setFormData({ sku: "", type: "SIMPLE", attributeSetId: null });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to create product: ${error.message}`);
@@ -292,7 +303,7 @@ export default function Product() {
       toast.success("Product updated successfully");
       setShowEditDialog(false);
       setEditingProduct(null);
-      setFormData({ sku: "", type: "SIMPLE" });
+      setFormData({ sku: "", type: "SIMPLE", attributeSetId: null });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(`Failed to update product: ${error.message}`);
@@ -315,6 +326,7 @@ export default function Product() {
     setFormData({
       sku: product.sku,
       type: product.type,
+      attributeSetId: product.attributeSetId || null,
     });
     setShowEditDialog(true);
   };
@@ -570,6 +582,7 @@ export default function Product() {
             {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
             {isColumnVisible("sku") && <TableHead>SKU</TableHead>}
             {isColumnVisible("type") && <TableHead>Type</TableHead>}
+            {isColumnVisible("attributeSet") && <TableHead>Attribute Set</TableHead>}
             {isColumnVisible("categories") && <TableHead>Categories</TableHead>}
             {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
             {isColumnVisible("created") && <TableHead>Created</TableHead>}
@@ -599,6 +612,17 @@ export default function Product() {
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       {product.type}
                     </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("attributeSet") && (
+                  <TableCell>
+                    {product.attributeSet ? (
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                        {product.attributeSet.label}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">No Set</span>
+                    )}
                   </TableCell>
                 )}
                 {isColumnVisible("categories") && (
@@ -732,6 +756,27 @@ export default function Product() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label htmlFor="attributeSet">Attribute Set (Optional)</Label>
+            {attributeSets && (
+              <SelectType
+                initialValue={formData.attributeSetId?.toString() || "none"}
+                options={[
+                  { name: "No Attribute Set", value: "none" },
+                  ...attributeSets.map((attributeSet) => ({
+                    name: attributeSet.label,
+                    value: attributeSet.id.toString(),
+                  })),
+                ]}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    attributeSetId: value === "none" ? null : parseInt(value),
+                  })
+                }
+              />
+            )}
+          </div>
         </div>
       </EntityDialog>
 
@@ -775,6 +820,27 @@ export default function Product() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label htmlFor="edit-attributeSet">Attribute Set (Optional)</Label>
+            {attributeSets && (
+              <SelectType
+                initialValue={formData.attributeSetId?.toString() || "none"}
+                options={[
+                  { name: "No Attribute Set", value: "none" },
+                  ...attributeSets.map((attributeSet) => ({
+                    name: attributeSet.label,
+                    value: attributeSet.id.toString(),
+                  })),
+                ]}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    attributeSetId: value === "none" ? null : parseInt(value),
+                  })
+                }
+              />
+            )}
           </div>
         </div>
       </EntityDialog>
