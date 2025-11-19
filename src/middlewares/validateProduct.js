@@ -10,6 +10,14 @@ const productSchema = z.object({
   }),
 });
 
+const productUpdateSchema = z.object({
+  sku: z.string().min(1, "Product SKU is required").optional(),
+  type: z.enum(Object.values(ProductType), {
+    errorMap: () => ({ message: "Invalid product type" }),
+  }).optional(),
+  attributeSetId: z.number().nullable().optional(),
+});
+
 export const validateProductCreation = async (req, res, next) => {
   const result = productSchema.safeParse(req.body);
 
@@ -38,7 +46,7 @@ export const validateProductUpdate = async (req, res, next) => {
     return res.json(errorMessage("ID not defined"));
   }
 
-  const result = productSchema.safeParse(req.body);
+  const result = productUpdateSchema.safeParse(req.body);
   const productExists = await findById(id);
 
   if (!result.success) {

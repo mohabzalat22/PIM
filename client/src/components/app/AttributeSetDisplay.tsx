@@ -1,6 +1,7 @@
-import { PackageIcon, TagIcon, HashIcon } from "lucide-react";
+import { PackageIcon, TagIcon, HashIcon, Edit2Icon, TrashIcon, PlusIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface Attribute {
   id: number;
@@ -40,12 +41,15 @@ interface AttributeSet {
 
 interface AttributeSetDisplayProps {
   attributeSet: AttributeSet | null;
+  onAssign?: () => void;
+  onChange?: () => void;
+  onRemove?: () => void;
 }
 
 /**
  * Displays attribute set information with groups and attributes
  */
-export function AttributeSetDisplay({ attributeSet }: AttributeSetDisplayProps) {
+export function AttributeSetDisplay({ attributeSet, onAssign, onChange, onRemove }: AttributeSetDisplayProps) {
   const getDataTypeColor = (dataType: string) => {
     switch (dataType) {
       case "STRING":
@@ -67,9 +71,17 @@ export function AttributeSetDisplay({ attributeSet }: AttributeSetDisplayProps) 
     return (
       <Card>
         <CardContent className="py-8">
-          <p className="text-center text-muted-foreground">
-            No attribute set assigned to this product
-          </p>
+          <div className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              No attribute set assigned to this product
+            </p>
+            {onAssign && (
+              <Button onClick={onAssign} variant="outline">
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Assign Attribute Set
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -79,8 +91,26 @@ export function AttributeSetDisplay({ attributeSet }: AttributeSetDisplayProps) 
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Attribute Set Information</CardTitle>
-          <CardDescription>Overview of the assigned attribute set</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Attribute Set Information</CardTitle>
+              <CardDescription>Overview of the assigned attribute set</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              {onChange && (
+                <Button onClick={onChange} variant="outline" size="sm">
+                  <Edit2Icon className="h-4 w-4 mr-2" />
+                  Change
+                </Button>
+              )}
+              {onRemove && (
+                <Button onClick={onRemove} variant="destructive" size="sm">
+                  <TrashIcon className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

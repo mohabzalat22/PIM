@@ -58,7 +58,7 @@ export const updateProduct = async (req, res) => {
   if (!result) {
     res.json(errorMessage("Failed to update product"));
   }
-  res.json(successMessage("Product updated successfully"));
+  res.json(successMessage(result, 200, "Product updated successfully"));
 };
 
 export const deleteProduct = async (req, res) => {

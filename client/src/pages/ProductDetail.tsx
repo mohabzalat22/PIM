@@ -20,6 +20,7 @@ import { ProductCategoryForm } from "@/components/app/ProductCategoryForm";
 import { ProductAssetForm } from "@/components/app/ProductAssetForm";
 import { ProductService } from "@/services/product.service";
 import { AttributeService } from "@/services/attribute.service";
+import { AttributeSetService } from "@/services/attributeSet.service";
 import { StoreViewService } from "@/services/storeView.service";
 import { CategoryService } from "@/services/category.service";
 import { AssetService } from "@/services/asset.service";
@@ -166,12 +167,15 @@ export default function ProductDetail() {
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
+  const [availableAttributeSets, setAvailableAttributeSets] = useState<AttributeSet[]>([]);
 
   // Dialog states
   const [showAddAttributeDialog, setShowAddAttributeDialog] = useState<boolean>(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState<boolean>(false);
   const [showAddAssetDialog, setShowAddAssetDialog] = useState<boolean>(false);
   const [showEditProductDialog, setShowEditProductDialog] = useState<boolean>(false);
+  const [showAssignAttributeSetDialog, setShowAssignAttributeSetDialog] = useState<boolean>(false);
+  const [showRemoveAttributeSetDialog, setShowRemoveAttributeSetDialog] = useState<boolean>(false);
   const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<ProductAsset | null>(null);
@@ -191,6 +195,7 @@ export default function ProductDetail() {
 
   const [categoryFormData, setCategoryFormData] = useState("");
   const [assetFormData, setAssetFormData] = useState("");
+  const [attributeSetFormData, setAttributeSetFormData] = useState("");
   const [productFormData, setProductFormData] = useState({
     sku: "",
     type: "SIMPLE",
@@ -237,6 +242,7 @@ export default function ProductDetail() {
         storeViewsResponse,
         categoriesResponse,
         assetsResponse,
+        attributeSetsResponse,
       ] = await Promise.all([
         AttributeService.getAll(1, 100),
         StoreViewService.getAll(1, 100),
@@ -247,6 +253,7 @@ export default function ProductDetail() {
           sortBy: "createdAt",
           sortOrder: "desc",
         }),
+        AttributeSetService.getAll(1, 100),
       ]);
 
       const cleanAttributes = (attributesResponse.data as Attribute[]).map(
@@ -265,6 +272,7 @@ export default function ProductDetail() {
       setStoreViews(storeViewsResponse.data as StoreView[]);
       setAvailableCategories(categoriesResponse.data as Category[]);
       setAvailableAssets(assetsResponse.data as Asset[]);
+      setAvailableAttributeSets(attributeSetsResponse.data as AttributeSet[]);
     } catch {
       toast.error("Failed to load available data");
     }
@@ -487,6 +495,57 @@ export default function ProductDetail() {
     }
   };
 
+  const handleOpenAssignAttributeSet = () => {
+    if (!product) return;
+    setAttributeSetFormData(product.attributeSetId?.toString() || "");
+    setShowAssignAttributeSetDialog(true);
+  };
+
+  const handleAssignAttributeSet = async () => {
+    if (!product) return;
+
+    try {
+      const attributeSetId = attributeSetFormData ? parseInt(attributeSetFormData, 10) : null;
+      await ProductService.update(product.id, { attributeSetId });
+      
+      const message = attributeSetId 
+        ? product.attributeSetId 
+          ? "Attribute set changed successfully"
+          : "Attribute set assigned successfully"
+        : "Attribute set removed successfully";
+      
+      toast.success(message);
+      setShowAssignAttributeSetDialog(false);
+      setAttributeSetFormData("");
+      await fetchProduct();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(
+        `Failed to update attribute set: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleRemoveAttributeSet = async () => {
+    if (!product) return;
+
+    try {
+      await ProductService.update(product.id, { attributeSetId: null });
+      toast.success("Attribute set removed successfully");
+      setShowRemoveAttributeSetDialog(false);
+      await fetchProduct();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(
+        `Failed to remove attribute set: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
   const getAttributeValue = (productAttribute: ProductAttributeValue) => {
     if (productAttribute.valueString) return productAttribute.valueString;
     if (productAttribute.valueText) return productAttribute.valueText;
@@ -600,7 +659,12 @@ export default function ProductDetail() {
 
         {/* Attribute Set Tab */}
         <TabsContent value="attribute-set" className="space-y-4">
-          <AttributeSetDisplay attributeSet={product.attributeSet || null} />
+          <AttributeSetDisplay 
+            attributeSet={product.attributeSet || null}
+            onAssign={handleOpenAssignAttributeSet}
+            onChange={handleOpenAssignAttributeSet}
+            onRemove={() => setShowRemoveAttributeSetDialog(true)}
+          />
         </TabsContent>
 
         {/* Attributes Tab */}
@@ -780,6 +844,48 @@ export default function ProductDetail() {
           if (!open) setAssetToView(null);
         }}
         getAssetUrl={getAssetUrl}
+      />
+
+      {/* Assign/Change Attribute Set Dialog */}
+      <EntityDialog
+        open={showAssignAttributeSetDialog}
+        onOpenChange={setShowAssignAttributeSetDialog}
+        title={product?.attributeSetId ? "Change Attribute Set" : "Assign Attribute Set"}
+        description={
+          product?.attributeSetId
+            ? "Select a new attribute set for this product. Warning: Changing the attribute set may affect existing attribute values."
+            : "Select an attribute set to assign to this product. This will determine which attributes can be assigned."
+        }
+        primaryLabel={product?.attributeSetId ? "Change Attribute Set" : "Assign Attribute Set"}
+        onPrimary={handleAssignAttributeSet}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="attribute-set">Attribute Set</Label>
+            <SelectType
+              initialValue={attributeSetFormData}
+              options={availableAttributeSets.map((set) => ({
+                name: `${set.label} (${set.code})`,
+                value: set.id.toString(),
+              }))}
+              onValueChange={setAttributeSetFormData}
+            />
+          </div>
+        </div>
+      </EntityDialog>
+
+      {/* Remove Attribute Set Dialog */}
+      <DeleteConfirmDialog
+        open={showRemoveAttributeSetDialog}
+        onOpenChange={(open) => {
+          if (!open) setShowRemoveAttributeSetDialog(false);
+        }}
+        title="Remove Attribute Set"
+        description="Are you sure you want to remove the attribute set from this product? Warning: This may affect existing attribute values. This action cannot be undone."
+        primaryLabel="Remove Attribute Set"
+        onConfirm={() => {
+          void handleRemoveAttributeSet();
+        }}
       />
     </div>
   );
