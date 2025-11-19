@@ -1,44 +1,23 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { 
-  ArrowLeftIcon,
-  PackageIcon, 
-  TagIcon, 
-  FolderIcon, 
-  ImageIcon,
-  EditIcon,
-  PlusIcon,
-  TrashIcon,
-  EyeIcon,
-  GlobeIcon,
-  CalendarIcon,
-  HashIcon
-} from "lucide-react";
+import { ArrowLeftIcon, PackageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
 import { EntityDialog } from "@/components/app/EntityDialog";
 import { SelectType } from "@/components/app/select-type";
-import { SkeletonImage } from "@/components/app/SkeletonImage";
+import { ProductOverviewCard } from "@/components/app/ProductOverviewCard";
+import { AttributeSetDisplay } from "@/components/app/AttributeSetDisplay";
+import { ProductAttributesList } from "@/components/app/ProductAttributesList";
+import { ProductCategoriesList } from "@/components/app/ProductCategoriesList";
+import { ProductAssetsList } from "@/components/app/ProductAssetsList";
+import { AssetViewerDialog } from "@/components/app/AssetViewerDialog";
+import { ProductAttributeForm } from "@/components/app/ProductAttributeForm";
+import { ProductCategoryForm } from "@/components/app/ProductCategoryForm";
+import { ProductAssetForm } from "@/components/app/ProductAssetForm";
 import { ProductService } from "@/services/product.service";
 import { AttributeService } from "@/services/attribute.service";
 import { StoreViewService } from "@/services/storeView.service";
@@ -185,43 +164,39 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState<boolean>(true);
   const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([]);
   const [storeViews, setStoreViews] = useState<StoreView[]>([]);
-  const [showAddAttributeDialog, setShowAddAttributeDialog] = useState<boolean>(false);
-  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState<boolean>(false);
-  const [showAddAssetDialog, setShowAddAssetDialog] = useState<boolean>(false);
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
 
-  const [attributeFormData, setAttributeFormData] = useState({
-    attributeId: '',
-    storeViewId: '',
-    valueString: '',
-    valueText: '',
-    valueInt: '',
-    valueDecimal: '',
-    valueBoolean: false,
-    valueJson: ''
-  });
-
-  const [categoryFormData, setCategoryFormData] = useState({
-    categoryId: ''
-  });
-
-  const [assetFormData, setAssetFormData] = useState({
-    assetId: ''
-  });
-
-  const [activeTab, setActiveTab] = useState<string>("attribute-set");
-
+  // Dialog states
+  const [showAddAttributeDialog, setShowAddAttributeDialog] = useState<boolean>(false);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState<boolean>(false);
+  const [showAddAssetDialog, setShowAddAssetDialog] = useState<boolean>(false);
+  const [showEditProductDialog, setShowEditProductDialog] = useState<boolean>(false);
   const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<ProductAsset | null>(null);
   const [assetToView, setAssetToView] = useState<ProductAsset | null>(null);
 
-  const [showEditProductDialog, setShowEditProductDialog] = useState<boolean>(false);
+  // Form data states
+  const [attributeFormData, setAttributeFormData] = useState({
+    attributeId: "",
+    storeViewId: "",
+    valueString: "",
+    valueText: "",
+    valueInt: "",
+    valueDecimal: "",
+    valueBoolean: false,
+    valueJson: "",
+  });
+
+  const [categoryFormData, setCategoryFormData] = useState("");
+  const [assetFormData, setAssetFormData] = useState("");
   const [productFormData, setProductFormData] = useState({
     sku: "",
     type: "SIMPLE",
   });
+
+  const [activeTab, setActiveTab] = useState<string>("attribute-set");
 
   const productTypes = [
     { value: "SIMPLE", label: "Simple" },
@@ -236,21 +211,20 @@ export default function ProductDetail() {
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
       return filePath;
     }
-    // Assume backend serves files from http://localhost:3000
     return `http://localhost:3000${filePath.startsWith("/") ? "" : "/"}${filePath}`;
   };
 
   const fetchProduct = async () => {
     if (!id) return;
-    
+
     try {
       setLoading(true);
       const response = await ProductService.getById(parseInt(id, 10));
       setProduct(response.data as Product);
     } catch (err) {
-      const error = err as { message?: string; response?: { data?: { message?: string } } };
-      toast.error(`Failed to load product: ${error.message || 'Unknown error'}`);
-      navigate('/products');
+      const error = err as ApiError;
+      toast.error(`Failed to load product: ${error.message || "Unknown error"}`);
+      navigate("/products");
     } finally {
       setLoading(false);
     }
@@ -275,91 +249,99 @@ export default function ProductDetail() {
         }),
       ]);
 
-      // Map to clean attribute objects without nested relations
-      const cleanAttributes = (attributesResponse.data as Attribute[]).map((attr: Attribute) => ({
-        id: attr.id,
-        code: attr.code,
-        label: attr.label,
-        dataType: attr.dataType,
-        inputType: attr.inputType,
-        isFilterable: attr.isFilterable,
-        isGlobal: attr.isGlobal
-      }));
-      
+      const cleanAttributes = (attributesResponse.data as Attribute[]).map(
+        (attr: Attribute) => ({
+          id: attr.id,
+          code: attr.code,
+          label: attr.label,
+          dataType: attr.dataType,
+          inputType: attr.inputType,
+          isFilterable: attr.isFilterable,
+          isGlobal: attr.isGlobal,
+        })
+      );
+
       setAvailableAttributes(cleanAttributes as Attribute[]);
       setStoreViews(storeViewsResponse.data as StoreView[]);
       setAvailableCategories(categoriesResponse.data as Category[]);
       setAvailableAssets(assetsResponse.data as Asset[]);
-    } catch (err) {
-      console.error('Failed to load available data:', err);
+    } catch {
+      toast.error("Failed to load available data");
     }
   };
 
   useEffect(() => {
     void fetchProduct();
     void fetchAvailableData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleAddAttribute = async () => {
     if (!product) return;
 
     try {
-      const selectedAttribute = availableAttributes.find(attr => attr.id.toString() === attributeFormData.attributeId);
+      const selectedAttribute = availableAttributes.find(
+        (attr) => attr.id.toString() === attributeFormData.attributeId
+      );
       if (!selectedAttribute) {
-        toast.error('Please select an attribute');
+        toast.error("Please select an attribute");
         return;
       }
 
       const attributeData: Record<string, string | number | boolean | object> = {
         productId: product.id,
         attributeId: parseInt(attributeFormData.attributeId),
-        storeViewId: parseInt(attributeFormData.storeViewId)
+        storeViewId: parseInt(attributeFormData.storeViewId),
       };
 
-      // Add value based on data type
       switch (selectedAttribute.dataType) {
-        case 'STRING':
+        case "STRING":
           attributeData.valueString = attributeFormData.valueString;
           break;
-        case 'TEXT':
+        case "TEXT":
           attributeData.valueText = attributeFormData.valueText;
           break;
-        case 'INT':
+        case "INT":
           attributeData.valueInt = parseInt(attributeFormData.valueInt) || 0;
           break;
-        case 'DECIMAL':
-          attributeData.valueDecimal = parseFloat(attributeFormData.valueDecimal) || 0;
+        case "DECIMAL":
+          attributeData.valueDecimal =
+            parseFloat(attributeFormData.valueDecimal) || 0;
           break;
-        case 'BOOLEAN':
+        case "BOOLEAN":
           attributeData.valueBoolean = attributeFormData.valueBoolean;
           break;
-        case 'JSON':
+        case "JSON":
           try {
             attributeData.valueJson = JSON.parse(attributeFormData.valueJson);
           } catch {
-            toast.error('Invalid JSON format. Please check your input.');
+            toast.error("Invalid JSON format. Please check your input.");
             return;
           }
           break;
       }
 
       await ProductAttributeValueService.create(attributeData);
-      toast.success('Attribute added successfully');
+      toast.success("Attribute added successfully");
       setShowAddAttributeDialog(false);
       setAttributeFormData({
-        attributeId: '',
-        storeViewId: '',
-        valueString: '',
-        valueText: '',
-        valueInt: '',
-        valueDecimal: '',
+        attributeId: "",
+        storeViewId: "",
+        valueString: "",
+        valueText: "",
+        valueInt: "",
+        valueDecimal: "",
         valueBoolean: false,
-        valueJson: ''
+        valueJson: "",
       });
-      fetchProduct();
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to add attribute: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to add attribute: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -369,15 +351,19 @@ export default function ProductDetail() {
     try {
       await ProductCategoryService.create({
         productId: product.id,
-        categoryId: parseInt(categoryFormData.categoryId, 10),
+        categoryId: parseInt(categoryFormData, 10),
       });
-      toast.success('Category added successfully');
+      toast.success("Category added successfully");
       setShowAddCategoryDialog(false);
-      setCategoryFormData({ categoryId: '' });
-      fetchProduct();
+      setCategoryFormData("");
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to add category: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to add category: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -386,7 +372,7 @@ export default function ProductDetail() {
 
     try {
       const selectedAsset = availableAssets.find(
-        (asset) => asset.id === parseInt(assetFormData.assetId, 10)
+        (asset) => asset.id === parseInt(assetFormData, 10)
       );
 
       const mimeType = selectedAsset?.mimeType || "";
@@ -402,28 +388,36 @@ export default function ProductDetail() {
 
       await ProductAssetService.create({
         productId: product.id,
-        assetId: parseInt(assetFormData.assetId, 10),
+        assetId: parseInt(assetFormData, 10),
         type,
       });
-      toast.success('Asset added successfully');
+      toast.success("Asset added successfully");
       setShowAddAssetDialog(false);
-      setAssetFormData({ assetId: '' });
-      fetchProduct();
+      setAssetFormData("");
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to add asset: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to add asset: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
   const handleRemoveAttribute = async (attributeId: number) => {
     try {
       await ProductAttributeValueService.remove(attributeId);
-      toast.success('Attribute removed successfully');
+      toast.success("Attribute removed successfully");
       setAttributeIdToDelete(null);
-      fetchProduct();
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to remove attribute: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to remove attribute: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -433,12 +427,16 @@ export default function ProductDetail() {
         productCategory.productId,
         productCategory.categoryId
       );
-      toast.success('Category removed successfully');
+      toast.success("Category removed successfully");
       setCategoryToDelete(null);
-      fetchProduct();
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to remove category: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to remove category: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -449,12 +447,16 @@ export default function ProductDetail() {
         productAsset.assetId,
         productAsset.type
       );
-      toast.success('Asset removed successfully');
+      toast.success("Asset removed successfully");
       setAssetToDelete(null);
-      fetchProduct();
+      await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to remove asset: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to remove asset: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -477,22 +479,40 @@ export default function ProductDetail() {
       await fetchProduct();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(`Failed to update product: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      toast.error(
+        `Failed to update product: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
     }
   };
 
   const getAttributeValue = (productAttribute: ProductAttributeValue) => {
     if (productAttribute.valueString) return productAttribute.valueString;
     if (productAttribute.valueText) return productAttribute.valueText;
-    if (productAttribute.valueInt !== null && productAttribute.valueInt !== undefined) return productAttribute.valueInt.toString();
-    if (productAttribute.valueDecimal !== null && productAttribute.valueDecimal !== undefined) return productAttribute.valueDecimal.toString();
-    if (productAttribute.valueBoolean !== null && productAttribute.valueBoolean !== undefined) return productAttribute.valueBoolean ? 'Yes' : 'No';
-    return 'No value';
+    if (
+      productAttribute.valueInt !== null &&
+      productAttribute.valueInt !== undefined
+    )
+      return productAttribute.valueInt.toString();
+    if (
+      productAttribute.valueDecimal !== null &&
+      productAttribute.valueDecimal !== undefined
+    )
+      return productAttribute.valueDecimal.toString();
+    if (
+      productAttribute.valueBoolean !== null &&
+      productAttribute.valueBoolean !== undefined
+    )
+      return productAttribute.valueBoolean ? "Yes" : "No";
+    return "No value";
   };
 
-  const getAttributeGroupInfo = (attributeId: number): { groupLabel: string; groupCode: string } | null => {
+  const getAttributeGroupInfo = (
+    attributeId: number
+  ): { groupLabel: string; groupCode: string } | null => {
     if (!product?.attributeSet?.groups) return null;
-    
+
     for (const group of product.attributeSet.groups) {
       const hasAttribute = group.groupAttributes?.some(
         (ga) => ga.attribute.id === attributeId
@@ -506,21 +526,27 @@ export default function ProductDetail() {
 
   const getDataTypeColor = (dataType: string) => {
     switch (dataType) {
-      case 'STRING': return 'bg-blue-100 text-blue-800';
-      case 'TEXT': return 'bg-green-100 text-green-800';
-      case 'INT': return 'bg-purple-100 text-purple-800';
-      case 'DECIMAL': return 'bg-orange-100 text-orange-800';
-      case 'BOOLEAN': return 'bg-pink-100 text-pink-800';
-      default: return 'bg-muted/60 text-gray-800';
+      case "STRING":
+        return "bg-blue-100 text-blue-800";
+      case "TEXT":
+        return "bg-green-100 text-green-800";
+      case "INT":
+        return "bg-purple-100 text-purple-800";
+      case "DECIMAL":
+        return "bg-orange-100 text-orange-800";
+      case "BOOLEAN":
+        return "bg-pink-100 text-pink-800";
+      default:
+        return "bg-muted/60 text-gray-800";
     }
   };
 
   const getMimeTypeIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.startsWith('video/')) return '🎥';
-    if (mimeType.startsWith('audio/')) return '🎵';
-    if (mimeType.includes('pdf')) return '📄';
-    return '📁';
+    if (mimeType.startsWith("image/")) return "🖼️";
+    if (mimeType.startsWith("video/")) return "🎥";
+    if (mimeType.startsWith("audio/")) return "🎵";
+    if (mimeType.includes("pdf")) return "📄";
+    return "📁";
   };
 
   if (loading) {
@@ -539,7 +565,7 @@ export default function ProductDetail() {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <p className="text-red-500">Product not found</p>
-          <Button onClick={() => navigate('/products')} className="mt-4">
+          <Button onClick={() => navigate("/products")} className="mt-4">
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Back to Products
           </Button>
@@ -550,59 +576,14 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-full p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => navigate('/products')}>
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Back to Products
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <PackageIcon className="h-8 w-8 mr-3 text-blue-500" />
-              {product.sku}
-            </h1>
-            <p className="text-muted-foreground">Product Details & Management</p>
-          </div>
-        </div>
-        <Button onClick={handleOpenEditProduct}>
-          <EditIcon className="h-4 w-4 mr-2" />
-          Edit Product
-        </Button>
-      </div>
+      {/* Back Button */}
+      <Button variant="outline" onClick={() => navigate("/products")}>
+        <ArrowLeftIcon className="h-4 w-4 mr-2" />
+        Back to Products
+      </Button>
 
       {/* Product Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Overview</CardTitle>
-          <CardDescription>Basic product information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <HashIcon className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium">SKU</span>
-              </div>
-              <p className="text-lg font-mono">{product.sku}</p>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <TagIcon className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium">Type</span>
-              </div>
-              <Badge variant="outline">{product.type}</Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <CalendarIcon className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium">Created</span>
-              </div>
-              <p className="text-sm">{new Date(product.createdAt).toLocaleDateString()}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ProductOverviewCard product={product} onEdit={handleOpenEditProduct} />
 
       {/* Tabs for different sections */}
       <Tabs
@@ -619,568 +600,94 @@ export default function ProductDetail() {
 
         {/* Attribute Set Tab */}
         <TabsContent value="attribute-set" className="space-y-4">
-          {product.attributeSet ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Attribute Set Information</CardTitle>
-                  <CardDescription>Overview of the assigned attribute set</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <HashIcon className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Code</span>
-                      </div>
-                      <p className="font-mono text-sm">{product.attributeSet.code}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <TagIcon className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Label</span>
-                      </div>
-                      <p className="font-semibold">{product.attributeSet.label}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <PackageIcon className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Product Type</span>
-                      </div>
-                      <Badge variant="outline">
-                        {product.attributeSet.productType || 'All Types'}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">Default Set</span>
-                      </div>
-                      <Badge variant={product.attributeSet.isDefault ? "default" : "secondary"}>
-                        {product.attributeSet.isDefault ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {product.attributeSet.groups && product.attributeSet.groups.length > 0 ? (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Attribute Groups</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {product.attributeSet.groups.map((group) => (
-                      <Card key={group.id} className="border-2">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">{group.label}</CardTitle>
-                            <Badge variant="outline" className="text-xs">
-                              {group.groupAttributes?.length || 0} attributes
-                            </Badge>
-                          </div>
-                          <CardDescription className="text-xs font-mono">
-                            {group.code}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {group.groupAttributes && group.groupAttributes.length > 0 ? (
-                            <div className="space-y-2">
-                              {group.groupAttributes.map((groupAttr) => (
-                                <div
-                                  key={groupAttr.id}
-                                  className="flex items-center justify-between p-2 rounded border bg-muted/30"
-                                >
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium">{groupAttr.attribute.label}</p>
-                                    <p className="text-xs text-muted-foreground font-mono">
-                                      {groupAttr.attribute.code}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Badge 
-                                      variant="secondary" 
-                                      className={`text-xs ${getDataTypeColor(groupAttr.attribute.dataType)}`}
-                                    >
-                                      {groupAttr.attribute.dataType}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">
-                                      {groupAttr.attribute.inputType}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No attributes in this group</p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="py-8">
-                    <p className="text-center text-muted-foreground">
-                      No attribute groups defined for this attribute set
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-center text-muted-foreground">
-                  No attribute set assigned to this product
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <AttributeSetDisplay attributeSet={product.attributeSet || null} />
         </TabsContent>
 
         {/* Attributes Tab */}
         <TabsContent value="attributes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Product Attributes</CardTitle>
-                  <CardDescription>EAV attribute values for this product</CardDescription>
-                </div>
-                <Button onClick={() => setShowAddAttributeDialog(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Attribute
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {product.productAttributeValues && product.productAttributeValues.length > 0 ? (
-                <div className="space-y-4">
-                  {product.productAttributeValues.map((productAttribute) => {
-                    const groupInfo = getAttributeGroupInfo(productAttribute.attributeId);
-                    return (
-                      <div key={productAttribute.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="font-medium">{productAttribute.attribute?.label}</span>
-                              <Badge className={getDataTypeColor(productAttribute.attribute?.dataType || '')}>
-                                {productAttribute.attribute?.dataType}
-                              </Badge>
-                              <code className="text-xs bg-muted/60 px-2 py-1 rounded">
-                                {productAttribute.attribute?.code}
-                              </code>
-                              {groupInfo && (
-                                <Badge variant="outline" className="text-xs">
-                                  <FolderIcon className="h-3 w-3 mr-1" />
-                                  {groupInfo.groupLabel}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                              <div className="flex items-center space-x-1">
-                                <GlobeIcon className="h-3 w-3" />
-                                <span>{productAttribute.storeView?.name}</span>
-                                <span>({productAttribute.storeView?.locale?.value || productAttribute.storeView?.locale?.label || 'No locale'})</span>
-                              </div>
-                            </div>
-                            <p className="mt-2 text-lg font-medium">
-                              {getAttributeValue(productAttribute)}
-                            </p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAttributeIdToDelete(productAttribute.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <TagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No attributes assigned to this product</p>
-                  <Button onClick={() => setShowAddAttributeDialog(true)} className="mt-4">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add First Attribute
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ProductAttributesList
+            productAttributes={product.productAttributeValues || []}
+            onAdd={() => setShowAddAttributeDialog(true)}
+            onDelete={setAttributeIdToDelete}
+            getAttributeValue={getAttributeValue}
+            getAttributeGroupInfo={getAttributeGroupInfo}
+            getDataTypeColor={getDataTypeColor}
+          />
         </TabsContent>
 
         {/* Categories Tab */}
         <TabsContent value="categories" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Product Categories</CardTitle>
-                  <CardDescription>Categories this product belongs to</CardDescription>
-                </div>
-                <Button onClick={() => setShowAddCategoryDialog(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Category
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {product.productCategories && product.productCategories.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {product.productCategories.map((productCategory) => (
-                    <div key={productCategory.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FolderIcon className="h-4 w-4 text-blue-500" />
-                            <span className="font-medium">
-                              {productCategory.category?.translations?.[0]?.name || `Category ${productCategory.categoryId}`}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            ID: {productCategory.categoryId}
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCategoryToDelete(productCategory)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No categories assigned to this product</p>
-                  <Button onClick={() => setShowAddCategoryDialog(true)} className="mt-4">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add First Category
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ProductCategoriesList
+            productCategories={product.productCategories || []}
+            onAdd={() => setShowAddCategoryDialog(true)}
+            onDelete={setCategoryToDelete}
+          />
         </TabsContent>
 
         {/* Assets Tab */}
         <TabsContent value="assets" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Product Assets</CardTitle>
-                  <CardDescription>Images and files associated with this product</CardDescription>
-                </div>
-                <Button onClick={() => setShowAddAssetDialog(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Asset
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {product.productAssets && product.productAssets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {product.productAssets.map((productAsset) => (
-                    <div key={productAsset.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-2xl">{getMimeTypeIcon(productAsset.asset?.mimeType || '')}</span>
-                            <span className="font-medium truncate">
-                              {productAsset.asset?.filePath.split('/').pop()}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {productAsset.asset?.mimeType}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Added {new Date(productAsset.asset?.createdAt || '').toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAssetToView(productAsset)}
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAssetToDelete(productAsset)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No assets assigned to this product</p>
-                  <Button onClick={() => setShowAddAssetDialog(true)} className="mt-4">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add First Asset
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ProductAssetsList
+            productAssets={product.productAssets || []}
+            onAdd={() => setShowAddAssetDialog(true)}
+            onView={setAssetToView}
+            onDelete={setAssetToDelete}
+            getMimeTypeIcon={getMimeTypeIcon}
+          />
         </TabsContent>
       </Tabs>
 
       {/* Add Attribute Dialog */}
-      <Dialog open={showAddAttributeDialog} onOpenChange={setShowAddAttributeDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Add Attribute to Product</DialogTitle>
-            <DialogDescription>
-              Assign an attribute with a value to this product for a specific store view.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="attributeId">Attribute</Label>
-                <Select value={attributeFormData.attributeId} onValueChange={(value) => setAttributeFormData({ ...attributeFormData, attributeId: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select attribute" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableAttributes.map((attribute) => (
-                      <SelectItem key={attribute.id} value={attribute.id.toString()}>
-                        {attribute.label || attribute.code} ({attribute.dataType})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="storeViewId">Store View</Label>
-                <Select value={attributeFormData.storeViewId} onValueChange={(value) => setAttributeFormData({ ...attributeFormData, storeViewId: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select store view" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {storeViews.map((storeView) => (
-                      <SelectItem key={storeView.id} value={storeView.id.toString()}>
-                        {storeView.name} ({storeView.locale?.value || storeView.locale?.label || 'No locale'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {/* Dynamic value input based on selected attribute */}
-            {attributeFormData.attributeId && (() => {
-              const selectedAttribute = availableAttributes.find(attr => attr.id.toString() === attributeFormData.attributeId);
-              if (!selectedAttribute) return null;
-
-              switch (selectedAttribute.dataType) {
-                case 'STRING':
-                  return (
-                    <div>
-                      <Label htmlFor="valueString">Value (String)</Label>
-                      <Input
-                        id="valueString"
-                        value={attributeFormData.valueString}
-                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueString: e.target.value })}
-                        placeholder="Enter string value"
-                      />
-                    </div>
-                  );
-                case 'TEXT':
-                  return (
-                    <div>
-                      <Label htmlFor="valueText">Value (Text)</Label>
-                      <textarea
-                        id="valueText"
-                        value={attributeFormData.valueText}
-                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueText: e.target.value })}
-                        placeholder="Enter text value"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={3}
-                      />
-                    </div>
-                  );
-                case 'INT':
-                  return (
-                    <div>
-                      <Label htmlFor="valueInt">Value (Integer)</Label>
-                      <Input
-                        id="valueInt"
-                        type="number"
-                        value={attributeFormData.valueInt}
-                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueInt: e.target.value })}
-                        placeholder="Enter integer value"
-                      />
-                    </div>
-                  );
-                case 'DECIMAL':
-                  return (
-                    <div>
-                      <Label htmlFor="valueDecimal">Value (Decimal)</Label>
-                      <Input
-                        id="valueDecimal"
-                        type="number"
-                        step="0.01"
-                        value={attributeFormData.valueDecimal}
-                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueDecimal: e.target.value })}
-                        placeholder="Enter decimal value"
-                      />
-                    </div>
-                  );
-                case 'BOOLEAN':
-                  return (
-                    <div>
-                      <Label htmlFor="valueBoolean">Value (Boolean)</Label>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <input
-                          id="valueBoolean"
-                          type="checkbox"
-                          checked={attributeFormData.valueBoolean}
-                          onChange={(e) => setAttributeFormData({ ...attributeFormData, valueBoolean: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm">True/False</span>
-                      </div>
-                    </div>
-                  );
-                case 'JSON':
-                  return (
-                    <div>
-                      <Label htmlFor="valueJson">Value (JSON)</Label>
-                      <textarea
-                        id="valueJson"
-                        value={attributeFormData.valueJson}
-                        onChange={(e) => setAttributeFormData({ ...attributeFormData, valueJson: e.target.value })}
-                        placeholder='Enter valid JSON (e.g., {"key": "value"} or [1, 2, 3])'
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                        rows={4}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Must be valid JSON format
-                      </p>
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })()}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddAttributeDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddAttribute}>
-              Add Attribute
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <EntityDialog
-        open={attributeIdToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAttributeIdToDelete(null);
-          }
-        }}
-        title="Remove Attribute"
-        description="Are you sure you want to remove this attribute from the product? This action cannot be undone."
-        primaryLabel="Remove Attribute"
-        onPrimary={() => {
-          if (attributeIdToDelete !== null) {
-            void handleRemoveAttribute(attributeIdToDelete);
-          }
-        }}
+        open={showAddAttributeDialog}
+        onOpenChange={setShowAddAttributeDialog}
+        title="Add Attribute to Product"
+        description="Assign an attribute with a value to this product for a specific store view."
+        primaryLabel="Add Attribute"
+        onPrimary={handleAddAttribute}
+        contentClassName="max-w-2xl"
       >
-        <p className="text-sm text-muted-foreground">
-          This will delete the selected attribute value for this product.
-        </p>
+        <ProductAttributeForm
+          availableAttributes={availableAttributes}
+          storeViews={storeViews}
+          formData={attributeFormData}
+          onFormDataChange={setAttributeFormData}
+        />
       </EntityDialog>
 
-      <Dialog open={assetToView !== null} onOpenChange={(open) => {
-        if (!open) {
-          setAssetToView(null);
-        }
-      }}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>View Asset</DialogTitle>
-            <DialogDescription>
-              Preview of the selected asset.
-            </DialogDescription>
-          </DialogHeader>
-          {assetToView?.asset && (
-            <div className="mt-4">
-              <SkeletonImage
-                src={getAssetUrl(assetToView.asset.filePath)}
-                alt="Asset preview"
-                className="max-h-[70vh] w-auto mx-auto rounded border"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
+      {/* Add Category Dialog */}
       <EntityDialog
-        open={categoryToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCategoryToDelete(null);
-          }
-        }}
-        title="Remove Category"
-        description="Are you sure you want to remove this category from the product? This action cannot be undone."
-        primaryLabel="Remove Category"
-        onPrimary={() => {
-          if (categoryToDelete !== null) {
-            void handleRemoveCategory(categoryToDelete);
-          }
-        }}
+        open={showAddCategoryDialog}
+        onOpenChange={setShowAddCategoryDialog}
+        title="Add Category to Product"
+        description="Assign this product to a category."
+        primaryLabel="Add Category"
+        onPrimary={handleAddCategory}
       >
-        <p className="text-sm text-muted-foreground">
-          This will detach the selected category from this product.
-        </p>
+        <ProductCategoryForm
+          availableCategories={availableCategories}
+          categoryId={categoryFormData}
+          onCategoryIdChange={setCategoryFormData}
+        />
       </EntityDialog>
 
+      {/* Add Asset Dialog */}
       <EntityDialog
-        open={assetToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAssetToDelete(null);
-          }
-        }}
-        title="Remove Asset"
-        description="Are you sure you want to remove this asset from the product? This action cannot be undone."
-        primaryLabel="Remove Asset"
-        onPrimary={() => {
-          if (assetToDelete !== null) {
-            void handleRemoveAsset(assetToDelete);
-          }
-        }}
+        open={showAddAssetDialog}
+        onOpenChange={setShowAddAssetDialog}
+        title="Add Asset to Product"
+        description="Associate an asset with this product."
+        primaryLabel="Add Asset"
+        onPrimary={handleAddAsset}
       >
-        <p className="text-sm text-muted-foreground">
-          This will detach the selected asset from this product.
-        </p>
+        <ProductAssetForm
+          availableAssets={availableAssets}
+          assetId={assetFormData}
+          onAssetIdChange={setAssetFormData}
+          getMimeTypeIcon={getMimeTypeIcon}
+        />
       </EntityDialog>
 
+      {/* Edit Product Dialog */}
       <EntityDialog
         open={showEditProductDialog}
         onOpenChange={setShowEditProductDialog}
@@ -1217,83 +724,63 @@ export default function ProductDetail() {
         </div>
       </EntityDialog>
 
-      {/* Add Category Dialog */}
-      <Dialog open={showAddCategoryDialog} onOpenChange={setShowAddCategoryDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Category to Product</DialogTitle>
-            <DialogDescription>
-              Assign this product to a category.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="categoryId">Category</Label>
-              <Select value={categoryFormData.categoryId} onValueChange={(value) => setCategoryFormData({ ...categoryFormData, categoryId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.translations?.[0]?.name || `Category ${category.id}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddCategoryDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCategory}>
-              Add Category
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Attribute Dialog */}
+      <DeleteConfirmDialog
+        open={attributeIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setAttributeIdToDelete(null);
+        }}
+        title="Remove Attribute"
+        description="Are you sure you want to remove this attribute from the product? This action cannot be undone."
+        primaryLabel="Remove Attribute"
+        onConfirm={() => {
+          if (attributeIdToDelete !== null) {
+            void handleRemoveAttribute(attributeIdToDelete);
+          }
+        }}
+      />
 
-      {/* Add Asset Dialog */}
-      <Dialog open={showAddAssetDialog} onOpenChange={setShowAddAssetDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Asset to Product</DialogTitle>
-            <DialogDescription>
-              Associate an asset with this product.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="assetId">Asset</Label>
-              <Select value={assetFormData.assetId} onValueChange={(value) => setAssetFormData({ ...assetFormData, assetId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select asset" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableAssets.map((asset) => (
-                    <SelectItem key={asset.id} value={asset.id.toString()}>
-                      <div className="flex items-center space-x-2">
-                        <span>{getMimeTypeIcon(asset.mimeType)}</span>
-                        <span>{asset.filePath.split('/').pop()}</span>
-                        <span className="text-xs text-muted-foreground">({asset.mimeType})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddAssetDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddAsset}>
-              Add Asset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Category Dialog */}
+      <DeleteConfirmDialog
+        open={categoryToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCategoryToDelete(null);
+        }}
+        title="Remove Category"
+        description="Are you sure you want to remove this category from the product? This action cannot be undone."
+        primaryLabel="Remove Category"
+        onConfirm={() => {
+          if (categoryToDelete !== null) {
+            void handleRemoveCategory(categoryToDelete);
+          }
+        }}
+      />
+
+      {/* Delete Asset Dialog */}
+      <DeleteConfirmDialog
+        open={assetToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setAssetToDelete(null);
+        }}
+        title="Remove Asset"
+        description="Are you sure you want to remove this asset from the product? This action cannot be undone."
+        primaryLabel="Remove Asset"
+        onConfirm={() => {
+          if (assetToDelete !== null) {
+            void handleRemoveAsset(assetToDelete);
+          }
+        }}
+      />
+
+      {/* Asset Viewer Dialog */}
+      <AssetViewerDialog
+        asset={assetToView}
+        open={assetToView !== null}
+        onOpenChange={(open) => {
+          if (!open) setAssetToView(null);
+        }}
+        getAssetUrl={getAssetUrl}
+      />
     </div>
   );
 }
