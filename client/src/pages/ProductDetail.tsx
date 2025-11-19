@@ -48,12 +48,58 @@ import { ProductAttributeValueService } from "@/services/productAttributeValue.s
 import { ProductCategoryService } from "@/services/productCategory.service";
 import { ProductAssetService } from "@/services/productAsset.service";
 
+type ApiError = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+interface AttributeSetAttribute {
+  id: number;
+  attributeSetId: number;
+  attributeId: number;
+  sortOrder: number;
+  attribute: Attribute;
+}
+
+interface AttributeGroupAttribute {
+  id: number;
+  attributeGroupId: number;
+  attributeId: number;
+  sortOrder: number;
+  attribute: Attribute;
+}
+
+interface AttributeGroup {
+  id: number;
+  code: string;
+  label: string;
+  sortOrder: number;
+  attributeSetId: number;
+  groupAttributes: AttributeGroupAttribute[];
+}
+
+interface AttributeSet {
+  id: number;
+  code: string;
+  label: string;
+  productType: string | null;
+  isDefault: boolean;
+  groups: AttributeGroup[];
+  setAttributes: AttributeSetAttribute[];
+}
+
 interface Product {
   id: number;
   sku: string;
   type: string;
   createdAt: string;
   updatedAt: string;
+  attributeSetId?: number | null;
+  attributeSet?: AttributeSet | null;
   productAssets?: ProductAsset[];
   productCategories?: ProductCategory[];
   productAttributeValues?: ProductAttributeValue[];
@@ -164,7 +210,7 @@ export default function ProductDetail() {
     assetId: ''
   });
 
-  const [activeTab, setActiveTab] = useState<string>("attributes");
+  const [activeTab, setActiveTab] = useState<string>("attribute-set");
 
   const [attributeIdToDelete, setAttributeIdToDelete] = useState<number | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
@@ -201,8 +247,9 @@ export default function ProductDetail() {
       setLoading(true);
       const response = await ProductService.getById(parseInt(id, 10));
       setProduct(response.data as Product);
-    } catch (err: any) {
-      toast.error(`Failed to load product: ${err.message}`);
+    } catch (err) {
+      const error = err as { message?: string; response?: { data?: { message?: string } } };
+      toast.error(`Failed to load product: ${error.message || 'Unknown error'}`);
       navigate('/products');
     } finally {
       setLoading(false);
@@ -229,7 +276,7 @@ export default function ProductDetail() {
       ]);
 
       // Map to clean attribute objects without nested relations
-      const cleanAttributes = (attributesResponse.data as any[]).map((attr: any) => ({
+      const cleanAttributes = (attributesResponse.data as Attribute[]).map((attr: Attribute) => ({
         id: attr.id,
         code: attr.code,
         label: attr.label,
@@ -243,14 +290,14 @@ export default function ProductDetail() {
       setStoreViews(storeViewsResponse.data as StoreView[]);
       setAvailableCategories(categoriesResponse.data as Category[]);
       setAvailableAssets(assetsResponse.data as Asset[]);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load available data:', err);
     }
   };
 
   useEffect(() => {
-    fetchProduct();
-    fetchAvailableData();
+    void fetchProduct();
+    void fetchAvailableData();
   }, [id]);
 
   const handleAddAttribute = async () => {
@@ -263,7 +310,7 @@ export default function ProductDetail() {
         return;
       }
 
-      const attributeData: any = {
+      const attributeData: Record<string, string | number | boolean | object> = {
         productId: product.id,
         attributeId: parseInt(attributeFormData.attributeId),
         storeViewId: parseInt(attributeFormData.storeViewId)
@@ -310,8 +357,9 @@ export default function ProductDetail() {
         valueJson: ''
       });
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to add attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to add attribute: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -327,8 +375,9 @@ export default function ProductDetail() {
       setShowAddCategoryDialog(false);
       setCategoryFormData({ categoryId: '' });
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to add category: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to add category: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -360,8 +409,9 @@ export default function ProductDetail() {
       setShowAddAssetDialog(false);
       setAssetFormData({ assetId: '' });
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to add asset: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to add asset: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -371,8 +421,9 @@ export default function ProductDetail() {
       toast.success('Attribute removed successfully');
       setAttributeIdToDelete(null);
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to remove attribute: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to remove attribute: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -385,8 +436,9 @@ export default function ProductDetail() {
       toast.success('Category removed successfully');
       setCategoryToDelete(null);
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to remove category: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to remove category: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -400,8 +452,9 @@ export default function ProductDetail() {
       toast.success('Asset removed successfully');
       setAssetToDelete(null);
       fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to remove asset: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to remove asset: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -422,8 +475,9 @@ export default function ProductDetail() {
       toast.success("Product updated successfully");
       setShowEditProductDialog(false);
       await fetchProduct();
-    } catch (err: any) {
-      toast.error(`Failed to update product: ${err.response?.data?.message || err.message}`);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(`Failed to update product: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -434,6 +488,20 @@ export default function ProductDetail() {
     if (productAttribute.valueDecimal !== null && productAttribute.valueDecimal !== undefined) return productAttribute.valueDecimal.toString();
     if (productAttribute.valueBoolean !== null && productAttribute.valueBoolean !== undefined) return productAttribute.valueBoolean ? 'Yes' : 'No';
     return 'No value';
+  };
+
+  const getAttributeGroupInfo = (attributeId: number): { groupLabel: string; groupCode: string } | null => {
+    if (!product?.attributeSet?.groups) return null;
+    
+    for (const group of product.attributeSet.groups) {
+      const hasAttribute = group.groupAttributes?.some(
+        (ga) => ga.attribute.id === attributeId
+      );
+      if (hasAttribute) {
+        return { groupLabel: group.label, groupCode: group.code };
+      }
+    }
+    return null;
   };
 
   const getDataTypeColor = (dataType: string) => {
@@ -543,10 +611,131 @@ export default function ProductDetail() {
         className="space-y-4"
       >
         <TabsList>
+          <TabsTrigger value="attribute-set">Attribute Set</TabsTrigger>
           <TabsTrigger value="attributes">Attributes</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
         </TabsList>
+
+        {/* Attribute Set Tab */}
+        <TabsContent value="attribute-set" className="space-y-4">
+          {product.attributeSet ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Attribute Set Information</CardTitle>
+                  <CardDescription>Overview of the assigned attribute set</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <HashIcon className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Code</span>
+                      </div>
+                      <p className="font-mono text-sm">{product.attributeSet.code}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <TagIcon className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Label</span>
+                      </div>
+                      <p className="font-semibold">{product.attributeSet.label}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <PackageIcon className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Product Type</span>
+                      </div>
+                      <Badge variant="outline">
+                        {product.attributeSet.productType || 'All Types'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">Default Set</span>
+                      </div>
+                      <Badge variant={product.attributeSet.isDefault ? "default" : "secondary"}>
+                        {product.attributeSet.isDefault ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {product.attributeSet.groups && product.attributeSet.groups.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Attribute Groups</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {product.attributeSet.groups.map((group) => (
+                      <Card key={group.id} className="border-2">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">{group.label}</CardTitle>
+                            <Badge variant="outline" className="text-xs">
+                              {group.groupAttributes?.length || 0} attributes
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-xs font-mono">
+                            {group.code}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {group.groupAttributes && group.groupAttributes.length > 0 ? (
+                            <div className="space-y-2">
+                              {group.groupAttributes.map((groupAttr) => (
+                                <div
+                                  key={groupAttr.id}
+                                  className="flex items-center justify-between p-2 rounded border bg-muted/30"
+                                >
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{groupAttr.attribute.label}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">
+                                      {groupAttr.attribute.code}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`text-xs ${getDataTypeColor(groupAttr.attribute.dataType)}`}
+                                    >
+                                      {groupAttr.attribute.dataType}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {groupAttr.attribute.inputType}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No attributes in this group</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-8">
+                    <p className="text-center text-muted-foreground">
+                      No attribute groups defined for this attribute set
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">
+                  No attribute set assigned to this product
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* Attributes Tab */}
         <TabsContent value="attributes" className="space-y-4">
@@ -566,41 +755,50 @@ export default function ProductDetail() {
             <CardContent>
               {product.productAttributeValues && product.productAttributeValues.length > 0 ? (
                 <div className="space-y-4">
-                  {product.productAttributeValues.map((productAttribute) => (
-                    <div key={productAttribute.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-medium">{productAttribute.attribute?.label}</span>
-                            <Badge className={getDataTypeColor(productAttribute.attribute?.dataType || '')}>
-                              {productAttribute.attribute?.dataType}
-                            </Badge>
-                            <code className="text-xs bg-muted/60 px-2 py-1 rounded">
-                              {productAttribute.attribute?.code}
-                            </code>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center space-x-1">
-                              <GlobeIcon className="h-3 w-3" />
-                              <span>{productAttribute.storeView?.name}</span>
-                              <span>({productAttribute.storeView?.locale?.value || productAttribute.storeView?.locale?.label || 'No locale'})</span>
+                  {product.productAttributeValues.map((productAttribute) => {
+                    const groupInfo = getAttributeGroupInfo(productAttribute.attributeId);
+                    return (
+                      <div key={productAttribute.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="font-medium">{productAttribute.attribute?.label}</span>
+                              <Badge className={getDataTypeColor(productAttribute.attribute?.dataType || '')}>
+                                {productAttribute.attribute?.dataType}
+                              </Badge>
+                              <code className="text-xs bg-muted/60 px-2 py-1 rounded">
+                                {productAttribute.attribute?.code}
+                              </code>
+                              {groupInfo && (
+                                <Badge variant="outline" className="text-xs">
+                                  <FolderIcon className="h-3 w-3 mr-1" />
+                                  {groupInfo.groupLabel}
+                                </Badge>
+                              )}
                             </div>
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <div className="flex items-center space-x-1">
+                                <GlobeIcon className="h-3 w-3" />
+                                <span>{productAttribute.storeView?.name}</span>
+                                <span>({productAttribute.storeView?.locale?.value || productAttribute.storeView?.locale?.label || 'No locale'})</span>
+                              </div>
+                            </div>
+                            <p className="mt-2 text-lg font-medium">
+                              {getAttributeValue(productAttribute)}
+                            </p>
                           </div>
-                          <p className="mt-2 text-lg font-medium">
-                            {getAttributeValue(productAttribute)}
-                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAttributeIdToDelete(productAttribute.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAttributeIdToDelete(productAttribute.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

@@ -280,7 +280,33 @@ export const findById = async (id) => {
   return await prisma.product.findUnique({
     where: { id: id },
     include: {
-      attributeSet: true,
+      attributeSet: {
+        include: {
+          groups: {
+            include: {
+              groupAttributes: {
+                include: {
+                  attribute: true,
+                },
+                orderBy: {
+                  sortOrder: "asc",
+                },
+              },
+            },
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
+          setAttributes: {
+            include: {
+              attribute: true,
+            },
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
+        },
+      },
       productAssets: {
         include: {
           asset: true,
