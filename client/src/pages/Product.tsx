@@ -14,14 +14,6 @@ import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -528,36 +520,28 @@ export default function Product() {
             <div className="flex flex-wrap gap-4">
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Sort By</Label>
-                <Select
-                  value={filters.sortBy}
+                <SelectType
+                  initialValue={filters.sortBy}
+                  options={[
+                    { value: "createdAt", name: "Created Date" },
+                    { value: "sku", name: "SKU" },
+                    { value: "type", name: "Type" },
+                  ]}
                   onValueChange={(value) => handleFilterChange("sortBy", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="createdAt">Created Date</SelectItem>
-                    <SelectItem value="sku">SKU</SelectItem>
-                    <SelectItem value="type">Type</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Order</Label>
-                <Select
-                  value={filters.sortOrder}
+                <SelectType
+                  initialValue={filters.sortOrder}
+                  options={[
+                    { value: "asc", name: "Ascending" },
+                    { value: "desc", name: "Descending" },
+                  ]}
                   onValueChange={(value) =>
                     handleFilterChange("sortOrder", value)
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                    <SelectItem value="desc">Descending</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
             </div>
           </div>
@@ -738,23 +722,16 @@ export default function Product() {
           </div>
           <div>
             <Label htmlFor="type">Product Type</Label>
-            <Select
-              value={formData.type}
+            <SelectType
+              initialValue={formData.type}
+              options={productTypes.map((type) => ({
+                value: type.value,
+                name: type.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, type: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div>
             <Label htmlFor="attributeSet">Attribute Set (Optional)</Label>
@@ -803,23 +780,16 @@ export default function Product() {
           </div>
           <div>
             <Label htmlFor="edit-type">Product Type</Label>
-            <Select
-              value={formData.type}
+            <SelectType
+              initialValue={formData.type}
+              options={productTypes.map((type) => ({
+                value: type.value,
+                name: type.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, type: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div>
             <Label htmlFor="edit-attributeSet">Attribute Set (Optional)</Label>

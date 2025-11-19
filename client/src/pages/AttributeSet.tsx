@@ -22,7 +22,7 @@ import {
 import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectType } from "@/components/app/select-type";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -386,41 +386,32 @@ export default function AttributeSetPage() {
               </div>
             </div>
             <div className="min-w-[150px]">
-              <Select
-                value={filters.productType || "all"}
+              <SelectType
+                initialValue={filters.productType || "all"}
+                options={[
+                  { value: "all", name: "All Product Types" },
+                  ...productTypes.map((type) => ({
+                    value: type.value,
+                    name: type.label,
+                  })),
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("productType", value === "all" ? "" : value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Product Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Product Types</SelectItem>
-                  {productTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
-              <Select
-                value={filters.isDefault || "all"}
+              <SelectType
+                initialValue={filters.isDefault || "all"}
+                options={[
+                  { value: "all", name: "All Sets" },
+                  { value: "true", name: "Default Only" },
+                  { value: "false", name: "Non-default Only" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("isDefault", value === "all" ? "" : value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Sets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sets</SelectItem>
-                  <SelectItem value="true">Default Only</SelectItem>
-                  <SelectItem value="false">Non-default Only</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         }
@@ -429,34 +420,26 @@ export default function AttributeSetPage() {
             <div className="flex flex-wrap gap-4">
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Sort By</Label>
-                <Select
-                  value={filters.sortBy || "createdAt"}
+                <SelectType
+                  initialValue={filters.sortBy || "createdAt"}
+                  options={[
+                    { value: "createdAt", name: "Created Date" },
+                    { value: "code", name: "Code" },
+                    { value: "label", name: "Label" },
+                  ]}
                   onValueChange={(value) => handleFilterChange("sortBy", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="createdAt">Created Date</SelectItem>
-                    <SelectItem value="code">Code</SelectItem>
-                    <SelectItem value="label">Label</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Order</Label>
-                <Select
-                  value={filters.sortOrder || "desc"}
+                <SelectType
+                  initialValue={filters.sortOrder || "desc"}
+                  options={[
+                    { value: "asc", name: "Ascending" },
+                    { value: "desc", name: "Descending" },
+                  ]}
                   onValueChange={(value) => handleFilterChange("sortOrder", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                    <SelectItem value="desc">Descending</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
             </div>
           </div>
@@ -633,27 +616,22 @@ export default function AttributeSetPage() {
           </div>
           <div>
             <Label htmlFor="productType">Product Type (optional)</Label>
-            <Select
-              value={formData.productType || "all"}
+            <SelectType
+              initialValue={formData.productType || "all"}
+              options={[
+                { value: "all", name: "All Product Types" },
+                ...productTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                })),
+              ]}
               onValueChange={(value) =>
                 setFormData({
                   ...formData,
                   productType: value === "all" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Product Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Product Types</SelectItem>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -702,27 +680,22 @@ export default function AttributeSetPage() {
           </div>
           <div>
             <Label htmlFor="edit-productType">Product Type (optional)</Label>
-            <Select
-              value={formData.productType || "all"}
+            <SelectType
+              initialValue={formData.productType || "all"}
+              options={[
+                { value: "all", name: "All Product Types" },
+                ...productTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                })),
+              ]}
               onValueChange={(value) =>
                 setFormData({
                   ...formData,
                   productType: value === "all" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Product Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Product Types</SelectItem>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div className="flex items-center gap-2">
             <input

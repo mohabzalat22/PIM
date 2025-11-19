@@ -11,14 +11,6 @@ import {
 
 import { PaginationBar } from "@/components/app/PaginationBar";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { 
@@ -259,38 +251,30 @@ export default function Asset() {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select
-                value={filters.sortBy}
+              <SelectType
+                initialValue={filters.sortBy}
+                options={[
+                  { value: "createdAt", name: "Created Date" },
+                  { value: "filePath", name: "File Path" },
+                  { value: "mimeType", name: "MIME Type" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("sortBy", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Created Date</SelectItem>
-                  <SelectItem value="filePath">File Path</SelectItem>
-                  <SelectItem value="mimeType">MIME Type</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select
-                value={filters.sortOrder}
+              <SelectType
+                initialValue={filters.sortOrder}
+                options={[
+                  { value: "asc", name: "Ascending" },
+                  { value: "desc", name: "Descending" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("sortOrder", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Ascending</SelectItem>
-                  <SelectItem value="desc">Descending</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         }
@@ -411,23 +395,16 @@ export default function Asset() {
           </div>
           <div>
             <Label htmlFor="mimeType">MIME Type</Label>
-            <Select
-              value={formData.mimeType}
+            <SelectType
+              initialValue={formData.mimeType}
+              options={mimeTypes.map((type) => ({
+                value: type.value || "none",
+                name: type.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, mimeType: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select MIME type" />
-              </SelectTrigger>
-              <SelectContent>
-                {mimeTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || "none"}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
       </EntityDialog>
@@ -455,23 +432,16 @@ export default function Asset() {
           </div>
           <div>
             <Label htmlFor="edit-mimeType">MIME Type</Label>
-            <Select
-              value={formData.mimeType}
+            <SelectType
+              initialValue={formData.mimeType}
+              options={mimeTypes.map((type) => ({
+                value: type.value || "none",
+                name: type.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, mimeType: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select MIME type" />
-              </SelectTrigger>
-              <SelectContent>
-                {mimeTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value || "none"}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
       </EntityDialog>

@@ -1,12 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectType } from "@/components/app/select-type";
 
 interface Attribute {
   id: number;
@@ -183,47 +177,29 @@ export function ProductAttributeForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="attributeId">Attribute</Label>
-          <Select
-            value={formData.attributeId}
+          <SelectType
+            initialValue={formData.attributeId}
+            options={availableAttributes.map((attribute) => ({
+              value: attribute.id.toString(),
+              name: `${attribute.label || attribute.code} (${attribute.dataType})`,
+            }))}
             onValueChange={(value) =>
               onFormDataChange({ ...formData, attributeId: value })
             }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select attribute" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableAttributes.map((attribute) => (
-                <SelectItem key={attribute.id} value={attribute.id.toString()}>
-                  {attribute.label || attribute.code} ({attribute.dataType})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
         <div>
           <Label htmlFor="storeViewId">Store View</Label>
-          <Select
-            value={formData.storeViewId}
+          <SelectType
+            initialValue={formData.storeViewId}
+            options={storeViews.map((storeView) => ({
+              value: storeView.id.toString(),
+              name: `${storeView.name} (${storeView.locale?.value || storeView.locale?.label || "No locale"})`,
+            }))}
             onValueChange={(value) =>
               onFormDataChange({ ...formData, storeViewId: value })
             }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select store view" />
-            </SelectTrigger>
-            <SelectContent>
-              {storeViews.map((storeView) => (
-                <SelectItem key={storeView.id} value={storeView.id.toString()}>
-                  {storeView.name} (
-                  {storeView.locale?.value ||
-                    storeView.locale?.label ||
-                    "No locale"}
-                  )
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
       </div>
 

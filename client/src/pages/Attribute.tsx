@@ -14,14 +14,6 @@ import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -401,74 +393,58 @@ export default function Attribute() {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Filterable</Label>
-              <Select
-                value={filters.isFilterable}
+              <SelectType
+                initialValue={filters.isFilterable}
+                options={[
+                  { value: "", name: "All" },
+                  { value: "true", name: "Yes" },
+                  { value: "false", name: "No" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("isFilterable", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filterable" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All</SelectItem>
-                  <SelectItem value="true">Yes</SelectItem>
-                  <SelectItem value="false">No</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Global</Label>
-              <Select
-                value={filters.isGlobal}
+              <SelectType
+                initialValue={filters.isGlobal}
+                options={[
+                  { value: "", name: "All" },
+                  { value: "true", name: "Yes" },
+                  { value: "false", name: "No" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("isGlobal", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Global" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All</SelectItem>
-                  <SelectItem value="true">Yes</SelectItem>
-                  <SelectItem value="false">No</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select
-                value={filters.sortBy}
+              <SelectType
+                initialValue={filters.sortBy}
+                options={[
+                  { value: "createdAt", name: "Created Date" },
+                  { value: "code", name: "Code" },
+                  { value: "label", name: "Label" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("sortBy", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Created Date</SelectItem>
-                  <SelectItem value="code">Code</SelectItem>
-                  <SelectItem value="label">Label</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select
-                value={filters.sortOrder}
+              <SelectType
+                initialValue={filters.sortOrder}
+                options={[
+                  { value: "asc", name: "Ascending" },
+                  { value: "desc", name: "Descending" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("sortOrder", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Ascending</SelectItem>
-                  <SelectItem value="desc">Descending</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         }
@@ -680,43 +656,29 @@ export default function Attribute() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="dataType">Data Type</Label>
-              <Select
-                value={formData.dataType}
+              <SelectType
+                initialValue={formData.dataType}
+                options={dataTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, dataType: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {dataTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div>
               <Label htmlFor="inputType">Input Type</Label>
-              <Select
-                value={formData.inputType}
+              <SelectType
+                initialValue={formData.inputType}
+                options={inputTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, inputType: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {inputTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
           <div className="space-y-3">
@@ -797,43 +759,29 @@ export default function Attribute() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="edit-dataType">Data Type</Label>
-              <Select
-                value={formData.dataType}
+              <SelectType
+                initialValue={formData.dataType}
+                options={dataTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, dataType: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {dataTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div>
               <Label htmlFor="edit-inputType">Input Type</Label>
-              <Select
-                value={formData.inputType}
+              <SelectType
+                initialValue={formData.inputType}
+                options={inputTypes.map((type) => ({
+                  value: type.value,
+                  name: type.label,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, inputType: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {inputTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
           <div className="space-y-3">

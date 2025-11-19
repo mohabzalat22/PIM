@@ -1,11 +1,5 @@
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectType } from "@/components/app/select-type";
 
 interface CategoryTranslation {
   id: number;
@@ -39,18 +33,14 @@ export function ProductCategoryForm({
     <div className="space-y-4">
       <div>
         <Label htmlFor="categoryId">Category</Label>
-        <Select value={categoryId} onValueChange={onCategoryIdChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableCategories.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
-                {category.translations?.[0]?.name || `Category ${category.id}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SelectType
+          initialValue={categoryId}
+          options={availableCategories.map((category) => ({
+            value: category.id.toString(),
+            name: category.translations?.[0]?.name || `Category ${category.id}`,
+          }))}
+          onValueChange={onCategoryIdChange}
+        />
       </div>
     </div>
   );

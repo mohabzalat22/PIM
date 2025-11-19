@@ -9,14 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -455,26 +447,16 @@ export default function StoreView() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="storeId">Store</Label>
-            <Select
-              value={formData.storeId}
+            <SelectType
+              initialValue={formData.storeId}
+              options={stores.map((store) => ({
+                value: store.id.toString() || "none",
+                name: store.name || store.code,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, storeId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select store" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map((store) => (
-                  <SelectItem
-                    key={store.id}
-                    value={store.id.toString() || "none"}
-                  >
-                    {store.name || store.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div>
             <Label htmlFor="code">Store View Code</Label>
@@ -500,23 +482,16 @@ export default function StoreView() {
           </div>
           <div>
             <Label htmlFor="locale">Locale</Label>
-            <Select
-              value={formData.localeId}
+            <SelectType
+              initialValue={formData.localeId}
+              options={availableLocales.map((locale) => ({
+                value: locale.id.toString() || "none",
+                name: locale.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, localeId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select locale" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableLocales.map((locale) => (
-                  <SelectItem key={locale.id} value={locale.id.toString() || "none"}>
-                    {locale.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
       </EntityDialog>
@@ -533,26 +508,16 @@ export default function StoreView() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="edit-storeId">Store</Label>
-            <Select
-              value={formData.storeId}
+            <SelectType
+              initialValue={formData.storeId}
+              options={stores.map((store) => ({
+                value: store.id.toString() || "none",
+                name: store.name || store.code,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, storeId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select store" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map((store) => (
-                  <SelectItem
-                    key={store.id}
-                    value={store.id.toString() || "none"}
-                  >
-                    {store.name || store.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
           <div>
             <Label htmlFor="edit-code">Store View Code</Label>
@@ -578,23 +543,16 @@ export default function StoreView() {
           </div>
           <div>
             <Label htmlFor="edit-locale">Locale</Label>
-            <Select
-              value={formData.localeId}
+            <SelectType
+              initialValue={formData.localeId}
+              options={availableLocales.map((locale) => ({
+                value: locale.id.toString() || "none",
+                name: locale.label,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, localeId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select locale" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableLocales.map((locale) => (
-                  <SelectItem key={locale.id} value={locale.id.toString() || "none"}>
-                    {locale.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
       </EntityDialog>

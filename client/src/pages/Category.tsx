@@ -14,14 +14,6 @@ import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -473,35 +465,27 @@ export default function Category() {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Sort By</Label>
-              <Select
-                value={filters.sortBy}
+              <SelectType
+                initialValue={filters.sortBy}
+                options={[
+                  { value: "createdAt", name: "Created Date" },
+                  { value: "name", name: "Name" },
+                ]}
                 onValueChange={(value) => handleFilterChange("sortBy", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Created Date</SelectItem>
-                  <SelectItem value="name">Name</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="min-w-[150px]">
               <Label className="text-sm font-medium">Order</Label>
-              <Select
-                value={filters.sortOrder}
+              <SelectType
+                initialValue={filters.sortOrder}
+                options={[
+                  { value: "asc", name: "Ascending" },
+                  { value: "desc", name: "Descending" },
+                ]}
                 onValueChange={(value) =>
                   handleFilterChange("sortOrder", value)
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Ascending</SelectItem>
-                  <SelectItem value="desc">Descending</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
         }
@@ -683,28 +667,19 @@ export default function Category() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="parentId">Parent Category</Label>
-            <Select
-              value={formData.parentId}
+            <SelectType
+              initialValue={formData.parentId}
+              options={[
+                { value: "all", name: "No parent (Root category)" },
+                ...categories.map((category) => ({
+                  value: category.id.toString(),
+                  name: category.translations?.[0]?.name || `Category ${category.id}`,
+                })),
+              ]}
               onValueChange={(value) =>
                 setFormData({ ...formData, parentId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select parent category (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">No parent (Root category)</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.id.toString()}
-                  >
-                    {category.translations?.[0]?.name ||
-                      `Category ${category.id}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
@@ -774,26 +749,16 @@ export default function Category() {
                 </div>
                 <div>
                   <Label htmlFor={`storeView-${index}`}>Store View</Label>
-                  <Select
-                    value={CategoryTranslation.storeViewId.toString()}
+                  <SelectType
+                    initialValue={CategoryTranslation.storeViewId.toString()}
+                    options={storeViews.map((storeView) => ({
+                      value: storeView.id.toString(),
+                      name: `${storeView.name} (${storeView.locale?.label || storeView.locale?.value || 'No locale'})`,
+                    }))}
                     onValueChange={(value) =>
                       updateTranslation(index, "storeViewId", parseInt(value))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {storeViews.map((storeView) => (
-                        <SelectItem
-                          key={storeView.id}
-                          value={storeView.id.toString()}
-                        >
-                          {storeView.name} ({storeView.locale?.label || storeView.locale?.value || 'No locale'})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
               </div>
             ))}
@@ -907,26 +872,16 @@ export default function Category() {
                   <Label htmlFor={`edit-storeView-${index}`}>
                     Store View
                   </Label>
-                  <Select
-                    value={CategoryTranslation.storeViewId.toString()}
+                  <SelectType
+                    initialValue={CategoryTranslation.storeViewId.toString()}
+                    options={storeViews.map((storeView) => ({
+                      value: storeView.id.toString() || "none",
+                      name: `${storeView.name} (${storeView.locale?.label || storeView.locale?.value || 'No locale'})`,
+                    }))}
                     onValueChange={(value) =>
                       updateTranslation(index, "storeViewId", parseInt(value))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {storeViews.map((storeView) => (
-                        <SelectItem
-                          key={storeView.id}
-                          value={storeView.id.toString() || "none"}
-                        >
-                          {storeView.name} ({storeView.locale?.label || storeView.locale?.value || 'No locale'})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
               </div>
             ))}

@@ -14,14 +14,6 @@ import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -729,73 +721,43 @@ export default function ProductAttributes() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="productId">Product</Label>
-              <Select
-                value={formData.productId}
+              <SelectType
+                initialValue={formData.productId}
+                options={products.map((product) => ({
+                  value: product.id.toString() || "none",
+                  name: `${product.sku} (${product.type})`,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, productId: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem
-                      key={product.id}
-                      value={product.id.toString() || "none"}
-                    >
-                      {product.sku} ({product.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div>
               <Label htmlFor="attributeId">Attribute</Label>
-              <Select
-                value={formData.attributeId}
+              <SelectType
+                initialValue={formData.attributeId}
+                options={attributes.map((attribute) => ({
+                  value: attribute.id.toString() || "none",
+                  name: `${attribute.label} (${attribute.dataType})`,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, attributeId: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select attribute" />
-                </SelectTrigger>
-                <SelectContent>
-                  {attributes.map((attribute) => (
-                    <SelectItem
-                      key={attribute.id}
-                      value={attribute.id.toString() || "none"}
-                    >
-                      {attribute.label} ({attribute.dataType})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="storeViewId">Store View</Label>
-            <Select
-              value={formData.storeViewId}
+            <SelectType
+              initialValue={formData.storeViewId}
+              options={storeViews.map((storeView) => ({
+                value: storeView.id.toString() || "none",
+                name: `${storeView.name} (${storeView.locale?.value})`,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, storeViewId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select store view" />
-              </SelectTrigger>
-              <SelectContent>
-                {storeViews.map((storeView) => (
-                  <SelectItem
-                    key={storeView.id}
-                    value={storeView.id.toString() || "none"}
-                  >
-                    {storeView.name} ({storeView.locale?.value})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           {formData.attributeId && (() => {
@@ -908,73 +870,43 @@ export default function ProductAttributes() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="edit-productId">Product</Label>
-              <Select
-                value={formData.productId}
+              <SelectType
+                initialValue={formData.productId}
+                options={products.map((product) => ({
+                  value: product.id.toString() || "none",
+                  name: `${product.sku} (${product.type})`,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, productId: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem
-                      key={product.id}
-                      value={product.id.toString() || "none"}
-                    >
-                      {product.sku} ({product.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div>
               <Label htmlFor="edit-attributeId">Attribute</Label>
-              <Select
-                value={formData.attributeId}
+              <SelectType
+                initialValue={formData.attributeId}
+                options={attributes.map((attribute) => ({
+                  value: attribute.id.toString() || "none",
+                  name: `${attribute.label} (${attribute.dataType})`,
+                }))}
                 onValueChange={(value) =>
                   setFormData({ ...formData, attributeId: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select attribute" />
-                </SelectTrigger>
-                <SelectContent>
-                  {attributes.map((attribute) => (
-                    <SelectItem
-                      key={attribute.id}
-                      value={attribute.id.toString() || "none"}
-                    >
-                      {attribute.label} ({attribute.dataType})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="edit-storeViewId">Store View</Label>
-            <Select
-              value={formData.storeViewId}
+            <SelectType
+              initialValue={formData.storeViewId}
+              options={storeViews.map((storeView) => ({
+                value: storeView.id.toString() || "none",
+                name: `${storeView.name} (${storeView.locale?.value})`,
+              }))}
               onValueChange={(value) =>
                 setFormData({ ...formData, storeViewId: value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select store view" />
-              </SelectTrigger>
-              <SelectContent>
-                {storeViews.map((storeView) => (
-                  <SelectItem
-                    key={storeView.id}
-                    value={storeView.id.toString() || "none"}
-                  >
-                    {storeView.name} ({storeView.locale?.value})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           {formData.attributeId && (() => {

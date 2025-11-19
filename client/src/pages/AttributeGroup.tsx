@@ -22,13 +22,7 @@ import {
 import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectType } from "@/components/app/select-type";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -396,18 +390,14 @@ export default function AttributeGroupPage() {
     if (!attributeSets) return null;
 
     return (
-      <Select value={value || ""} onValueChange={(val) => onChange(val)}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select attribute set" />
-        </SelectTrigger>
-        <SelectContent>
-          {attributeSets.map((set: AttributeSet) => (
-            <SelectItem key={set.id} value={set.id.toString()}>
-              {set.label} ({set.code})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SelectType
+        initialValue={value || ""}
+        options={attributeSets.map((set: AttributeSet) => ({
+          value: set.id.toString(),
+          name: `${set.label} (${set.code})`,
+        }))}
+        onValueChange={(val) => onChange(val)}
+      />
     );
   };
 
@@ -477,36 +467,28 @@ export default function AttributeGroupPage() {
             <div className="flex flex-wrap gap-4">
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Sort By</Label>
-                <Select
-                  value={filters.sortBy || "sortOrder"}
+                <SelectType
+                  initialValue={filters.sortBy || "sortOrder"}
+                  options={[
+                    { value: "sortOrder", name: "Sort Order" },
+                    { value: "code", name: "Code" },
+                    { value: "label", name: "Label" },
+                  ]}
                   onValueChange={(value) => handleFilterChange("sortBy", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sortOrder">Sort Order</SelectItem>
-                    <SelectItem value="code">Code</SelectItem>
-                    <SelectItem value="label">Label</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
               <div className="min-w-[150px]">
                 <Label className="text-sm font-medium">Order</Label>
-                <Select
-                  value={filters.sortOrder || "asc"}
+                <SelectType
+                  initialValue={filters.sortOrder || "asc"}
+                  options={[
+                    { value: "asc", name: "Ascending" },
+                    { value: "desc", name: "Descending" },
+                  ]}
                   onValueChange={(value) =>
                     handleFilterChange("sortOrder", value)
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                    <SelectItem value="desc">Descending</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
             </div>
           </div>
