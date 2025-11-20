@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findById as findProductById } from "../models/productModel.js";
 import { findById as findAttributeById } from "../models/attributeModel.js";
 import { findById as findStoreViewById } from "../models/storeViewModel.js";
@@ -48,23 +47,21 @@ export const validateProductAttributeCreation = async (req, res, next) => {
   const result = ProductAttributeValueSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate product attribute", 500, result.error)
-    );
+    return res.error("Failed to validate product attribute", 500, result.error);
   }
 
   // Check if product exists
   const productId = req.body.productId;
   const product = await findProductById(productId);
   if (!product) {
-    return res.json(errorMessage("Product not found", 404));
+    return res.notFound("Product not found");
   }
 
   // Check if attribute exists
   const attributeId = req.body.attributeId;
   const attribute = await findAttributeById(attributeId);
   if (!attribute) {
-    return res.json(errorMessage("Attribute not found", 404));
+    return res.notFound("Attribute not found");
   }
 
   // Check if storeView exists when storeViewId is provided
@@ -72,7 +69,7 @@ export const validateProductAttributeCreation = async (req, res, next) => {
   if (storeViewId !== null && storeViewId !== undefined) {
     const storeView = await findStoreViewById(storeViewId);
     if (!storeView) {
-      return res.json(errorMessage("Store view not found", 404));
+      return res.notFound("Store view not found");
     }
   }
 
@@ -115,25 +112,21 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
 
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   const productAttributeExists = await findById(id);
   if (!productAttributeExists) {
-    return res.json(
-      errorMessage("Unable to find product attribute value to update", 404)
-    );
+    return res.notFound("Unable to find product attribute value to update");
   }
 
   const result = ProductAttributeUpdateSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage(
-        "Failed to validate product attribute update",
-        500,
-        result.error
-      )
+    return res.error(
+      "Failed to validate product attribute update",
+      500,
+      result.error
     );
   }
 
@@ -141,7 +134,7 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
   if (req.body.productId) {
     const product = await findProductById(req.body.productId);
     if (!product) {
-      return res.json(errorMessage("Product not found", 404));
+      return res.notFound("Product not found");
     }
   }
 
@@ -149,7 +142,7 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
   if (req.body.attributeId) {
     const attribute = await findAttributeById(req.body.attributeId);
     if (!attribute) {
-      return res.json(errorMessage("Attribute not found", 404));
+      return res.notFound("Attribute not found");
     }
   }
 
@@ -157,7 +150,7 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
   if (req.body.storeViewId !== null && req.body.storeViewId !== undefined) {
     const storeView = await findStoreViewById(req.body.storeViewId);
     if (!storeView) {
-      return res.json(errorMessage("Store view not found", 404));
+      return res.notFound("Store view not found");
     }
   }
 
@@ -169,13 +162,11 @@ export const validateProductAttributeDelete = async (req, res, next) => {
   const productAttributeExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   if (!productAttributeExists) {
-    return res.json(
-      errorMessage("Unable to find product attribute value to delete", 404)
-    );
+    return res.notFound("Unable to find product attribute value to delete");
   }
 
   next();
@@ -193,30 +184,30 @@ export const validateProductAttributeDeleteByCompositeKey = async (
     : null;
 
   if (!productId) {
-    return res.json(errorMessage("Product ID not defined"));
+    return res.error("Product ID not defined", 500);
   }
 
   if (!attributeId) {
-    return res.json(errorMessage("Attribute ID not defined"));
+    return res.error("Attribute ID not defined", 500);
   }
 
   // Check if product exists
   const productExists = await findProductById(productId);
   if (!productExists) {
-    return res.json(errorMessage("Product not found", 404));
+    return res.notFound("Product not found");
   }
 
   // Check if attribute exists
   const attributeExists = await findAttributeById(attributeId);
   if (!attributeExists) {
-    return res.json(errorMessage("Attribute not found", 404));
+    return res.notFound("Attribute not found");
   }
 
   // Check if storeView exists when storeViewId is provided
   if (storeViewId !== null && storeViewId !== undefined) {
     const storeViewExists = await findStoreViewById(storeViewId);
     if (!storeViewExists) {
-      return res.json(errorMessage("Store view not found", 404));
+      return res.notFound("Store view not found");
     }
   }
 
@@ -227,11 +218,8 @@ export const validateProductAttributeDeleteByCompositeKey = async (
     storeViewId
   );
   if (!productAttributeExists) {
-    return res.json(
-      errorMessage(
-        "Unable to find product attribute value with the specified combination",
-        404
-      )
+    return res.notFound(
+      "Unable to find product attribute value with the specified combination"
     );
   }
 

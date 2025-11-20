@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findByCompositeKey } from "../models/productAssetModel.js";
 import { findById as findProductById } from "../models/productModel.js";
 import { findById as findAssetById } from "../models/assetModel.js";
@@ -15,21 +14,19 @@ export const validateProductAssetCreation = async (req, res, next) => {
   const result = productAssetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate product asset", 500, result.error)
-    );
+    return res.error("Product asset validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if product exists
   const productExists = await findProductById(result.data.productId);
   if (!productExists) {
-    return res.json(errorMessage("Product not found", 404));
+    return res.notFound(`Product with ID ${result.data.productId} was not found in the system.`);
   }
 
   // Check if asset exists
   const assetExists = await findAssetById(result.data.assetId);
   if (!assetExists) {
-    return res.json(errorMessage("Asset not found", 404));
+    return res.notFound(`Asset with ID ${result.data.assetId} was not found in the system.`);
   }
 
   // Check if product asset relationship already exists
@@ -40,9 +37,7 @@ export const validateProductAssetCreation = async (req, res, next) => {
   );
 
   if (productAssetExists) {
-    return res.json(
-      errorMessage("Product asset relationship already exists", 409)
-    );
+    return res.error(`This asset is already associated with the product as type '${result.data.type}'.`, 409);
   }
   next();
 };
@@ -53,9 +48,7 @@ export const validateProductAssetUpdate = async (req, res, next) => {
   const type = req.params.type;
 
   if (!productId || !assetId || !type) {
-    return res.json(
-      errorMessage("Product ID, Asset ID, and Type are required")
-    );
+    return res.error("Product ID, Asset ID, and Type are all required parameters.", 500);
   }
 
   const result = productAssetSchema.safeParse(req.body);
@@ -64,17 +57,14 @@ export const validateProductAssetUpdate = async (req, res, next) => {
   const productAssetExists = await findByCompositeKey(productId, assetId, type);
 
   if (!result.success) {
-    return res.json(
-      errorMessage(
-        "Failed to validate product asset update",
-        400,
-        result.error?.message
-      )
+    return res.badRequest(
+      "Product asset update validation failed. Please check the provided data.",
+      result.error?.message
     );
   }
 
   if (!productAssetExists) {
-    return res.json(errorMessage("Unable to find product asset to update"));
+    return res.error(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}'.`, 500);
   }
   next();
 };
@@ -87,13 +77,11 @@ export const validateProductAssetDelete = async (req, res, next) => {
   const productAssetExists = await findByCompositeKey(productId, assetId, type);
 
   if (!productId || !assetId || !type) {
-    return res.json(
-      errorMessage("Product ID, Asset ID, and Type are required")
-    );
+    return res.error("Product ID, Asset ID, and Type are all required parameters.", 500);
   }
 
   if (!productAssetExists) {
-    return res.json(errorMessage("Unable to find product asset to delete"));
+    return res.error(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}' and cannot be deleted.`, 500);
   }
   next();
 };

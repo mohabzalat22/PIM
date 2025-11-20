@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findById, findByCode } from "../models/storeViewModel.js";
 import { findById as findStoreById } from "../models/storeModel.js";
 import { findById as findLocaleById } from "../models/localeModel.js";
@@ -15,32 +14,28 @@ export const validateStoreViewCreation = async (req, res, next) => {
   const result = storeViewSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.status(400).json(
-      errorMessage("Failed to validate store view", 400, result.error)
-    );
+    return res.badRequest("Store view validation failed. Please check the provided data.", result.error);
   }
 
   // Check if store exists
   const storeExists = await findStoreById(result.data.storeId);
   if (!storeExists) {
-    return res.status(404).json(errorMessage("Store not found", 404));
+    return res.notFound(`Store with ID ${result.data.storeId} was not found in the system.`);
   }
 
   // Check if locale exists
   const localeExists = await findLocaleById(result.data.localeId);
   if (!localeExists) {
-    return res.status(404).json(errorMessage("Locale not found", 404));
+    return res.notFound(`Locale with ID ${result.data.localeId} was not found in the system.`);
   }
 
   // Check if already saved record with the same code
   const storeViewExists = await findByCode(result.data.code);
 
   if (storeViewExists) {
-    return res.status(409).json(
-      errorMessage("Store view with the same code already exists", 409, {
-        error: `code-${result.data.code}`,
-      })
-    );
+    return res.error(`A store view with code '${result.data.code}' already exists in the system.`, 409, {
+      error: `code-${result.data.code}`,
+    });
   }
   next();
 };
@@ -48,25 +43,25 @@ export const validateStoreViewCreation = async (req, res, next) => {
 export const validateStoreViewUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.status(400).json(errorMessage("ID not defined", 400));
+    return res.badRequest("Store view ID is required and must be a valid number.");
   }
 
   const result = storeViewSchema.safeParse(req.body);
   const storeViewExists = await findById(id);
 
   if (!result.success) {
-    return res.status(400).json(errorMessage("Failed to validate store view update", 400));
+    return res.badRequest("Store view update validation failed. Please check the provided data.");
   }
 
   if (!storeViewExists) {
-    return res.status(404).json(errorMessage("Unable to find store view to update", 404));
+    return res.notFound(`Store view with ID ${id} was not found in the system.`);
   }
 
   // Check if store exists
   if (result.data.storeId) {
     const storeExists = await findStoreById(result.data.storeId);
     if (!storeExists) {
-      return res.status(404).json(errorMessage("Store not found", 404));
+      return res.notFound(`Store with ID ${result.data.storeId} was not found in the system.`);
     }
   }
 
@@ -74,7 +69,7 @@ export const validateStoreViewUpdate = async (req, res, next) => {
   if (result.data.localeId) {
     const localeExists = await findLocaleById(result.data.localeId);
     if (!localeExists) {
-      return res.status(404).json(errorMessage("Locale not found", 404));
+      return res.notFound(`Locale with ID ${result.data.localeId} was not found in the system.`);
     }
   }
 
@@ -82,9 +77,7 @@ export const validateStoreViewUpdate = async (req, res, next) => {
   if (result.data.code) {
     const codeExists = await findByCode(result.data.code);
     if (codeExists && codeExists.id !== id) {
-      return res.status(409).json(
-        errorMessage("Store view with the same code already exists", 409)
-      );
+      return res.error(`Store view code '${result.data.code}' is already in use by another store view.`, 409);
     }
   }
 
@@ -96,11 +89,11 @@ export const validateStoreViewDelete = async (req, res, next) => {
   const storeViewExists = await findById(id);
 
   if (!id) {
-    return res.status(400).json(errorMessage("ID not defined", 400));
+    return res.badRequest("Store view ID is required and must be a valid number.");
   }
 
   if (!storeViewExists) {
-    return res.status(404).json(errorMessage("Unable to find store view to delete", 404));
+    return res.notFound(`Store view with ID ${id} was not found and cannot be deleted.`);
   }
 
   // Check if store view has associated data
@@ -108,11 +101,8 @@ export const validateStoreViewDelete = async (req, res, next) => {
     storeViewExists.productAttributeValues &&
     storeViewExists.productAttributeValues.length > 0
   ) {
-    return res.status(400).json(
-      errorMessage(
-        "Cannot delete store view with associated product attribute values",
-        400
-      )
+    return res.badRequest(
+      `Cannot delete store view '${storeViewExists.name}' because it has ${storeViewExists.productAttributeValues.length} associated product attribute value(s). Please remove these associations first.`
     );
   }
 
@@ -120,11 +110,8 @@ export const validateStoreViewDelete = async (req, res, next) => {
     storeViewExists.categoryTranslations &&
     storeViewExists.categoryTranslations.length > 0
   ) {
-    return res.status(400).json(
-      errorMessage(
-        "Cannot delete store view with associated category translations",
-        400
-      )
+    return res.badRequest(
+      `Cannot delete store view '${storeViewExists.name}' because it has ${storeViewExists.categoryTranslations.length} associated category translation(s). Please remove these translations first.`
     );
   }
 

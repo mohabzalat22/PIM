@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findById, findByValue } from "../models/localeModel.js";
 import { PrismaClient } from "@prisma/client";
 
@@ -14,18 +13,14 @@ export const validateLocaleCreation = async (req, res, next) => {
   const result = localeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.status(400).json(
-      errorMessage("Failed to validate locale", 400, result.error)
-    );
+    return res.badRequest("Locale validation failed. Please check the provided data.", result.error);
   }
 
   const existing = await findByValue(result.data.value);
   if (existing) {
-    return res.status(409).json(
-      errorMessage("Locale with the same value already exists", 409, {
-        error: `value-${result.data.value}`,
-      })
-    );
+    return res.error(`A locale with value '${result.data.value}' already exists in the system.`, 409, {
+      error: `value-${result.data.value}`,
+    });
   }
 
   next();
@@ -34,28 +29,24 @@ export const validateLocaleCreation = async (req, res, next) => {
 export const validateLocaleUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.status(400).json(errorMessage("ID not defined", 400));
+    return res.badRequest("Locale ID is required and must be a valid number.");
   }
 
   const result = localeSchema.safeParse(req.body);
   const localeExists = await findById(id);
 
   if (!result.success) {
-    return res.status(400).json(
-      errorMessage("Failed to validate locale update", 400, result.error)
-    );
+    return res.badRequest("Locale update validation failed. Please check the provided data.", result.error);
   }
 
   if (!localeExists) {
-    return res.status(404).json(errorMessage("Unable to find locale to update", 404));
+    return res.notFound(`Locale with ID ${id} was not found in the system.`);
   }
 
   if (result.data.value) {
     const valueExists = await findByValue(result.data.value);
     if (valueExists && valueExists.id !== id) {
-      return res.status(409).json(
-        errorMessage("Locale with the same value already exists", 409)
-      );
+      return res.error(`Locale value '${result.data.value}' is already in use by another locale.`, 409);
     }
   }
 
@@ -65,12 +56,12 @@ export const validateLocaleUpdate = async (req, res, next) => {
 export const validateLocaleDelete = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.status(400).json(errorMessage("ID not defined"));
+    return res.badRequest("Locale ID is required and must be a valid number.");
   }
 
   const localeExists = await findById(id);
   if (!localeExists) {
-    return res.status(404).json(errorMessage("Unable to find locale to delete", 404));
+    return res.notFound(`Locale with ID ${id} was not found and cannot be deleted.`);
   }
 
   // Check if locale is associated with a store view
@@ -79,11 +70,8 @@ export const validateLocaleDelete = async (req, res, next) => {
   });
 
   if (storeViewUsingLocale) {
-    return res.status(400).json(
-      errorMessage(
-        "Cannot delete locale that is associated with a store view",
-        400
-      )
+    return res.badRequest(
+      `Cannot delete locale '${localeExists.label}' because it is currently associated with store view '${storeViewUsingLocale.name}'. Please reassign the store view to a different locale first.`
     );
   }
 

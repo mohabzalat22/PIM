@@ -1,6 +1,5 @@
 import z from "zod";
 import { ProductType } from "@prisma/client";
-import { errorMessage } from "../utils/message.js";
 import { findById, findBySku } from "../models/productModel.js";
 
 const productSchema = z.object({
@@ -22,20 +21,16 @@ export const validateProductCreation = async (req, res, next) => {
   const result = productSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate product", 500, result.error)
-    );
+    return res.error("Product validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if already saved record with the same sku
   const productExists = await findBySku(result.data.sku);
 
   if (productExists) {
-    return res.json(
-      errorMessage("Product with the same SKU already exists", 409, {
-        error: `sku-${result.data.sku}`,
-      })
-    );
+    return res.error(`A product with SKU '${result.data.sku}' already exists in the system.`, 409, {
+      error: `sku-${result.data.sku}`,
+    });
   }
   next();
 };
@@ -43,29 +38,25 @@ export const validateProductCreation = async (req, res, next) => {
 export const validateProductUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Product ID is required and must be a valid number.", 500);
   }
 
   const result = productUpdateSchema.safeParse(req.body);
   const productExists = await findById(id);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate product update", 500, result.error)
-    );
+    return res.error("Product update validation failed. Please check the provided data.", 500, result.error);
   }
 
   if (!productExists) {
-    return res.json(errorMessage("Unable to find product to update", 404));
+    return res.notFound(`Product with ID ${id} was not found in the system.`);
   }
 
   // Check if SKU already exists (excluding current product)
   if (result.data.sku) {
     const skuExists = await findBySku(result.data.sku);
     if (skuExists && skuExists.id !== id) {
-      return res.json(
-        errorMessage("Product with the same SKU already exists", 409)
-      );
+      return res.error(`SKU '${result.data.sku}' is already in use by another product.`, 409);
     }
   }
 
@@ -77,11 +68,11 @@ export const validateProductDelete = async (req, res, next) => {
   const productExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Product ID is required and must be a valid number.", 500);
   }
 
   if (!productExists) {
-    return res.json(errorMessage("Unable to find product to delete", 404));
+    return res.notFound(`Product with ID ${id} was not found and cannot be deleted.`);
   }
 
   next();

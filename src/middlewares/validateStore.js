@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findById, findByCode } from "../models/storeModel.js";
 
 const storeSchema = z.object({
@@ -11,20 +10,16 @@ export const validateStoreCreation = async (req, res, next) => {
   const result = storeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate store", 500, result.error)
-    );
+    return res.error("Store validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if already saved record with the same code
   const storeExists = await findByCode(result.data.code);
 
   if (storeExists) {
-    return res.json(
-      errorMessage("Store with the same code already exists", 500, {
-        error: `code-${result.data.code}`,
-      })
-    );
+    return res.error(`A store with code '${result.data.code}' already exists in the system.`, 500, {
+      error: `code-${result.data.code}`,
+    });
   }
   next();
 };
@@ -32,27 +27,25 @@ export const validateStoreCreation = async (req, res, next) => {
 export const validateStoreUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Store ID is required and must be a valid number.", 500);
   }
 
   const result = storeSchema.safeParse(req.body);
   const storeExists = await findById(id);
 
   if (!result.success) {
-    return res.json(errorMessage("Failed to validate store update"));
+    return res.error("Store update validation failed. Please check the provided data.", 500);
   }
 
   if (!storeExists) {
-    return res.json(errorMessage("Unable to find store to update"));
+    return res.error(`Store with ID ${id} was not found in the system.`, 500);
   }
 
   // Check if code already exists (excluding current store)
   if (result.data.code) {
     const codeExists = await findByCode(result.data.code);
     if (codeExists && codeExists.id !== id) {
-      return res.json(
-        errorMessage("Store with the same code already exists", 409)
-      );
+      return res.error(`Store code '${result.data.code}' is already in use by another store.`, 409);
     }
   }
 
@@ -64,18 +57,16 @@ export const validateStoreDelete = async (req, res, next) => {
   const storeExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Store ID is required and must be a valid number.", 500);
   }
 
   if (!storeExists) {
-    return res.json(errorMessage("Unable to find store to delete"));
+    return res.error(`Store with ID ${id} was not found and cannot be deleted.`, 500);
   }
 
   // Check if store has store views
   if (storeExists.storeViews && storeExists.storeViews.length > 0) {
-    return res.json(
-      errorMessage("Cannot delete store with associated store views", 400)
-    );
+    return res.badRequest(`Cannot delete store because it has ${storeExists.storeViews.length} associated store view(s). Please delete or reassign store views first.`);
   }
 
   next();

@@ -1,6 +1,5 @@
 import z from "zod";
 import { ProductType } from "@prisma/client";
-import { errorMessage } from "../utils/message.js";
 import { findById as findAttributeSetById } from "../models/attributeSetModel.js";
 import { findById as findAttributeGroupById } from "../models/attributeGroupModel.js";
 import { findById as findAttributeById } from "../models/attributeModel.js";
@@ -49,9 +48,7 @@ export const validateAttributeSetCreation = async (req, res, next) => {
   const result = attributeSetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute set", 500, result.error)
-    );
+    return res.error("Failed to validate attribute set", 500, result.error);
   }
 
   const existing = await prisma.attributeSet.findUnique({
@@ -59,11 +56,9 @@ export const validateAttributeSetCreation = async (req, res, next) => {
   });
 
   if (existing) {
-    return res.json(
-      errorMessage("Attribute set with the same code already exists", 409, {
-        error: `code-${result.data.code}`,
-      })
-    );
+    return res.error("Attribute set with the same code already exists", 409, {
+      error: `code-${result.data.code}`,
+    });
   }
 
   const attributeIds = new Set();
@@ -72,15 +67,12 @@ export const validateAttributeSetCreation = async (req, res, next) => {
     for (const item of result.data.attributes) {
       const attribute = await findAttributeById(item.attributeId);
       if (!attribute) {
-        return res.json(errorMessage("Attribute not found", 404));
+        return res.notFound("Attribute not found");
       }
 
       if (attributeIds.has(item.attributeId)) {
-        return res.json(
-          errorMessage(
-            "Attribute cannot be duplicated in the same attribute set",
-            400
-          )
+        return res.badRequest(
+          "Attribute cannot be duplicated in the same attribute set"
         );
       }
       attributeIds.add(item.attributeId);
@@ -93,15 +85,12 @@ export const validateAttributeSetCreation = async (req, res, next) => {
         for (const attr of group.attributes) {
           const attribute = await findAttributeById(attr.attributeId);
           if (!attribute) {
-            return res.json(errorMessage("Attribute not found", 404));
+            return res.notFound("Attribute not found");
           }
 
           if (attributeIds.has(attr.attributeId)) {
-            return res.json(
-              errorMessage(
-                "Attribute cannot be duplicated in the same attribute set",
-                400
-              )
+            return res.badRequest(
+              "Attribute cannot be duplicated in the same attribute set"
             );
           }
           attributeIds.add(attr.attributeId);
@@ -117,23 +106,19 @@ export const validateAttributeSetUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   const attributeSetExists = await findAttributeSetById(id);
 
   if (!attributeSetExists) {
-    return res.json(
-      errorMessage("Unable to find attribute set to update", 404)
-    );
+    return res.notFound("Unable to find attribute set to update");
   }
 
   const result = attributeSetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute set update", 500, result.error)
-    );
+    return res.error("Failed to validate attribute set update", 500, result.error);
   }
 
   if (result.data.code) {
@@ -141,9 +126,7 @@ export const validateAttributeSetUpdate = async (req, res, next) => {
       where: { code: result.data.code },
     });
     if (codeExists && codeExists.id !== id) {
-      return res.json(
-        errorMessage("Attribute set with the same code already exists", 409)
-      );
+      return res.error("Attribute set with the same code already exists", 409);
     }
   }
 
@@ -155,13 +138,11 @@ export const validateAttributeSetDelete = async (req, res, next) => {
   const attributeSetExists = await findAttributeSetById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   if (!attributeSetExists) {
-    return res.json(
-      errorMessage("Unable to find attribute set to delete", 404)
-    );
+    return res.notFound("Unable to find attribute set to delete");
   }
 
   next();
@@ -178,14 +159,12 @@ export const validateAttributeGroupCreation = async (req, res, next) => {
   const result = attributeGroupSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute group", 500, result.error)
-    );
+    return res.error("Failed to validate attribute group", 500, result.error);
   }
 
   const attributeSet = await findAttributeSetById(result.data.attributeSetId);
   if (!attributeSet) {
-    return res.json(errorMessage("Attribute set not found", 404));
+    return res.notFound("Attribute set not found");
   }
 
   const existingGroup = await prisma.attributeGroup.findFirst({
@@ -196,9 +175,7 @@ export const validateAttributeGroupCreation = async (req, res, next) => {
   });
 
   if (existingGroup) {
-    return res.json(
-      errorMessage("Attribute group with the same code already exists", 409)
-    );
+    return res.error("Attribute group with the same code already exists", 409);
   }
 
   next();
@@ -208,23 +185,19 @@ export const validateAttributeGroupUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   const attributeGroupExists = await findAttributeGroupById(id);
 
   if (!attributeGroupExists) {
-    return res.json(
-      errorMessage("Unable to find attribute group to update", 404)
-    );
+    return res.notFound("Unable to find attribute group to update");
   }
 
   const result = attributeGroupSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute group update", 500, result.error)
-    );
+    return res.error("Failed to validate attribute group update", 500, result.error);
   }
 
   if (result.data.code) {
@@ -236,9 +209,7 @@ export const validateAttributeGroupUpdate = async (req, res, next) => {
     });
 
     if (existingGroup && existingGroup.id !== id) {
-      return res.json(
-        errorMessage("Attribute group with the same code already exists", 409)
-      );
+      return res.error("Attribute group with the same code already exists", 409);
     }
   }
 
@@ -250,13 +221,11 @@ export const validateAttributeGroupDelete = async (req, res, next) => {
   const attributeGroupExists = await findAttributeGroupById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("ID not defined", 500);
   }
 
   if (!attributeGroupExists) {
-    return res.json(
-      errorMessage("Unable to find attribute group to delete", 404)
-    );
+    return res.notFound("Unable to find attribute group to delete");
   }
 
   next();

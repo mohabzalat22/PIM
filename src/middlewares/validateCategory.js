@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findById } from "../models/categoryModel.js";
 
 const categorySchema = z.object({
@@ -10,16 +9,14 @@ export const validateCategoryCreation = async (req, res, next) => {
   const result = categorySchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate category", 500, result.error)
-    );
+    return res.error("Category validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if parent category exists (if parentId is provided)
   if (result.data.parentId) {
     const parentExists = await findById(result.data.parentId);
     if (!parentExists) {
-      return res.json(errorMessage("Parent category not found", 404));
+      return res.notFound(`Parent category with ID ${result.data.parentId} was not found.`);
     }
   }
 
@@ -29,30 +26,30 @@ export const validateCategoryCreation = async (req, res, next) => {
 export const validateCategoryUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Category ID is required and must be a valid number.", 500);
   }
 
   const result = categorySchema.safeParse(req.body);
   const categoryExists = await findById(id);
 
   if (!result.success) {
-    return res.json(errorMessage("Failed to validate category update"));
+    return res.error("Category update validation failed. Please check the provided data.", 500);
   }
 
   if (!categoryExists) {
-    return res.json(errorMessage("Unable to find category to update"));
+    return res.error(`Category with ID ${id} was not found in the system.`, 500);
   }
 
   // Check if parent category exists (if parentId is provided)
   if (result.data.parentId) {
     const parentExists = await findById(result.data.parentId);
     if (!parentExists) {
-      return res.json(errorMessage("Parent category not found", 404));
+      return res.notFound(`Parent category with ID ${result.data.parentId} was not found.`);
     }
 
     // Prevent setting parent to itself
     if (result.data.parentId === id) {
-      return res.json(errorMessage("Category cannot be its own parent", 400));
+      return res.badRequest("A category cannot be set as its own parent.");
     }
   }
 
@@ -64,18 +61,16 @@ export const validateCategoryDelete = async (req, res, next) => {
   const categoryExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Category ID is required and must be a valid number.", 500);
   }
 
   if (!categoryExists) {
-    return res.json(errorMessage("Unable to find category to delete"));
+    return res.error(`Category with ID ${id} was not found and cannot be deleted.`, 500);
   }
 
   // Check if category has subcategories
   if (categoryExists.subcategory && categoryExists.subcategory.length > 0) {
-    return res.json(
-      errorMessage("Cannot delete category with subcategories", 400)
-    );
+    return res.badRequest(`Cannot delete category because it contains ${categoryExists.subcategory.length} subcategory(ies). Please delete or reassign subcategories first.`);
   }
 
   next();

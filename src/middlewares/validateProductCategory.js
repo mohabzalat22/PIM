@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import { findByCompositeKey } from "../models/productCategoryModel.js";
 import { findById as findProductById } from "../models/productModel.js";
 import { findById as findCategoryById } from "../models/categoryModel.js";
@@ -16,21 +15,19 @@ export const validateProductCategoryCreation = async (req, res, next) => {
   const result = productCategorySchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate product category", 500, result.error)
-    );
+    return res.error("Product category validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if product exists
   const productExists = await findProductById(result.data.productId);
   if (!productExists) {
-    return res.json(errorMessage("Product not found", 404));
+    return res.notFound(`Product with ID ${result.data.productId} was not found in the system.`);
   }
 
   // Check if category exists
   const categoryExists = await findCategoryById(result.data.categoryId);
   if (!categoryExists) {
-    return res.json(errorMessage("Category not found", 404));
+    return res.notFound(`Category with ID ${result.data.categoryId} was not found in the system.`);
   }
 
   // Check if product category relationship already exists
@@ -40,9 +37,7 @@ export const validateProductCategoryCreation = async (req, res, next) => {
   );
 
   if (productCategoryExists) {
-    return res.json(
-      errorMessage("Product category relationship already exists", 409)
-    );
+    return res.error(`Product is already assigned to this category.`, 409);
   }
   next();
 };
@@ -54,11 +49,11 @@ export const validateProductCategoryDelete = async (req, res, next) => {
   const productCategoryExists = await findByCompositeKey(productId, categoryId);
 
   if (!productId || !categoryId) {
-    return res.json(errorMessage("Product ID and Category ID are required"));
+    return res.error("Both Product ID and Category ID are required parameters.", 500);
   }
 
   if (!productCategoryExists) {
-    return res.json(errorMessage("Unable to find product category to delete"));
+    return res.error(`Product category relationship not found for product ID ${productId} and category ID ${categoryId}.`, 500);
   }
   next();
 };

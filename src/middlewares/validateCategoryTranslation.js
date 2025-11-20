@@ -1,5 +1,4 @@
 import z from "zod";
-import { errorMessage } from "../utils/message.js";
 import {
   findById,
   findByCompositeKey,
@@ -25,21 +24,19 @@ export const validateCategoryTranslationCreation = async (req, res, next) => {
   const result = categoryTranslationSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate category translation", 500, result.error)
-    );
+    return res.error("Category translation validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if category exists
   const categoryExists = await findCategoryById(result.data.categoryId);
   if (!categoryExists) {
-    return res.json(errorMessage("Category not found", 404));
+    return res.notFound(`Category with ID ${result.data.categoryId} was not found in the system.`);
   }
 
   // Check if store view exists
   const storeViewExists = await findStoreViewById(result.data.storeViewId);
   if (!storeViewExists) {
-    return res.json(errorMessage("Store view not found", 404));
+    return res.notFound(`Store view with ID ${result.data.storeViewId} was not found in the system.`);
   }
 
   // Check if translation already exists for this category and store view
@@ -49,11 +46,9 @@ export const validateCategoryTranslationCreation = async (req, res, next) => {
   );
 
   if (translationExists) {
-    return res.json(
-      errorMessage(
-        "Translation for this category and store view already exists",
-        409
-      )
+    return res.error(
+      `A translation for category ID ${result.data.categoryId} and store view ID ${result.data.storeViewId} already exists.`,
+      409
     );
   }
   next();
@@ -62,29 +57,25 @@ export const validateCategoryTranslationCreation = async (req, res, next) => {
 export const validateCategoryTranslationUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Translation ID is required and must be a valid number.", 500);
   }
 
   const result = categoryTranslationSchema.safeParse(req.body);
   const translationExists = await findById(id);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate category translation update")
-    );
+    return res.error("Category translation update validation failed. Please check the provided data.", 500);
   }
 
   if (!translationExists) {
-    return res.json(
-      errorMessage("Unable to find category translation to update")
-    );
+    return res.error(`Category translation with ID ${id} was not found in the system.`, 500);
   }
 
   // Check if category exists
   if (result.data.categoryId) {
     const categoryExists = await findCategoryById(result.data.categoryId);
     if (!categoryExists) {
-      return res.json(errorMessage("Category not found", 404));
+      return res.notFound(`Category with ID ${result.data.categoryId} was not found in the system.`);
     }
   }
 
@@ -92,7 +83,7 @@ export const validateCategoryTranslationUpdate = async (req, res, next) => {
   if (result.data.storeViewId) {
     const storeViewExists = await findStoreViewById(result.data.storeViewId);
     if (!storeViewExists) {
-      return res.json(errorMessage("Store view not found", 404));
+      return res.notFound(`Store view with ID ${result.data.storeViewId} was not found in the system.`);
     }
   }
 
@@ -104,13 +95,11 @@ export const validateCategoryTranslationDelete = async (req, res, next) => {
   const translationExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Translation ID is required and must be a valid number.", 500);
   }
 
   if (!translationExists) {
-    return res.json(
-      errorMessage("Unable to find category translation to delete")
-    );
+    return res.error(`Category translation with ID ${id} was not found and cannot be deleted.`, 500);
   }
   next();
 };

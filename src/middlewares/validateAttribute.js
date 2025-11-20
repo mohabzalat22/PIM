@@ -1,6 +1,5 @@
 import z from "zod";
 import { AttributeInputType, AttributeDataType } from "@prisma/client";
-import { errorMessage } from "../utils/message.js";
 import { findById, findByCode } from "../models/attributeModel.js";
 
 const attributeSchema = z.object({
@@ -21,20 +20,16 @@ export const validateAttributeCreation = async (req, res, next) => {
   const result = attributeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute", 500, result.error)
-    );
+    return res.error("Attribute validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if already saved record with the same code
   const attributeExists = await findByCode(result.data.code);
 
   if (attributeExists) {
-    return res.json(
-      errorMessage("Attribute with the same code already exists", 409, {
-        error: `code-${result.data.code}`,
-      })
-    );
+    return res.error(`An attribute with code '${result.data.code}' already exists in the system.`, 409, {
+      error: `code-${result.data.code}`,
+    });
   }
 
   next();
@@ -44,30 +39,26 @@ export const validateAttributeUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Attribute ID is required and must be a valid number.", 500);
   }
 
   const attributeExists = await findById(id);
 
   if (!attributeExists) {
-    return res.json(errorMessage("Unable to find attribute to update", 404));
+    return res.notFound(`Attribute with ID ${id} was not found in the system.`);
   }
 
   const result = attributeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.json(
-      errorMessage("Failed to validate attribute update", 500, result.error)
-    );
+    return res.error("Attribute update validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if code already exists (excluding current attribute)
   if (result.data.code) {
     const codeExists = await findByCode(result.data.code);
     if (codeExists && codeExists.id !== id) {
-      return res.json(
-        errorMessage("Attribute with the same code already exists", 409)
-      );
+      return res.error(`Attribute code '${result.data.code}' is already in use by another attribute.`, 409);
     }
   }
 
@@ -79,11 +70,11 @@ export const validateAttributeDelete = async (req, res, next) => {
   const attributeExists = await findById(id);
 
   if (!id) {
-    return res.json(errorMessage("ID not defined"));
+    return res.error("Attribute ID is required and must be a valid number.", 500);
   }
 
   if (!attributeExists) {
-    return res.json(errorMessage("Unable to find attribute to delete", 404));
+    return res.notFound(`Attribute with ID ${id} was not found and cannot be deleted.`);
   }
 
   // Check if attribute has associated product attribute values
@@ -91,11 +82,8 @@ export const validateAttributeDelete = async (req, res, next) => {
     attributeExists.productAttributeValues &&
     attributeExists.productAttributeValues.length > 0
   ) {
-    return res.json(
-      errorMessage(
-        "Cannot delete attribute with associated product attribute values",
-        400
-      )
+    return res.badRequest(
+      `Cannot delete attribute '${attributeExists.label}' because it is currently associated with ${attributeExists.productAttributeValues.length} product(s).`
     );
   }
 
