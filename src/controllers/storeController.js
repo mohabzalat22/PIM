@@ -6,7 +6,6 @@ import {
   findById,
   findByCode,
 } from "../models/storeModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getStores = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // current page
@@ -30,49 +29,49 @@ export const getStores = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
 
-  res.json(successMessage(stores, 200, "Success fetching stores", meta));
+  res.success(stores, "Stores retrieved successfully", meta);
 };
 
 export const getStore = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("ID not found"));
+    return res.badRequest("Store ID is required");
   }
   const store = (await findById(id)) ?? {};
-  res.json(successMessage(store));
+  res.success(store, "Store retrieved successfully");
 };
 
 export const getStoreByCode = async (req, res) => {
   const code = req.params.code;
   if (!code) {
-    res.json(errorMessage("Code not found"));
+    return res.badRequest("Store code is required");
   }
   const store = (await findByCode(code)) ?? {};
-  res.json(successMessage(store));
+  res.success(store, "Store retrieved successfully");
 };
 
 export const createStore = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(errorMessage("Failed to create new store", 500, result.error));
+    return res.error("Failed to create new store", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Store created successfully");
 };
 
 export const updateStore = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update store"));
+    return res.error("Failed to update store");
   }
-  res.json(successMessage("Store updated successfully"));
+  res.success(result, "Store updated successfully");
 };
 
 export const deleteStore = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete store"));
+    return res.error("Failed to delete store");
   }
-  res.json(successMessage("Store deleted successfully"));
+  res.success(result, "Store deleted successfully");
 };

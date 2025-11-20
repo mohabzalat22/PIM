@@ -7,29 +7,28 @@ import {
   findByAssetId,
   findByCompositeKey,
 } from "../models/productAssetModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProductAssets = async (req, res) => {
   const productAssets = (await findAll()) ?? [];
-  res.json(successMessage(productAssets));
+  res.success(productAssets, "Product assets retrieved successfully");
 };
 
 export const getProductAssetsByProduct = async (req, res) => {
   const productId = Number(req.params.productId);
   if (!productId) {
-    res.json(errorMessage("Product ID not found"));
+    return res.badRequest("Product ID is required");
   }
   const productAssets = (await findByProductId(productId)) ?? [];
-  res.json(successMessage(productAssets));
+  res.success(productAssets, "Product assets retrieved successfully");
 };
 
 export const getProductAssetsByAsset = async (req, res) => {
   const assetId = Number(req.params.assetId);
   if (!assetId) {
-    res.json(errorMessage("Asset ID not found"));
+    return res.badRequest("Asset ID is required");
   }
   const productAssets = (await findByAssetId(assetId)) ?? [];
-  res.json(successMessage(productAssets));
+  res.success(productAssets, "Product assets retrieved successfully");
 };
 
 export const getProductAsset = async (req, res) => {
@@ -38,22 +37,20 @@ export const getProductAsset = async (req, res) => {
   const type = req.params.type;
 
   if (!productId || !assetId || !type) {
-    res.json(errorMessage("Product ID, Asset ID, and Type not found"));
+    return res.badRequest("Product ID, asset ID, and type are required");
   }
 
   const productAsset =
     (await findByCompositeKey(productId, assetId, type)) ?? {};
-  res.json(successMessage(productAsset));
+  res.success(productAsset, "Product asset retrieved successfully");
 };
 
 export const createProductAsset = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(
-      errorMessage("Failed to create new product asset", 500, result.error)
-    );
+    return res.error("Failed to create new product asset", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Product asset created successfully");
 };
 
 export const updateProductAsset = async (req, res) => {
@@ -63,9 +60,9 @@ export const updateProductAsset = async (req, res) => {
 
   const result = await update(productId, assetId, type, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update product asset"));
+    return res.error("Failed to update product asset");
   }
-  res.json(successMessage("Product asset updated successfully"));
+  res.success(result, "Product asset updated successfully");
 };
 
 export const deleteProductAsset = async (req, res) => {
@@ -75,7 +72,7 @@ export const deleteProductAsset = async (req, res) => {
 
   const result = await deleteByCompositeKey(productId, assetId, type);
   if (!result) {
-    res.json(errorMessage("Failed to delete product asset"));
+    return res.error("Failed to delete product asset");
   }
-  res.json(successMessage("Product asset deleted successfully"));
+  res.success(result, "Product asset deleted successfully");
 };

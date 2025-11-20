@@ -5,7 +5,6 @@ import {
   deleteById,
   findById,
 } from "../models/assetModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getAssets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -28,40 +27,40 @@ export const getAssets = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
   
-  res.json(successMessage(assets, 200, "Success fetching assets", meta));
+  res.success(assets, "Assets retrieved successfully", meta);
 };
 
 export const getAsset = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("ID not found"));
+    return res.badRequest("Asset ID is required");
   }
   const asset = (await findById(id)) ?? {};
-  res.json(successMessage(asset));
+  res.success(asset, "Asset retrieved successfully");
 };
 
 export const createAsset = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(errorMessage("Failed to create new asset", 500, result.error));
+    return res.error("Failed to create new asset", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Asset created successfully");
 };
 
 export const updateAsset = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update asset"));
+    return res.error("Failed to update asset");
   }
-  res.json(successMessage("Asset updated successfully"));
+  res.success(result, "Asset updated successfully");
 };
 
 export const deleteAsset = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete asset"));
+    return res.error("Failed to delete asset");
   }
-  res.json(successMessage("Asset deleted successfully"));
+  res.success(result, "Asset deleted successfully");
 };

@@ -8,29 +8,28 @@ import {
   findByStoreViewId,
   findByCompositeKey,
 } from "../models/categoryTranslationModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getCategoryTranslations = async (req, res) => {
   const translations = (await findAll()) ?? [];
-  res.json(successMessage(translations));
+  res.success(translations, "Category translations retrieved successfully");
 };
 
 export const getCategoryTranslationsByCategory = async (req, res) => {
   const categoryId = Number(req.params.categoryId);
   if (!categoryId) {
-    res.json(errorMessage("Category ID not found"));
+    return res.badRequest("Category ID is required");
   }
   const translations = (await findByCategoryId(categoryId)) ?? [];
-  res.json(successMessage(translations));
+  res.success(translations, "Category translations retrieved successfully");
 };
 
 export const getCategoryTranslationsByStoreView = async (req, res) => {
   const storeViewId = Number(req.params.storeViewId);
   if (!storeViewId) {
-    res.json(errorMessage("Store View ID not found"));
+    return res.badRequest("Store view ID is required");
   }
   const translations = (await findByStoreViewId(storeViewId)) ?? [];
-  res.json(successMessage(translations));
+  res.success(translations, "Category translations retrieved successfully");
 };
 
 export const getCategoryTranslationByComposite = async (req, res) => {
@@ -38,50 +37,44 @@ export const getCategoryTranslationByComposite = async (req, res) => {
   const storeViewId = Number(req.params.storeViewId);
 
   if (!categoryId || !storeViewId) {
-    res.json(errorMessage("Category ID and Store View ID not found"));
+    return res.badRequest("Category ID and store view ID are required");
   }
 
   const translation = (await findByCompositeKey(categoryId, storeViewId)) ?? {};
-  res.json(successMessage(translation));
+  res.success(translation, "Category translation retrieved successfully");
 };
 
 export const getCategoryTranslation = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("ID not found"));
+    return res.badRequest("Translation ID is required");
   }
   const translation = (await findById(id)) ?? {};
-  res.json(successMessage(translation));
+  res.success(translation, "Category translation retrieved successfully");
 };
 
 export const createCategoryTranslation = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(
-      errorMessage(
-        "Failed to create new category translation",
-        500,
-        result.error
-      )
-    );
+    return res.error("Failed to create new category translation", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Category translation created successfully");
 };
 
 export const updateCategoryTranslation = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update category translation"));
+    return res.error("Failed to update category translation");
   }
-  res.json(successMessage("Category translation updated successfully"));
+  res.success(result, "Category translation updated successfully");
 };
 
 export const deleteCategoryTranslation = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete category translation"));
+    return res.error("Failed to delete category translation");
   }
-  res.json(successMessage("Category translation deleted successfully"));
+  res.success(result, "Category translation deleted successfully");
 };

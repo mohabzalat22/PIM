@@ -5,7 +5,6 @@ import {
   findById,
   update,
 } from "../models/attributeModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getAttributes = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -31,47 +30,45 @@ export const getAttributes = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
   
-  return res.json(successMessage(attributes, 200, "Success fetching attributes", meta));
+  return res.success(attributes, "Attributes retrieved successfully", meta);
 };
 
 export const getAttribute = async (req, res) => {
   const id = Number(req.params.id);
   const attribute = await findById(id);
-  return res.json(successMessage(attribute));
+  return res.success(attribute, "Attribute retrieved successfully");
 };
 
 export const createAttribute = async (req, res) => {
   try {
     const result = await create(req.body);
-    return res.json(successMessage(result, 200, "created attribute"));
+    return res.created(result, "Attribute created successfully");
   } catch (e) {
-    return res.json(
-      errorMessage("couldnot create new attribute", 300, {
-        message: e.message,
-        code: 800,
-      })
-    );
+    return res.error("Failed to create attribute", 500, {
+      message: e.message,
+      code: 800,
+    });
   }
 };
 
 export const updateAttribute = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("undefined id"));
+    return res.badRequest("Attribute ID is required");
   }
   const result = await update(id, req.body);
 
   if (!result) {
-    return res.json(errorMessage("couldnot update attribute"));
+    return res.error("Failed to update attribute");
   }
-  return res.json(successMessage("updated attribute"));
+  return res.success(result, "Attribute updated successfully");
 };
 
 export const deleteAttribute = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    return res.json(errorMessage("couldnot delete attribute"));
+    return res.error("Failed to delete attribute");
   }
-  return res.json(successMessage("deleted attribute"));
+  return res.success(result, "Attribute deleted successfully");
 };

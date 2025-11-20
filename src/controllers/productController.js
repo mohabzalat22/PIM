@@ -5,7 +5,6 @@ import {
   deleteById,
   findById,
 } from "../models/productModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProducts = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // current page
@@ -32,40 +31,40 @@ export const getProducts = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
 
-  res.json(successMessage(products, 200, "Success fetching products", meta));
+  res.success(products, "Products retrieved successfully", meta);
 };
 
 export const getProduct = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("Id not found"));
+    return res.badRequest("Product ID is required");
   }
   const product = (await findById(id)) ?? [];
-  res.json(successMessage(product));
+  res.success(product, "Product retrieved successfully");
 };
 
 export const createProduct = async (req, res) => {
   const result = create(req.body);
   if (!result) {
-    res.json(errorMessage("Failed to create new product", 500, result.error));
+    return res.error("Failed to create new product", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Product created successfully");
 };
 
 export const updateProduct = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update product"));
+    return res.error("Failed to update product");
   }
-  res.json(successMessage(result, 200, "Product updated successfully"));
+  res.success(result, "Product updated successfully");
 };
 
 export const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete product"));
+    return res.error("Failed to delete product");
   }
-  res.json(successMessage("Product deleted successfully"));
+  res.success(result, "Product deleted successfully");
 };

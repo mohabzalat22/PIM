@@ -6,29 +6,28 @@ import {
   findByCategoryId,
   findByCompositeKey,
 } from "../models/productCategoryModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProductCategories = async (req, res) => {
   const productCategories = (await findAll()) ?? [];
-  res.json(successMessage(productCategories));
+  res.success(productCategories, "Product categories retrieved successfully");
 };
 
 export const getProductCategoriesByProduct = async (req, res) => {
   const productId = Number(req.params.productId);
   if (!productId) {
-    res.json(errorMessage("Product ID not found"));
+    return res.badRequest("Product ID is required");
   }
   const productCategories = (await findByProductId(productId)) ?? [];
-  res.json(successMessage(productCategories));
+  res.success(productCategories, "Product categories retrieved successfully");
 };
 
 export const getProductCategoriesByCategory = async (req, res) => {
   const categoryId = Number(req.params.categoryId);
   if (!categoryId) {
-    res.json(errorMessage("Category ID not found"));
+    return res.badRequest("Category ID is required");
   }
   const productCategories = (await findByCategoryId(categoryId)) ?? [];
-  res.json(successMessage(productCategories));
+  res.success(productCategories, "Product categories retrieved successfully");
 };
 
 export const getProductCategory = async (req, res) => {
@@ -36,22 +35,20 @@ export const getProductCategory = async (req, res) => {
   const categoryId = Number(req.params.categoryId);
 
   if (!productId || !categoryId) {
-    res.json(errorMessage("Product ID and Category ID not found"));
+    return res.badRequest("Product ID and category ID are required");
   }
 
   const productCategory =
     (await findByCompositeKey(productId, categoryId)) ?? {};
-  res.json(successMessage(productCategory));
+  res.success(productCategory, "Product category retrieved successfully");
 };
 
 export const createProductCategory = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(
-      errorMessage("Failed to create new product category", 500, result.error)
-    );
+    return res.error("Failed to create new product category", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Product category created successfully");
 };
 
 export const deleteProductCategory = async (req, res) => {
@@ -60,7 +57,7 @@ export const deleteProductCategory = async (req, res) => {
 
   const result = await deleteByCompositeKey(productId, categoryId);
   if (!result) {
-    res.json(errorMessage("Failed to delete product category"));
+    return res.error("Failed to delete product category");
   }
-  res.json(successMessage("Product category deleted successfully"));
+  res.success(result, "Product category deleted successfully");
 };

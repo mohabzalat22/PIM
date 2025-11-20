@@ -7,7 +7,6 @@ import {
   findByCode,
   findByStoreId,
 } from "../models/storeViewModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getStoreViews = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // current page
@@ -33,60 +32,58 @@ export const getStoreViews = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
 
-  res.json(successMessage(storeViews, 200, "Success fetching store views", meta));
+  res.success(storeViews, "Store views retrieved successfully", meta);
 };
 
 export const getStoreViewsByStore = async (req, res) => {
   const storeId = Number(req.params.storeId);
   if (!storeId) {
-    res.json(errorMessage("Store ID not found"));
+    return res.badRequest("Store ID is required");
   }
   const storeViews = (await findByStoreId(storeId)) ?? [];
-  res.json(successMessage(storeViews));
+  res.success(storeViews, "Store views retrieved successfully");
 };
 
 export const getStoreView = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("ID not found"));
+    return res.badRequest("Store view ID is required");
   }
   const storeView = (await findById(id)) ?? {};
-  res.json(successMessage(storeView));
+  res.success(storeView, "Store view retrieved successfully");
 };
 
 export const getStoreViewByCode = async (req, res) => {
   const code = req.params.code;
   if (!code) {
-    res.json(errorMessage("Code not found"));
+    return res.badRequest("Store view code is required");
   }
   const storeView = (await findByCode(code)) ?? {};
-  res.json(successMessage(storeView));
+  res.success(storeView, "Store view retrieved successfully");
 };
 
 export const createStoreView = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(
-      errorMessage("Failed to create new store view", 500, result.error)
-    );
+    return res.error("Failed to create new store view", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Store view created successfully");
 };
 
 export const updateStoreView = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    return res.json(errorMessage("Failed to update store view"));
+    return res.error("Failed to update store view");
   }
-  res.json(successMessage("Store view updated successfully"));
+  res.success(result, "Store view updated successfully");
 };
 
 export const deleteStoreView = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    return res.json(errorMessage("Failed to delete store view"));
+    return res.error("Failed to delete store view");
   }
-  res.json(successMessage("Store view deleted successfully"));
+  res.success(result, "Store view deleted successfully");
 };

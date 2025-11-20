@@ -6,7 +6,6 @@ import {
   findById,
   update,
 } from "../models/productAttributeModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getProductAttributes = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // current page
@@ -34,41 +33,35 @@ export const getProductAttributes = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
 
-  return res.json(successMessage(productAttributeValues, 200, "Success fetching product attributes", meta));
+  return res.success(productAttributeValues, "Product attributes retrieved successfully", meta);
 };
 
 export const getProductAttribute = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("undefined product attribute id"));
+    return res.badRequest("Product attribute ID is required");
   }
   const result = (await findById(id)) ?? [];
-  return res.json(successMessage(result));
+  return res.success(result, "Product attribute retrieved successfully");
 };
 
 export const createProductAttribute = async (req, res) => {
   const result = await create(req.body);
-  return res.json(
-    successMessage(result, "created product attribute successfully")
-  );
+  return res.created(result, "Product attribute created successfully");
 };
 
 export const updateProductAttribute = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("undefined id for updaing product attribute"));
+    return res.badRequest("Product attribute ID is required");
   }
   try {
     const result = await update(id, req.body);
-    return res.json(
-      successMessage(result, "updated product attribute successfully")
-    );
+    return res.success(result, "Product attribute updated successfully");
   } catch (e) {
-    return res.json(
-      errorMessage("error when updating product attribute", 400, {
-        message: e.message,
-      })
-    );
+    return res.error("Failed to update product attribute", 400, {
+      message: e.message,
+    });
   }
 };
 
@@ -77,10 +70,10 @@ export const deleteProductAttribute = async (req, res) => {
   const result = await deleteById(id);
 
   if (!result) {
-    return res.json(errorMessage("cannot delete product attribute"));
+    return res.error("Failed to delete product attribute");
   }
 
-  return res.json(successMessage("deleted product successfully"));
+  return res.success(result, "Product attribute deleted successfully");
 };
 
 export const deleteProductAttributeByCompositeKey = async (req, res) => {
@@ -98,15 +91,13 @@ export const deleteProductAttributeByCompositeKey = async (req, res) => {
     );
 
     if (!result) {
-      return res.json(errorMessage("Cannot delete product attribute"));
+      return res.error("Failed to delete product attribute");
     }
 
-    return res.json(successMessage("Product attribute deleted successfully"));
+    return res.success(result, "Product attribute deleted successfully");
   } catch (e) {
-    return res.json(
-      errorMessage("Error when deleting product attribute", 400, {
-        message: e.message,
-      })
-    );
+    return res.error("Failed to delete product attribute", 400, {
+      message: e.message,
+    });
   }
 };

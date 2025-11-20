@@ -14,6 +14,7 @@ import attributeSetRoutes from "./routes/attributeSetRoute.js";
 import attributeGroupRoutes from "./routes/attributeGroupRoute.js";
 import analyticsRoutes from "./routes/analyticsRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import { responseHelper } from "./middlewares/responseHelper.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { csrfMiddleware } from "./middlewares/csrfMiddleware.js";
@@ -33,35 +34,35 @@ app.use(cors(CorsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(responseHelper);
 app.use(csrfMiddleware);
 
+const apiEndpoint = "/api/v1";
 // CSRF route
-app.use("/api", csrfRoute);
+app.use(apiEndpoint, csrfRoute);
 // Product related routes
-app.use("/api/products", productRoutes);
-app.use("/api/attributes", attributeRoutes);
-app.use("/api/product-attributes", productAttributeRoute);
-app.use("/api/attribute-sets", attributeSetRoutes);
-app.use("/api/attribute-groups", attributeGroupRoutes);
+app.use(`${apiEndpoint}/products`, productRoutes);
+app.use(`${apiEndpoint}/attributes`, attributeRoutes);
+app.use(`${apiEndpoint}/product-attributes`, productAttributeRoute);
+app.use(`${apiEndpoint}/attribute-sets`, attributeSetRoutes);
+app.use(`${apiEndpoint}/attribute-groups`, attributeGroupRoutes);
 
 // Asset related routes
-app.use("/api/assets", assetRoutes);
-app.use("/api/product-assets", productAssetRoutes);
-
+app.use(`${apiEndpoint}/assets`, assetRoutes);
+app.use(`${apiEndpoint}/product-assets`, productAssetRoutes);
 // Category related routes
-app.use("/api/categories", categoryRoutes);
-app.use("/api/category-translations", categoryTranslationRoutes);
-app.use("/api/product-categories", productCategoryRoutes);
-
+app.use(`${apiEndpoint}/categories`, categoryRoutes);
+app.use(`${apiEndpoint}/category-translations`, categoryTranslationRoutes);
+app.use(`${apiEndpoint}/product-categories`, productCategoryRoutes);
 // Store related routes
-app.use("/api/stores", storeRoutes);
-app.use("/api/store-views", storeViewRoutes);
+app.use(`${apiEndpoint}/stores`, storeRoutes);
+app.use(`${apiEndpoint}/store-views`, storeViewRoutes);
 
 // Locale related routes
-app.use("/api/locales", localeRoutes);
+app.use(`${apiEndpoint}/locales`, localeRoutes);
 
 // Analytics routes
-app.use("/api/analytics", analyticsRoutes);
+app.use(`${apiEndpoint}/analytics`, analyticsRoutes);
 
 // grouped routes
 

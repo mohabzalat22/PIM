@@ -7,7 +7,6 @@ import {
   findByParentId,
   findRootCategories,
 } from "../models/categoryModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 export const getCategories = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -30,54 +29,54 @@ export const getCategories = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
   
-  res.json(successMessage(categories, 200, "Success fetching categories", meta));
+  res.success(categories, "Categories retrieved successfully", meta);
 };
 
 export const getRootCategories = async (req, res) => {
   const categories = (await findRootCategories()) ?? [];
-  res.json(successMessage(categories));
+  res.success(categories, "Root categories retrieved successfully");
 };
 
 export const getCategoriesByParent = async (req, res) => {
   const parentId = Number(req.params.parentId);
   if (!parentId) {
-    res.json(errorMessage("Parent ID not found"));
+    return res.badRequest("Parent category ID is required");
   }
   const categories = (await findByParentId(parentId)) ?? [];
-  res.json(successMessage(categories));
+  res.success(categories, "Child categories retrieved successfully");
 };
 
 export const getCategory = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    res.json(errorMessage("ID not found"));
+    return res.badRequest("Category ID is required");
   }
   const category = (await findById(id)) ?? {};
-  res.json(successMessage(category));
+  res.success(category, "Category retrieved successfully");
 };
 
 export const createCategory = async (req, res) => {
   const result = await create(req.body);
   if (!result) {
-    res.json(errorMessage("Failed to create new category", 500, result.error));
+    return res.error("Failed to create new category", 500, result.error);
   }
-  res.json(successMessage(result));
+  res.created(result, "Category created successfully");
 };
 
 export const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
   const result = await update(id, req.body);
   if (!result) {
-    res.json(errorMessage("Failed to update category"));
+    return res.error("Failed to update category");
   }
-  res.json(successMessage("Category updated successfully"));
+  res.success(result, "Category updated successfully");
 };
 
 export const deleteCategory = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    res.json(errorMessage("Failed to delete category"));
+    return res.error("Failed to delete category");
   }
-  res.json(successMessage("Category deleted successfully"));
+  res.success(result, "Category deleted successfully");
 };

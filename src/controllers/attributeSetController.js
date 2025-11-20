@@ -7,7 +7,6 @@ import {
 } from "../models/attributeSetModel.js";
 import { addAttributeToSet, removeAttributeFromSet } from "../models/attributeSetAttributeModel.js";
 import { addAttributeToGroup, removeAttributeFromGroup } from "../models/attributeSetGroupAttributeModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -34,51 +33,47 @@ export const getAttributeSets = async (req, res) => {
     totalPages: Math.ceil(total / limit),
   };
 
-  return res.json(
-    successMessage(sets, 200, "Success fetching attribute sets", meta)
-  );
+  return res.success(sets, "Attribute sets retrieved successfully", meta);
 };
 
 export const getAttributeSet = async (req, res) => {
   const id = Number(req.params.id);
   const set = await findById(id);
-  return res.json(successMessage(set));
+  return res.success(set, "Attribute set retrieved successfully");
 };
 
 export const createAttributeSet = async (req, res) => {
   try {
     const result = await create(req.body);
-    return res.json(successMessage(result, 200, "created attribute set"));
+    return res.created(result, "Attribute set created successfully");
   } catch (e) {
-    return res.json(
-      errorMessage("couldnot create new attribute set", 300, {
-        message: e.message,
-        code: 800,
-      })
-    );
+    return res.error("Failed to create attribute set", 500, {
+      message: e.message,
+      code: 800,
+    });
   }
 };
 
 export const updateAttributeSet = async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.json(errorMessage("undefined id"));
+    return res.badRequest("Attribute set ID is required");
   }
   const result = await update(id, req.body);
 
   if (!result) {
-    return res.json(errorMessage("couldnot update attribute set"));
+    return res.error("Failed to update attribute set");
   }
-  return res.json(successMessage("updated attribute set"));
+  return res.success(result, "Attribute set updated successfully");
 };
 
 export const deleteAttributeSet = async (req, res) => {
   const id = Number(req.params.id);
   const result = await deleteById(id);
   if (!result) {
-    return res.json(errorMessage("couldnot delete attribute set"));
+    return res.error("Failed to delete attribute set");
   }
-  return res.json(successMessage("deleted attribute set"));
+  return res.success(result, "Attribute set deleted successfully");
 };
 
 export const addAttributeToAttributeSet = async (req, res) => {
@@ -86,7 +81,7 @@ export const addAttributeToAttributeSet = async (req, res) => {
   const { attributeId, sortOrder } = req.body;
 
   if (!attributeSetId || !attributeId) {
-    return res.json(errorMessage("attributeSetId and attributeId are required"));
+    return res.badRequest("Attribute set ID and attribute ID are required");
   }
 
   // Do not allow assigning an attribute directly to a set
@@ -99,11 +94,8 @@ export const addAttributeToAttributeSet = async (req, res) => {
   });
 
   if (existingInGroups) {
-    return res.json(
-      errorMessage(
-        "Attribute is already assigned to a group in this attribute set",
-        400
-      )
+    return res.badRequest(
+      "Attribute is already assigned to a group in this attribute set"
     );
   }
 
@@ -113,21 +105,21 @@ export const addAttributeToAttributeSet = async (req, res) => {
     sortOrder,
   });
 
-  return res.json(successMessage(result, 200, "added attribute to set"));
+  return res.success(result, "Attribute added to set successfully");
 };
 
 export const removeAttributeFromAttributeSet = async (req, res) => {
   const id = Number(req.params.relationId);
   if (!id) {
-    return res.json(errorMessage("relation id not defined"));
+    return res.badRequest("Relation ID is required");
   }
 
   const result = await removeAttributeFromSet(id);
   if (!result) {
-    return res.json(errorMessage("couldnot remove attribute from set"));
+    return res.error("Failed to remove attribute from set");
   }
 
-  return res.json(successMessage("removed attribute from set"));
+  return res.success(result, "Attribute removed from set successfully");
 };
 
 export const addAttributeToAttributeGroupInSet = async (req, res) => {
@@ -136,8 +128,8 @@ export const addAttributeToAttributeGroupInSet = async (req, res) => {
   const { attributeId, sortOrder } = req.body;
 
   if (!attributeSetId || !attributeGroupId || !attributeId) {
-    return res.json(
-      errorMessage("attributeSetId, attributeGroupId and attributeId are required")
+    return res.badRequest(
+      "Attribute set ID, attribute group ID and attribute ID are required"
     );
   }
 
@@ -151,11 +143,8 @@ export const addAttributeToAttributeGroupInSet = async (req, res) => {
   });
 
   if (existingInSet) {
-    return res.json(
-      errorMessage(
-        "Attribute is already assigned directly to this attribute set",
-        400
-      )
+    return res.badRequest(
+      "Attribute is already assigned directly to this attribute set"
     );
   }
 
@@ -169,11 +158,8 @@ export const addAttributeToAttributeGroupInSet = async (req, res) => {
   });
 
   if (existingInOtherGroup) {
-    return res.json(
-      errorMessage(
-        "Attribute is already assigned to another group in this attribute set",
-        400
-      )
+    return res.badRequest(
+      "Attribute is already assigned to another group in this attribute set"
     );
   }
 
@@ -184,23 +170,24 @@ export const addAttributeToAttributeGroupInSet = async (req, res) => {
     sortOrder,
   });
 
-  return res.json(
-    successMessage(result, 200, "added attribute to attribute group in set")
+  return res.success(
+    result,
+    "Attribute added to group successfully"
   );
 };
 
 export const removeAttributeFromAttributeGroupInSet = async (req, res) => {
   const id = Number(req.params.relationId);
   if (!id) {
-    return res.json(errorMessage("relation id not defined"));
+    return res.badRequest("Relation ID is required");
   }
 
   const result = await removeAttributeFromGroup(id);
   if (!result) {
-    return res.json(
-      errorMessage("couldnot remove attribute from attribute group in set")
+    return res.error(
+      "Failed to remove attribute from group"
     );
   }
 
-  return res.json(successMessage("removed attribute from attribute group in set"));
+  return res.success(result, "Attribute removed from group successfully");
 };

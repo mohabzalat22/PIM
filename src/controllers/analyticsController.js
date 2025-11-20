@@ -1,5 +1,4 @@
 import { getDashboardAnalytics } from "../models/analyticsModel.js";
-import { errorMessage, successMessage } from "../utils/message.js";
 
 /**
  * Get dashboard analytics data
@@ -8,9 +7,9 @@ import { errorMessage, successMessage } from "../utils/message.js";
 export const getDashboard = async (req, res) => {
   try {
     const analytics = await getDashboardAnalytics();
-    res.json(successMessage(analytics, 200, "Successfully fetched dashboard analytics"));
+    res.success(analytics, "Dashboard analytics retrieved successfully");
   } catch (error) {
     console.error("Error fetching dashboard analytics:", error);
-    res.json(errorMessage("Failed to fetch dashboard analytics", 500, error.message));
+    res.error("Failed to retrieve dashboard analytics", 500, error.message);
   }
 };
