@@ -257,7 +257,7 @@ model AttributeSetAttribute {
    * Relations
    */
   attributeSet AttributeSet? @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
-  attribute    Attribute    @relation(fields: [attributeId], references: [id])
+  attribute    Attribute    @relation(fields: [attributeId], references: [id], onDelete: Cascade)
 
   @@unique([attributeSetId, attributeId])
 }
@@ -274,7 +274,7 @@ model AttributeSetGroupAttribute {
    */
   attributeGroup AttributeGroup?      @relation(fields: [attributeGroupId], references: [id], onDelete: SetNull)
   attributeSet   AttributeSet?        @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
-  attribute      Attribute            @relation(fields: [attributeId], references: [id])
+  attribute      Attribute            @relation(fields: [attributeId], references: [id], onDelete: Cascade)
 
   @@unique([attributeSetId, attributeId])
 }
