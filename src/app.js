@@ -15,6 +15,9 @@ import attributeGroupRoutes from "./routes/attributeGroupRoute.js";
 import analyticsRoutes from "./routes/analyticsRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import { csrfMiddleware } from "./middlewares/csrfMiddleware.js";
+import csrfRoute from "./routes/csrfRoute.js";
 
 const PORT = 3000;
 
@@ -23,12 +26,17 @@ const app = express();
 const CorsOptions = {
   origin: "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "csrf-token"],
+  credentials: true, // Allow credentials (cookies) to be sent
 };
 app.use(cors(CorsOptions));
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(csrfMiddleware);
 
+// CSRF route
+app.use("/api", csrfRoute);
 // Product related routes
 app.use("/api/products", productRoutes);
 app.use("/api/attributes", attributeRoutes);
