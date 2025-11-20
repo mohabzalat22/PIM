@@ -36,6 +36,8 @@ import { useStoreViews } from "@/hooks/useStoreViews";
 import { useStores } from "@/hooks/useStores";
 import { useLocales } from "@/hooks/useLocales";
 import { StoreViewService } from "@/services/storeView.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
+
 interface StoreView {
   id: number;
   storeId: number;
@@ -163,7 +165,7 @@ export default function StoreView() {
   }, [isLoading]);
 
   const handleCreateStoreView = async () => {
-    try {
+    await asyncWrapper(async () => {
       // Validate form data
       if (!formData.storeId || !formData.code || !formData.name || !formData.localeId) {
         toast.error("Please fill in all required fields");
@@ -187,16 +189,13 @@ export default function StoreView() {
       toast.success("Store view created successfully");
       setShowCreateDialog(false);
       setFormData({ storeId: "", code: "", name: "", localeId: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create store view: ${error.message}`);
-    }
+    });
   };
 
   const handleEditStoreView = async () => {
     if (!editingStoreView) return;
 
-    try {
+    await asyncWrapper(async () => {
       // Validate form data
       if (!formData.storeId || !formData.code || !formData.name || !formData.localeId) {
         toast.error("Please fill in all required fields");
@@ -216,10 +215,7 @@ export default function StoreView() {
       setShowEditDialog(false);
       setEditingStoreView(null);
       setFormData({ storeId: "", code: "", name: "", localeId: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update store view: ${error.message}`);
-    }
+    });
   };
 
   const [storeViewIdToDelete, setStoreViewIdToDelete] = useState<number | null>(
@@ -227,14 +223,11 @@ export default function StoreView() {
   );
 
   const handleDeleteStoreView = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await StoreViewService.remove(id);
       toast.success("Store view deleted successfully");
       await refetchStoreViews();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete store view: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (storeView: StoreView) => {

@@ -41,6 +41,7 @@ import type { AttributeSetFilters } from "@/interfaces/attributeSet.filters.inte
 import { useAttributeSets } from "@/hooks/useAttributeSets";
 import { useAttributes } from "@/hooks/useAttributes";
 import { AttributeSetService } from "@/services/attributeSet.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function AttributeSetPage() {
   const limit = 10;
@@ -183,7 +184,7 @@ export default function AttributeSetPage() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedAttributeSetIds).map((id) =>
         AttributeSetService.remove(id)
       );
@@ -192,10 +193,7 @@ export default function AttributeSetPage() {
       const count = selectedAttributeSetIds.size;
       setSelectedAttributeSetIds(new Set());
       toast.success(`Successfully deleted ${count} attribute set${count > 1 ? "s" : ""}`);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attribute sets: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -229,7 +227,7 @@ export default function AttributeSetPage() {
   }
 
   const handleCreateAttributeSet = async () => {
-    try {
+    await asyncWrapper(async () => {
       const payload: any = {
         code: formData.code,
         label: formData.label,
@@ -249,16 +247,13 @@ export default function AttributeSetPage() {
       toast.success("Attribute set created successfully");
       setShowCreateDialog(false);
       resetForm();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create attribute set: ${error.message}`);
-    }
+    });
   };
 
   const handleEditAttributeSet = async () => {
     if (!editingAttributeSet) return;
 
-    try {
+    await asyncWrapper(async () => {
       const payload: any = {
         code: formData.code,
         label: formData.label,
@@ -290,21 +285,15 @@ export default function AttributeSetPage() {
       setShowEditDialog(false);
       setEditingAttributeSet(null);
       resetForm();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update attribute set: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteAttributeSet = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await AttributeSetService.remove(id);
       await refetchAttributeSets();
       toast.success("Attribute set deleted successfully");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attribute set: ${error.message}`);
-    }
+    });
   };
 
   const openCreateDialog = () => {

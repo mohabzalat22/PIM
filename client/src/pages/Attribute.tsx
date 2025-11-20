@@ -37,6 +37,7 @@ import { useAttributes } from "@/hooks/useAttributes";
 import { AttributeService } from "@/services/attribute.service";
 import Loading from "@/components/app/loading";
 import { DeleteConfirmDialog } from "@/components/app/DeleteConfirmDialog";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 interface Attribute {
   id: number;
@@ -206,7 +207,7 @@ export default function Attribute() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedAttributeIds).map((id) =>
         AttributeService.remove(id)
       );
@@ -215,10 +216,7 @@ export default function Attribute() {
       const count = selectedAttributeIds.size;
       setSelectedAttributeIds(new Set());
       toast.success(`Successfully deleted ${count} attribute${count > 1 ? "s" : ""}`);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attributes: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -238,7 +236,7 @@ export default function Attribute() {
   };
 
   const handleCreateAttribute = async () => {
-    try {
+    await asyncWrapper(async () => {
       await AttributeService.create(formData);
       await refetchAttributes();
       toast.success("Attribute created successfully");
@@ -252,16 +250,13 @@ export default function Attribute() {
         isFilterable: false,
         isGlobal: true,
       });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create attribute: ${error.message}`);
-    }
+    });
   };
 
   const handleEditAttribute = async () => {
     if (!editingAttribute) return;
 
-    try {
+    await asyncWrapper(async () => {
       await AttributeService.update(editingAttribute.id, formData);
       await refetchAttributes();
       toast.success("Attribute updated successfully");
@@ -276,21 +271,15 @@ export default function Attribute() {
         isFilterable: false,
         isGlobal: true,
       });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update attribute: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteAttribute = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await AttributeService.remove(id);
       await refetchAttributes();
       toast.success("Attribute deleted successfully");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attribute: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (attribute: Attribute) => {

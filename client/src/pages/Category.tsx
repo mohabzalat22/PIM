@@ -42,6 +42,7 @@ import type CategoryInterface from "@/interfaces/category/category.interface";
 import type StoreView from "@/interfaces/storeView.interface";
 import { CategoryService } from "@/services/category.service";
 import { StoreViewService } from "@/services/storeView.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function Category() {
   const limit = 10;
@@ -196,7 +197,7 @@ export default function Category() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedCategoryIds).map((id) =>
         CategoryService.remove(id)
       );
@@ -205,10 +206,7 @@ export default function Category() {
       const count = selectedCategoryIds.size;
       setSelectedCategoryIds(new Set());
       toast.success(`Successfully deleted ${count} category${count > 1 ? "ies" : "y"}`);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete categories: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -216,7 +214,7 @@ export default function Category() {
   };
 
   const handleCreateCategory = async () => {
-    try {
+    await asyncWrapper(async () => {
       const cleanedTranslations = formData.translations.filter(
         (t) => t.name.trim() !== ""
       );
@@ -252,16 +250,13 @@ export default function Category() {
           },
         ],
       });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create category: ${error.message}`);
-    }
+    });
   };
 
   const handleEditCategory = async () => {
     if (!editingCategory) return;
 
-    try {
+    await asyncWrapper(async () => {
       const cleanedTranslations = formData.translations.filter(
         (t) => t.name.trim() !== ""
       );
@@ -300,21 +295,15 @@ export default function Category() {
           },
         ],
       });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update category: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteCategory = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await CategoryService.remove(id);
       await refetchCategories();
       toast.success("Category deleted successfully");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete category: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (category: CategoryInterface) => {

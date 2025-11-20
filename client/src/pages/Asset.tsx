@@ -42,6 +42,7 @@ import type AssetType from "@/interfaces/asset.interface";
 import { SelectType } from "@/components/app/select-type";
 import { AssetService } from "@/services/asset.service";
 import { useAssets } from "@/hooks/useAssets";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function Asset() {
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -142,7 +143,7 @@ export default function Asset() {
   };
 
   const handleCreateAsset = async () => {
-    try {
+    await asyncWrapper(async () => {
       await AssetService.create(formData);
       toast.success("Asset created successfully");
       setShowCreateDialog(false);
@@ -151,16 +152,13 @@ export default function Asset() {
         mimeType: "",
       });
       await refetchAssets();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create asset: ${error.message}`);
-    }
+    });
   };
 
   const handleEditAsset = async () => {
     if (!editingAsset) return;
 
-    try {
+    await asyncWrapper(async () => {
       await AssetService.update(editingAsset.id, formData);
       toast.success("Asset updated successfully");
       setShowEditDialog(false);
@@ -170,21 +168,15 @@ export default function Asset() {
         mimeType: "",
       });
       refetchAssets();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update asset: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteAsset = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await AssetService.remove(id);
       toast.success("Asset deleted successfully");
       await refetchAssets();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete asset: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (asset: AssetType) => {

@@ -43,6 +43,7 @@ import { useAttributeGroups } from "@/hooks/useAttributeGroups";
 import { useAttributeSets } from "@/hooks/useAttributeSets";
 import { useAttributes } from "@/hooks/useAttributes";
 import { AttributeGroupService } from "@/services/attributeGroup.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function AttributeGroupPage() {
   const location = useLocation();
@@ -191,7 +192,7 @@ export default function AttributeGroupPage() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedGroupIds).map((id) =>
         AttributeGroupService.remove(id)
       );
@@ -202,10 +203,7 @@ export default function AttributeGroupPage() {
       toast.success(
         `Successfully deleted ${count} attribute group${count > 1 ? "s" : ""}`
       );
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attribute groups: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -243,7 +241,7 @@ export default function AttributeGroupPage() {
       return;
     }
 
-    try {
+    await asyncWrapper(async () => {
       const created = await AttributeGroupService.create({
         attributeSetId: Number(formData.attributeSetId),
         code: formData.code,
@@ -273,10 +271,7 @@ export default function AttributeGroupPage() {
       toast.success("Attribute group created successfully");
       setShowCreateDialog(false);
       resetForm();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create attribute group: ${error.message}`);
-    }
+    });
   };
 
   const handleEditGroup = async () => {
@@ -289,7 +284,7 @@ export default function AttributeGroupPage() {
       !!editingGroup.attributeSet &&
       editingGroup.attributeSet.id !== newAttributeSetId;
 
-    try {
+    await asyncWrapper(async () => {
       await AttributeGroupService.update(editingGroup.id, {
         attributeSetId: newAttributeSetId || undefined,
         code: formData.code,
@@ -338,21 +333,15 @@ export default function AttributeGroupPage() {
       setShowEditDialog(false);
       setEditingGroup(null);
       resetForm();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update attribute group: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteGroup = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await AttributeGroupService.remove(id);
       await refetchGroups();
       toast.success("Attribute group deleted successfully");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete attribute group: ${error.message}`);
-    }
+    });
   };
 
   const openCreateDialog = () => {

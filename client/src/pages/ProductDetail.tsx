@@ -27,6 +27,7 @@ import { AssetService } from "@/services/asset.service";
 import { ProductAttributeValueService } from "@/services/productAttributeValue.service";
 import { ProductCategoryService } from "@/services/productCategory.service";
 import { ProductAssetService } from "@/services/productAsset.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 type ApiError = {
   message?: string;
@@ -287,7 +288,7 @@ export default function ProductDetail() {
   const handleAddAttribute = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       const selectedAttribute = availableAttributes.find(
         (attr) => attr.id.toString() === attributeFormData.attributeId
       );
@@ -343,20 +344,13 @@ export default function ProductDetail() {
         valueJson: "",
       });
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to add attribute: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleAddCategory = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       await ProductCategoryService.create({
         productId: product.id,
         categoryId: parseInt(categoryFormData, 10),
@@ -365,20 +359,13 @@ export default function ProductDetail() {
       setShowAddCategoryDialog(false);
       setCategoryFormData("");
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to add category: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleAddAsset = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       const selectedAsset = availableAssets.find(
         (asset) => asset.id === parseInt(assetFormData, 10)
       );
@@ -403,34 +390,20 @@ export default function ProductDetail() {
       setShowAddAssetDialog(false);
       setAssetFormData("");
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to add asset: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleRemoveAttribute = async (attributeId: number) => {
-    try {
+    await asyncWrapper(async () => {
       await ProductAttributeValueService.remove(attributeId);
       toast.success("Attribute removed successfully");
       setAttributeIdToDelete(null);
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to remove attribute: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleRemoveCategory = async (productCategory: ProductCategory) => {
-    try {
+    await asyncWrapper(async () => {
       await ProductCategoryService.remove(
         productCategory.productId,
         productCategory.categoryId
@@ -438,18 +411,11 @@ export default function ProductDetail() {
       toast.success("Category removed successfully");
       setCategoryToDelete(null);
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to remove category: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleRemoveAsset = async (productAsset: ProductAsset) => {
-    try {
+    await asyncWrapper(async () => {
       await ProductAssetService.remove(
         productAsset.productId,
         productAsset.assetId,
@@ -458,14 +424,7 @@ export default function ProductDetail() {
       toast.success("Asset removed successfully");
       setAssetToDelete(null);
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to remove asset: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleOpenEditProduct = () => {
@@ -480,19 +439,12 @@ export default function ProductDetail() {
   const handleEditProduct = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       await ProductService.update(product.id, productFormData);
       toast.success("Product updated successfully");
       setShowEditProductDialog(false);
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to update product: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleOpenAssignAttributeSet = () => {
@@ -504,7 +456,7 @@ export default function ProductDetail() {
   const handleAssignAttributeSet = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       const attributeSetId = attributeSetFormData ? parseInt(attributeSetFormData, 10) : null;
       await ProductService.update(product.id, { attributeSetId });
       
@@ -518,32 +470,18 @@ export default function ProductDetail() {
       setShowAssignAttributeSetDialog(false);
       setAttributeSetFormData("");
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to update attribute set: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const handleRemoveAttributeSet = async () => {
     if (!product) return;
 
-    try {
+    await asyncWrapper(async () => {
       await ProductService.update(product.id, { attributeSetId: null });
       toast.success("Attribute set removed successfully");
       setShowRemoveAttributeSetDialog(false);
       await fetchProduct();
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        `Failed to remove attribute set: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    }
+    });
   };
 
   const getAttributeValue = (productAttribute: ProductAttributeValue) => {

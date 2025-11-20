@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type LocaleFilters } from "@/api/locale";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function LocalePage() {
   const limit = 10;
@@ -101,45 +102,34 @@ export default function LocalePage() {
   }, [isLoading]);
 
   const handleCreateLocale = async () => {
-    try {
+    await asyncWrapper(async () => {
       await LocaleService.create(formData);
       await refetchLocales();
       toast.success("Locale created successfully");
       setShowCreateDialog(false);
       setFormData({ value: "", label: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create locale: ${error.message}`);
-    }
+    });
   };
 
   const handleEditLocale = async () => {
     if (!editingLocale) return;
 
-    try {
+    await asyncWrapper(async () => {
       await LocaleService.update(editingLocale.id, formData);
       await refetchLocales();
       toast.success("Locale updated successfully");
       setShowEditDialog(false);
       setEditingLocale(null);
       setFormData({ value: "", label: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update locale: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteLocale = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await LocaleService.remove(id);
       toast.success("Locale deleted successfully");
       await refetchLocales();
-    } catch (err: unknown) {
-      // TODO create error interface
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error occurred";
-      toast.error(`Failed to delete locale: ${errorMessage}`);
-    }
+    });
   };
 
   const openEditDialog = (locale: Locale) => {

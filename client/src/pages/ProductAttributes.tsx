@@ -47,6 +47,7 @@ import { useStoreViews } from "@/hooks/useStoreViews";
 import type Attribute from "@/interfaces/attribute.interface";
 import type StoreView from "@/interfaces/storeView.interface";
 import { ProductAttributeValueService } from "@/services/productAttributeValue.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function ProductAttributes() {
   const navigate = useNavigate();
@@ -180,7 +181,7 @@ export default function ProductAttributes() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedProductAttributeIds).map((id) =>
         ProductAttributeValueService.remove(id)
       );
@@ -189,10 +190,7 @@ export default function ProductAttributes() {
       const count = selectedProductAttributeIds.size;
       setSelectedProductAttributeIds(new Set());
       toast.success(`Successfully deleted ${count} product attribute${count > 1 ? "s" : ""}`);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete product attributes: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -212,7 +210,7 @@ export default function ProductAttributes() {
   };
 
   const handleCreateProductAttribute = async () => {
-    try {
+    await asyncWrapper(async () => {
       const selectedAttribute = attributes.find(
         (attr) => attr.id.toString() === formData.attributeId
       );
@@ -251,16 +249,13 @@ export default function ProductAttributes() {
       toast.success('Product attribute assigned successfully');
       setShowCreateDialog(false);
       resetFormData();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to assign attribute: ${error.message}`);
-    }
+    });
   };
 
   const handleEditProductAttribute = async () => {
     if (!editingProductAttribute) return;
 
-    try {
+    await asyncWrapper(async () => {
       const selectedAttribute = attributes.find(attr => attr.id.toString() === formData.attributeId);
       if (!selectedAttribute) {
         toast.error('Please select an attribute');
@@ -301,21 +296,15 @@ export default function ProductAttributes() {
       setShowEditDialog(false);
       setEditingProductAttribute(null);
       resetFormData();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update attribute: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteProductAttribute = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await ProductAttributeValueService.remove(id);
       await refetchProductAttributeValues();
       toast.success('Product attribute deleted successfully');
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete product attribute: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (productAttribute: ProductAttributeValue) => {

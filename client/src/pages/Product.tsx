@@ -46,6 +46,7 @@ import { useAttributeSets } from "@/hooks/useAttributeSets";
 import { useProducts } from "@/hooks/useProducts";
 import { ProductService } from "@/services/product.service";
 import type Category from "@/interfaces/category.interface";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function Product() {
   const navigate = useNavigate();
@@ -238,7 +239,7 @@ export default function Product() {
   };
 
   const confirmBulkDelete = async () => {
-    try {
+    await asyncWrapper(async () => {
       const deletePromises = Array.from(selectedProductIds).map((id) =>
         ProductService.remove(id)
       );
@@ -247,10 +248,7 @@ export default function Product() {
       const count = selectedProductIds.size;
       setSelectedProductIds(new Set());
       toast.success(`Successfully deleted ${count} product${count > 1 ? "s" : ""}`);
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete products: ${error.message}`);
-    }
+    });
   };
 
   const handleClearSelection = () => {
@@ -274,43 +272,34 @@ export default function Product() {
   }
 
   const handleCreateProduct = async () => {
-    try {
+    await asyncWrapper(async () => {
       await ProductService.create(formData);
       await refetchProducts();
       toast.success("Product created successfully");
       setShowCreateDialog(false);
       setFormData({ sku: "", type: "SIMPLE", attributeSetId: null });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create product: ${error.message}`);
-    }
+    });
   };
 
   const handleEditProduct = async () => {
     if (!editingProduct) return;
 
-    try {
+    await asyncWrapper(async () => {
       await ProductService.update(editingProduct.id, formData);
       await refetchProducts();
       toast.success("Product updated successfully");
       setShowEditDialog(false);
       setEditingProduct(null);
       setFormData({ sku: "", type: "SIMPLE", attributeSetId: null });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update product: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteProduct = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await ProductService.remove(id);
       await refetchProducts();
       toast.success("Product deleted successfully");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete product: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (product: ProductInterface) => {

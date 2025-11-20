@@ -35,6 +35,7 @@ import type StoreInterface from "@/interfaces/store.interface";
 import type Filters from "@/interfaces/store/filters.interface";
 import { useStores } from "@/hooks/useStores";
 import { StoreService } from "@/services/store.service";
+import { asyncWrapper } from "@/utils/asyncWrapper";
 
 export default function Store() {
   const limit = 10;
@@ -101,43 +102,34 @@ export default function Store() {
   };
 
   const handleCreateStore = async () => {
-    try {
+    await asyncWrapper(async () => {
       await StoreService.create(formData);
       await refetchStores();
       toast.success("Store created successfully");
       setShowCreateDialog(false);
       setFormData({ code: "", name: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to create store: ${error.message}`);
-    }
+    });
   };
 
   const handleEditStore = async () => {
     if (!editingStore) return;
 
-    try {
+    await asyncWrapper(async () => {
       await StoreService.update(editingStore.id, formData);
       await refetchStores();
       toast.success("Store updated successfully");
       setShowEditDialog(false);
       setEditingStore(null);
       setFormData({ code: "", name: "" });
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to update store: ${error.message}`);
-    }
+    });
   };
 
   const handleDeleteStore = async (id: number) => {
-    try {
+    await asyncWrapper(async () => {
       await StoreService.remove(id);
       toast.success("Store deleted successfully");
       await refetchStores();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(`Failed to delete store: ${error.message}`);
-    }
+    });
   };
 
   const openEditDialog = (store: StoreInterface) => {
