@@ -19,6 +19,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { csrfMiddleware } from "./middlewares/csrfMiddleware.js";
 import csrfRoute from "./routes/csrfRoute.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./docs/swagger.js";
 
 const PORT = 3000;
 
@@ -36,6 +38,18 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(responseHelper);
 app.use(csrfMiddleware);
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "MOLAB PIM API Documentation"
+}));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 const apiEndpoint = "/api/v1";
 // CSRF route
