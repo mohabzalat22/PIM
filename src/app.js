@@ -21,19 +21,18 @@ import { csrfMiddleware } from "./middlewares/csrfMiddleware.js";
 import csrfRoute from "./routes/csrfRoute.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
+import corsOptions from "./config/corsOptions.Config.js";
+import rateLimiter from "./config/rateLimiterConfig.js";
+import dotenv from "dotenv";
 
-const PORT = 3000;
+dotenv.config();
+const PORT = process.env.PORT || 3000;
+const apiEndpoint = process.env.API_ENDPOINT || "/api/v1";
 
 const app = express();
-// cors options
-const CorsOptions = {
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "csrf-token"],
-  credentials: true, // Allow credentials (cookies) to be sent
-};
-app.use(cors(CorsOptions));
 
+app.use(cors(corsOptions));
+app.use(rateLimiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use(responseHelper);
@@ -51,7 +50,6 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-const apiEndpoint = "/api/v1";
 // CSRF route
 app.use(apiEndpoint, csrfRoute);
 // Product related routes
