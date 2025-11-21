@@ -24,7 +24,7 @@ export const validateCategoryTranslationCreation = async (req, res, next) => {
   const result = categoryTranslationSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Category translation validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Category translation validation failed. Please check the provided data.", result.error);
   }
 
   // Check if category exists
@@ -57,18 +57,19 @@ export const validateCategoryTranslationCreation = async (req, res, next) => {
 export const validateCategoryTranslationUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.error("Translation ID is required and must be a valid number.", 500);
+    return res.badRequest("Translation ID is required and must be a valid number.");
   }
 
   const result = categoryTranslationSchema.safeParse(req.body);
-  const translationExists = await findById(id);
 
   if (!result.success) {
-    return res.error("Category translation update validation failed. Please check the provided data.", 500);
+    return res.badRequest("Category translation update validation failed. Please check the provided data.", result.error);
   }
 
+  const translationExists = await findById(id);
+
   if (!translationExists) {
-    return res.error(`Category translation with ID ${id} was not found in the system.`, 500);
+    return res.notFound(`Category translation with ID ${id} was not found in the system.`);
   }
 
   // Check if category exists
@@ -92,14 +93,15 @@ export const validateCategoryTranslationUpdate = async (req, res, next) => {
 
 export const validateCategoryTranslationDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const translationExists = await findById(id);
 
   if (!id) {
-    return res.error("Translation ID is required and must be a valid number.", 500);
+    return res.badRequest("Translation ID is required and must be a valid number.");
   }
 
+  const translationExists = await findById(id);
+
   if (!translationExists) {
-    return res.error(`Category translation with ID ${id} was not found and cannot be deleted.`, 500);
+    return res.notFound(`Category translation with ID ${id} was not found and cannot be deleted.`);
   }
   next();
 };

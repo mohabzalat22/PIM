@@ -14,7 +14,7 @@ export const validateProductAssetCreation = async (req, res, next) => {
   const result = productAssetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Product asset validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Product asset validation failed. Please check the provided data.", result.error);
   }
 
   // Check if product exists
@@ -48,23 +48,19 @@ export const validateProductAssetUpdate = async (req, res, next) => {
   const type = req.params.type;
 
   if (!productId || !assetId || !type) {
-    return res.error("Product ID, Asset ID, and Type are all required parameters.", 500);
+    return res.badRequest("Product ID, Asset ID, and Type are all required parameters.");
   }
 
   const result = productAssetSchema.safeParse(req.body);
-  console.log(result);
+
+  if (!result.success) {
+    return res.badRequest("Product asset update validation failed. Please check the provided data.", result.error);
+  }
 
   const productAssetExists = await findByCompositeKey(productId, assetId, type);
 
-  if (!result.success) {
-    return res.badRequest(
-      "Product asset update validation failed. Please check the provided data.",
-      result.error?.message
-    );
-  }
-
   if (!productAssetExists) {
-    return res.error(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}'.`, 500);
+    return res.notFound(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}'.`);
   }
   next();
 };
@@ -74,14 +70,14 @@ export const validateProductAssetDelete = async (req, res, next) => {
   const assetId = Number(req.params.assetId);
   const type = req.params.type;
 
-  const productAssetExists = await findByCompositeKey(productId, assetId, type);
-
   if (!productId || !assetId || !type) {
-    return res.error("Product ID, Asset ID, and Type are all required parameters.", 500);
+    return res.badRequest("Product ID, Asset ID, and Type are all required parameters.");
   }
 
+  const productAssetExists = await findByCompositeKey(productId, assetId, type);
+
   if (!productAssetExists) {
-    return res.error(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}' and cannot be deleted.`, 500);
+    return res.notFound(`Product asset relationship not found for product ID ${productId}, asset ID ${assetId}, and type '${type}' and cannot be deleted.`);
   }
   next();
 };

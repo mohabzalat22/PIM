@@ -15,7 +15,7 @@ export const validateProductCategoryCreation = async (req, res, next) => {
   const result = productCategorySchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Product category validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Product category validation failed. Please check the provided data.", result.error);
   }
 
   // Check if product exists
@@ -46,14 +46,14 @@ export const validateProductCategoryDelete = async (req, res, next) => {
   const productId = Number(req.params.productId);
   const categoryId = Number(req.params.categoryId);
 
-  const productCategoryExists = await findByCompositeKey(productId, categoryId);
-
   if (!productId || !categoryId) {
-    return res.error("Both Product ID and Category ID are required parameters.", 500);
+    return res.badRequest("Both Product ID and Category ID are required parameters.");
   }
 
+  const productCategoryExists = await findByCompositeKey(productId, categoryId);
+
   if (!productCategoryExists) {
-    return res.error(`Product category relationship not found for product ID ${productId} and category ID ${categoryId}.`, 500);
+    return res.notFound(`Product category relationship not found for product ID ${productId} and category ID ${categoryId}.`);
   }
   next();
 };

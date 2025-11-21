@@ -20,7 +20,7 @@ export const validateAttributeCreation = async (req, res, next) => {
   const result = attributeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Attribute validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Attribute validation failed. Please check the provided data.", result.error);
   }
 
   // Check if already saved record with the same code
@@ -39,19 +39,19 @@ export const validateAttributeUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.error("Attribute ID is required and must be a valid number.", 500);
+    return res.badRequest("Attribute ID is required and must be a valid number.");
+  }
+
+  const result = attributeSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.badRequest("Attribute update validation failed. Please check the provided data.", result.error);
   }
 
   const attributeExists = await findById(id);
 
   if (!attributeExists) {
     return res.notFound(`Attribute with ID ${id} was not found in the system.`);
-  }
-
-  const result = attributeSchema.safeParse(req.body);
-
-  if (!result.success) {
-    return res.error("Attribute update validation failed. Please check the provided data.", 500, result.error);
   }
 
   // Check if code already exists (excluding current attribute)
@@ -67,11 +67,12 @@ export const validateAttributeUpdate = async (req, res, next) => {
 
 export const validateAttributeDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const attributeExists = await findById(id);
-
+  
   if (!id) {
-    return res.error("Attribute ID is required and must be a valid number.", 500);
+    return res.badRequest("Attribute ID is required and must be a valid number.");
   }
+
+  const attributeExists = await findById(id);
 
   if (!attributeExists) {
     return res.notFound(`Attribute with ID ${id} was not found and cannot be deleted.`);

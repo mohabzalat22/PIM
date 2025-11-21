@@ -47,7 +47,7 @@ export const validateProductAttributeCreation = async (req, res, next) => {
   const result = ProductAttributeValueSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Failed to validate product attribute", 500, result.error);
+    return res.badRequest("Failed to validate product attribute", result.error);
   }
 
   // Check if product exists
@@ -112,7 +112,7 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
 
   const id = Number(req.params.id);
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
 
   const productAttributeExists = await findById(id);
@@ -123,11 +123,7 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
   const result = ProductAttributeUpdateSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error(
-      "Failed to validate product attribute update",
-      500,
-      result.error
-    );
+    return res.badRequest("Failed to validate product attribute update", result.error);
   }
 
   // Check if product exists (only if productId is provided)
@@ -159,11 +155,12 @@ export const validateProductAttributeUpdate = async (req, res, next) => {
 
 export const validateProductAttributeDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const productAttributeExists = await findById(id);
 
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
+
+  const productAttributeExists = await findById(id);
 
   if (!productAttributeExists) {
     return res.notFound("Unable to find product attribute value to delete");
@@ -184,11 +181,11 @@ export const validateProductAttributeDeleteByCompositeKey = async (
     : null;
 
   if (!productId) {
-    return res.error("Product ID not defined", 500);
+    return res.badRequest("Product ID not defined");
   }
 
   if (!attributeId) {
-    return res.error("Attribute ID not defined", 500);
+    return res.badRequest("Attribute ID not defined");
   }
 
   // Check if product exists

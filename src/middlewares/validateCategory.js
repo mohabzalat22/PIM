@@ -9,7 +9,7 @@ export const validateCategoryCreation = async (req, res, next) => {
   const result = categorySchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Category validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Category validation failed. Please check the provided data.", result.error);
   }
 
   // Check if parent category exists (if parentId is provided)
@@ -25,19 +25,21 @@ export const validateCategoryCreation = async (req, res, next) => {
 
 export const validateCategoryUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
+  
   if (!id) {
-    return res.error("Category ID is required and must be a valid number.", 500);
+    return res.badRequest("Category ID is required and must be a valid number.");
   }
 
   const result = categorySchema.safeParse(req.body);
-  const categoryExists = await findById(id);
 
   if (!result.success) {
-    return res.error("Category update validation failed. Please check the provided data.", 500);
+    return res.badRequest("Category update validation failed. Please check the provided data.", result.error);
   }
 
+  const categoryExists = await findById(id);
+
   if (!categoryExists) {
-    return res.error(`Category with ID ${id} was not found in the system.`, 500);
+    return res.notFound(`Category with ID ${id} was not found in the system.`);
   }
 
   // Check if parent category exists (if parentId is provided)
@@ -58,14 +60,15 @@ export const validateCategoryUpdate = async (req, res, next) => {
 
 export const validateCategoryDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const categoryExists = await findById(id);
-
+  
   if (!id) {
-    return res.error("Category ID is required and must be a valid number.", 500);
+    return res.badRequest("Category ID is required and must be a valid number.");
   }
 
+  const categoryExists = await findById(id);
+
   if (!categoryExists) {
-    return res.error(`Category with ID ${id} was not found and cannot be deleted.`, 500);
+    return res.notFound(`Category with ID ${id} was not found and cannot be deleted.`);
   }
 
   // Check if category has subcategories

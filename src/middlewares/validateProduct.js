@@ -21,7 +21,7 @@ export const validateProductCreation = async (req, res, next) => {
   const result = productSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Product validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Product validation failed. Please check the provided data.", result.error);
   }
 
   // Check if already saved record with the same sku
@@ -38,15 +38,16 @@ export const validateProductCreation = async (req, res, next) => {
 export const validateProductUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
   if (!id) {
-    return res.error("Product ID is required and must be a valid number.", 500);
+    return res.badRequest("Product ID is required and must be a valid number.");
   }
 
   const result = productUpdateSchema.safeParse(req.body);
-  const productExists = await findById(id);
 
   if (!result.success) {
-    return res.error("Product update validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Product update validation failed. Please check the provided data.", result.error);
   }
+
+  const productExists = await findById(id);
 
   if (!productExists) {
     return res.notFound(`Product with ID ${id} was not found in the system.`);
@@ -65,11 +66,12 @@ export const validateProductUpdate = async (req, res, next) => {
 
 export const validateProductDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const productExists = await findById(id);
-
+  
   if (!id) {
-    return res.error("Product ID is required and must be a valid number.", 500);
+    return res.badRequest("Product ID is required and must be a valid number.");
   }
+
+  const productExists = await findById(id);
 
   if (!productExists) {
     return res.notFound(`Product with ID ${id} was not found and cannot be deleted.`);

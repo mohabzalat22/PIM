@@ -48,7 +48,7 @@ export const validateAttributeSetCreation = async (req, res, next) => {
   const result = attributeSetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Failed to validate attribute set", 500, result.error);
+    return res.badRequest("Failed to validate attribute set", result.error);
   }
 
   const existing = await prisma.attributeSet.findUnique({
@@ -106,7 +106,7 @@ export const validateAttributeSetUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
 
   const attributeSetExists = await findAttributeSetById(id);
@@ -118,7 +118,7 @@ export const validateAttributeSetUpdate = async (req, res, next) => {
   const result = attributeSetSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Failed to validate attribute set update", 500, result.error);
+    return res.badRequest("Failed to validate attribute set update", result.error);
   }
 
   if (result.data.code) {
@@ -135,11 +135,12 @@ export const validateAttributeSetUpdate = async (req, res, next) => {
 
 export const validateAttributeSetDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const attributeSetExists = await findAttributeSetById(id);
 
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
+
+  const attributeSetExists = await findAttributeSetById(id);
 
   if (!attributeSetExists) {
     return res.notFound("Unable to find attribute set to delete");
@@ -159,7 +160,7 @@ export const validateAttributeGroupCreation = async (req, res, next) => {
   const result = attributeGroupSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Failed to validate attribute group", 500, result.error);
+    return res.badRequest("Failed to validate attribute group", result.error);
   }
 
   const attributeSet = await findAttributeSetById(result.data.attributeSetId);
@@ -185,7 +186,7 @@ export const validateAttributeGroupUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
 
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
 
   const attributeGroupExists = await findAttributeGroupById(id);
@@ -197,7 +198,7 @@ export const validateAttributeGroupUpdate = async (req, res, next) => {
   const result = attributeGroupSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Failed to validate attribute group update", 500, result.error);
+    return res.badRequest("Failed to validate attribute group update", result.error);
   }
 
   if (result.data.code) {
@@ -218,11 +219,12 @@ export const validateAttributeGroupUpdate = async (req, res, next) => {
 
 export const validateAttributeGroupDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const attributeGroupExists = await findAttributeGroupById(id);
 
   if (!id) {
-    return res.error("ID not defined", 500);
+    return res.badRequest("ID not defined");
   }
+
+  const attributeGroupExists = await findAttributeGroupById(id);
 
   if (!attributeGroupExists) {
     return res.notFound("Unable to find attribute group to delete");

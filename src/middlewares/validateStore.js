@@ -10,14 +10,14 @@ export const validateStoreCreation = async (req, res, next) => {
   const result = storeSchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.error("Store validation failed. Please check the provided data.", 500, result.error);
+    return res.badRequest("Store validation failed. Please check the provided data.", result.error);
   }
 
   // Check if already saved record with the same code
   const storeExists = await findByCode(result.data.code);
 
   if (storeExists) {
-    return res.error(`A store with code '${result.data.code}' already exists in the system.`, 500, {
+    return res.error(`A store with code '${result.data.code}' already exists in the system.`, 409, {
       error: `code-${result.data.code}`,
     });
   }
@@ -26,19 +26,21 @@ export const validateStoreCreation = async (req, res, next) => {
 
 export const validateStoreUpdate = async (req, res, next) => {
   const id = Number(req.params.id);
+  
   if (!id) {
-    return res.error("Store ID is required and must be a valid number.", 500);
+    return res.badRequest("Store ID is required and must be a valid number.");
   }
 
   const result = storeSchema.safeParse(req.body);
-  const storeExists = await findById(id);
 
   if (!result.success) {
-    return res.error("Store update validation failed. Please check the provided data.", 500);
+    return res.badRequest("Store update validation failed. Please check the provided data.", result.error);
   }
 
+  const storeExists = await findById(id);
+
   if (!storeExists) {
-    return res.error(`Store with ID ${id} was not found in the system.`, 500);
+    return res.notFound(`Store with ID ${id} was not found in the system.`);
   }
 
   // Check if code already exists (excluding current store)
@@ -54,14 +56,15 @@ export const validateStoreUpdate = async (req, res, next) => {
 
 export const validateStoreDelete = async (req, res, next) => {
   const id = Number(req.params.id);
-  const storeExists = await findById(id);
-
+  
   if (!id) {
-    return res.error("Store ID is required and must be a valid number.", 500);
+    return res.badRequest("Store ID is required and must be a valid number.");
   }
 
+  const storeExists = await findById(id);
+
   if (!storeExists) {
-    return res.error(`Store with ID ${id} was not found and cannot be deleted.`, 500);
+    return res.notFound(`Store with ID ${id} was not found and cannot be deleted.`);
   }
 
   // Check if store has store views
