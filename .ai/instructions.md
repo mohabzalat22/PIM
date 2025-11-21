@@ -534,7 +534,7 @@ When working on this project, always consult these files:
 
 ### Workflow & Rules
 - **`.ai/workflow.md`** - JavaScript implementation workflow with ESLint validation
-- **`.ai/rules/implementation.md`** - Complete implementation rules and workflow steps
+- **`.ai/rules/`** - Directory for rules Complete implementation rules and workflow steps read them all first.
 - **`.ai/plans/`** - Directory for implementation plans (create before implementing)
 - **`.ai/tasks/`** - Directory for tasks with checkpoints (create before implementing)
 
