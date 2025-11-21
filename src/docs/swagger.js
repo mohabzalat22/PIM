@@ -1,6 +1,6 @@
 /**
  * Swagger API Documentation Configuration
- * XStore Product Information Management System
+ * MOLAB Product Information Management System
  */
 
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -15,12 +15,12 @@ import { assetSchemas } from './schemas/assets.js';
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'XStore PIM API',
+    title: 'MOLAB PIM API',
     version: '1.0.0',
     description: `
       **Product Information Management System API**
       
-      Comprehensive API for managing products, categories, attributes, and multi-store configurations.
+      Comprehensive API for managing products information.
       
       ## Features
       - Product management with EAV (Entity-Attribute-Value) system
@@ -30,12 +30,10 @@ const swaggerDefinition = {
       - Asset management
       - Advanced filtering and pagination
       
-      ## Response Format
-      All responses follow a consistent structure with status codes and messages.
     `,
     contact: {
       name: 'API Support',
-      email: 'support@xstore.com'
+      email: 'support@MOLAB.com'
     },
     license: {
       name: 'MIT',
