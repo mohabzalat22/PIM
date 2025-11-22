@@ -17,6 +17,8 @@ import LocalePage from "./pages/Locale";
 import Home from "./pages/Home";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import TeamPage from "./pages/Team";
+import TeamMemberPage from "./pages/TeamMember";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
 function App() {
@@ -51,6 +53,8 @@ function App() {
           <Route path="/attribute-groups" element={<AttributeGroupPage></AttributeGroupPage>}></Route>
           <Route path="/assets" element={<Asset></Asset>}></Route>
           <Route path="/product-attributes" element={<ProductAttributes></ProductAttributes>}></Route>
+          <Route path="/teams" element={<TeamPage></TeamPage>}></Route>
+          <Route path="/team-members" element={<TeamMemberPage></TeamMemberPage>}></Route>
           <Route path="/settings" element={<Settings></Settings>}></Route>
         </Route>
 

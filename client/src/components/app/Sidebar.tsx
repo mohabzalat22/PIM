@@ -1,7 +1,5 @@
 import { 
-  Apple, 
   Store, 
-  Eye, 
   ChartBarStacked, 
   Brush, 
   Video, 
@@ -13,7 +11,8 @@ import {
   Layers,
   FileText,
   Globe,
-  BarChart3
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -116,6 +115,23 @@ const menuItems = {
         url: "/locales",
         icon: Globe,
         description: "Locale definitions (value & label)"
+      }
+    ]
+  },
+  teams: {
+    label: "Team Management",
+    items: [
+      {
+        title: "Teams",
+        url: "/teams",
+        icon: Users,
+        description: "Manage teams and organizations"
+      },
+      {
+        title: "Team Members",
+        url: "/team-members",
+        icon: UserPlus,
+        description: "Assign users to teams with roles"
       }
     ]
   }
