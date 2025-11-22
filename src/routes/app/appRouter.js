@@ -13,6 +13,9 @@ import localeRoutes from "../../routes/localeRoute.js";
 import attributeSetRoutes from "../../routes/attributeSetRoute.js";
 import attributeGroupRoutes from "../../routes/attributeGroupRoute.js";
 import analyticsRoutes from "../../routes/analyticsRoute.js";
+import userRoutes from "../../routes/userRoute.js";
+import teamRoutes from "../../routes/teamRoute.js";
+import teamMemberRoutes from "../../routes/teamMemberRoute.js";
 
 const router = express.Router();
 // Product related routes
@@ -38,5 +41,10 @@ router.use(`/locales`, localeRoutes);
 
 // Analytics routes
 router.use(`/analytics`, analyticsRoutes);
+
+// User and Team related routes
+router.use(`/users`, userRoutes);
+router.use(`/teams`, teamRoutes);
+router.use(`/team-members`, teamMemberRoutes);
 
 export default router;
