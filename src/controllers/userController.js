@@ -2,6 +2,7 @@ import {
   findAll,
   findById,
   findByEmail,
+  findByClerkId,
   create,
   update,
   deleteById,
@@ -36,6 +37,36 @@ export const getUser = async (req, res) => {
     return res.badRequest("User ID is required");
   }
   const user = (await findById(id)) ?? {};
+  res.success(user, "User retrieved successfully");
+};
+
+/**
+ * Get a single user by Clerk ID
+ */
+export const getUserByClerkId = async (req, res) => {
+  const { clerkId } = req.params;
+  if (!clerkId) {
+    return res.badRequest("Clerk ID is required");
+  }
+  const user = await findByClerkId(clerkId);
+  if (!user) {
+    return res.notFound(`User with Clerk ID ${clerkId} not found.`);
+  }
+  res.success(user, "User retrieved successfully");
+};
+
+/**
+ * Get a single user by email
+ */
+export const getUserByEmail = async (req, res) => {
+  const { email } = req.params;
+  if (!email) {
+    return res.badRequest("Email is required");
+  }
+  const user = await findByEmail(email);
+  if (!user) {
+    return res.notFound(`User with email ${email} not found.`);
+  }
   res.success(user, "User retrieved successfully");
 };
 

@@ -59,6 +59,24 @@ export const findByEmail = async (email) => {
 };
 
 /**
+ * Find user by Clerk ID
+ * @param {string} clerkId - Clerk user ID
+ * @returns {Promise<Object|null>} - User object or null
+ */
+export const findByClerkId = async (clerkId) => {
+  return await prisma.user.findUnique({
+    where: { clerkId },
+    include: {
+      teamMembers: {
+        include: {
+          team: true,
+        },
+      },
+    },
+  });
+};
+
+/**
  * Create a new user
  * @param {Object} data - User data
  * @returns {Promise<Object>} - Created user object

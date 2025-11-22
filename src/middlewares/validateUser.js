@@ -1,12 +1,14 @@
 import z from "zod";
-import { findById, findByEmail } from "../models/userModel.js";
+import { findById, findByEmail, findByClerkId } from "../models/userModel.js";
 
 const userSchema = z.object({
+  clerkId: z.string().min(1, "Clerk ID is required"),
   name: z.string().min(1, "User name is required"),
   email: z.string().email("Invalid email format").min(1, "User email is required"),
 });
 
 const userUpdateSchema = z.object({
+  clerkId: z.string().min(1, "Clerk ID is required").optional(),
   name: z.string().min(1, "User name is required").optional(),
   email: z.string().email("Invalid email format").optional(),
 });
@@ -24,6 +26,15 @@ export const validateUserCreation = async (req, res, next) => {
   if (userExists) {
     return res.error(`A user with email '${result.data.email}' already exists in the system.`, 409, {
       error: `email-${result.data.email}`,
+    });
+  }
+
+  // Check if a user with the same clerkId already exists
+  const clerkIdExists = await findByClerkId(result.data.clerkId);
+
+  if (clerkIdExists) {
+    return res.error(`A user with Clerk ID '${result.data.clerkId}' already exists in the system.`, 409, {
+      error: `clerkId-${result.data.clerkId}`,
     });
   }
 
@@ -54,6 +65,16 @@ export const validateUserUpdate = async (req, res, next) => {
     if (emailExists && emailExists.id !== id) {
       return res.error(`A user with email '${result.data.email}' already exists in the system.`, 409, {
         error: `email-${result.data.email}`,
+      });
+    }
+  }
+
+  // If clerkId is being updated, check for uniqueness
+  if (result.data.clerkId) {
+    const clerkIdExists = await findByClerkId(result.data.clerkId);
+    if (clerkIdExists && clerkIdExists.id !== id) {
+      return res.error(`A user with Clerk ID '${result.data.clerkId}' already exists in the system.`, 409, {
+        error: `clerkId-${result.data.clerkId}`,
       });
     }
   }
