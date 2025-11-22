@@ -16,7 +16,17 @@ export const getTeamMembers = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const [teamMembers, total] = (await findAll(skip, limit)) ?? [];
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    teamId: req.query.teamId ? parseInt(req.query.teamId) : null,
+    userId: req.query.userId ? parseInt(req.query.userId) : null,
+    role: req.query.role || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [teamMembers, total] = (await findAll(skip, limit, filters)) ?? [];
 
   const meta = {
     total,

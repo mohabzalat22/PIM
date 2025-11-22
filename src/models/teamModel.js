@@ -6,12 +6,29 @@ const prisma = new PrismaClient();
  * Find all teams with pagination
  * @param {number} skip - Number of records to skip
  * @param {number} limit - Number of records to return
+ * @param {Object} filters - Filter options (search, sortBy, sortOrder)
  * @returns {Promise<[Array, number]>} - Array of teams and total count
  */
-export const findAll = async (skip, limit) => {
+export const findAll = async (skip, limit, filters = {}) => {
+  const where = {};
+
+  // Search filter (name search)
+  if (filters.search) {
+    where.name = { contains: filters.search, mode: 'insensitive' };
+  }
+
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'name') {
+    orderBy.name = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
   const teams = await prisma.team.findMany({
     skip,
     take: limit,
+    where,
     include: {
       teamMembers: {
         include: {
@@ -19,12 +36,10 @@ export const findAll = async (skip, limit) => {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy,
   });
 
-  const total = await prisma.team.count();
+  const total = await prisma.team.count({ where });
 
   return [teams, total];
 };

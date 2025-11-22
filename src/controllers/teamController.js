@@ -14,7 +14,14 @@ export const getTeams = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const [teams, total] = (await findAll(skip, limit)) ?? [];
+  // Extract filter parameters
+  const filters = {
+    search: req.query.search || null,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc'
+  };
+
+  const [teams, total] = (await findAll(skip, limit, filters)) ?? [];
 
   const meta = {
     total,

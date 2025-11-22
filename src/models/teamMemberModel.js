@@ -6,22 +6,57 @@ const prisma = new PrismaClient();
  * Find all team members with pagination
  * @param {number} skip - Number of records to skip
  * @param {number} limit - Number of records to return
+ * @param {Object} filters - Filter options (search, teamId, userId, role, sortBy, sortOrder)
  * @returns {Promise<[Array, number]>} - Array of team members and total count
  */
-export const findAll = async (skip, limit) => {
+export const findAll = async (skip, limit, filters = {}) => {
+  const where = {};
+
+  // Search filter (search in user email or name)
+  if (filters.search) {
+    where.user = {
+      OR: [
+        { email: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    };
+  }
+
+  // Filter by team
+  if (filters.teamId) {
+    where.teamId = filters.teamId;
+  }
+
+  // Filter by user
+  if (filters.userId) {
+    where.userId = filters.userId;
+  }
+
+  // Filter by role
+  if (filters.role) {
+    where.role = filters.role;
+  }
+
+  // Sorting
+  const orderBy = {};
+  if (filters.sortBy === 'role') {
+    orderBy.role = filters.sortOrder || 'asc';
+  } else {
+    orderBy.createdAt = filters.sortOrder || 'desc';
+  }
+
   const teamMembers = await prisma.teamMember.findMany({
     skip,
     take: limit,
+    where,
     include: {
       user: true,
       team: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy,
   });
 
-  const total = await prisma.teamMember.count();
+  const total = await prisma.teamMember.count({ where });
 
   return [teamMembers, total];
 };
