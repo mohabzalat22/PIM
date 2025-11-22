@@ -16,8 +16,13 @@ import analyticsRoutes from "../../routes/analyticsRoute.js";
 import userRoutes from "../../routes/userRoute.js";
 import teamRoutes from "../../routes/teamRoute.js";
 import teamMemberRoutes from "../../routes/teamMemberRoute.js";
+import { authMiddleware, requireAuthentication } from "../../middlewares/authMiddleware.js";
+import { csrfMiddleware } from "../../middlewares/csrfMiddleware.js";
 
 const router = express.Router();
+router.use(authMiddleware);
+router.use(requireAuthentication);
+router.use(csrfMiddleware);
 // Product related routes
 router.use(`/products`, productRoutes);
 router.use(`/attributes`, attributeRoutes);
