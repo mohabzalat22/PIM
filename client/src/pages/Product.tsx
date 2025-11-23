@@ -55,6 +55,7 @@ export default function Product() {
   const [filters, setFilters] = useState<Filters>({
     search: "",
     type: "",
+    status: "",
     categoryId: "",
     attributeFilters: {},
     sortBy: "createdAt",
@@ -97,6 +98,7 @@ export default function Product() {
     { id: "id", label: "ID", visible: true, locked: false },
     { id: "sku", label: "SKU", visible: true, locked: true },
     { id: "type", label: "Type", visible: true, locked: false },
+    { id: "status", label: "Status", visible: true, locked: false },
     { id: "attributeSet", label: "Attribute Set", visible: true, locked: false },
     { id: "categories", label: "Categories", visible: true, locked: false },
     { id: "attributes", label: "Attributes", visible: true, locked: false },
@@ -197,6 +199,7 @@ export default function Product() {
     const clearedFilters = {
       search: "",
       type: "",
+      status: "",
       categoryId: "",
       attributeFilters: {},
       sortBy: "createdAt",
@@ -453,6 +456,22 @@ export default function Product() {
               />
             </div>
             <div className="min-w-[150px]">
+              <SelectType
+                initialValue={filters.status || "all"}
+                options={[
+                  { name: "All Statuses", value: "all" },
+                  { name: "Draft", value: "DRAFT" },
+                  { name: "Enrichment", value: "ENRICHMENT" },
+                  { name: "Validation", value: "VALIDATION" },
+                  { name: "Approval", value: "APPROVAL" },
+                  { name: "Publishing", value: "PUBLISHING" },
+                ]}
+                onValueChange={(value) =>
+                  handleFilterChange("status", value === "all" ? "" : value)
+                }
+              />
+            </div>
+            <div className="min-w-[150px]">
               {categories && (
                 <SelectType
                   initialValue={filters.categoryId || "all"}
@@ -555,6 +574,7 @@ export default function Product() {
             {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
             {isColumnVisible("sku") && <TableHead>SKU</TableHead>}
             {isColumnVisible("type") && <TableHead>Type</TableHead>}
+            {isColumnVisible("status") && <TableHead>Status</TableHead>}
             {isColumnVisible("attributeSet") && <TableHead>Attribute Set</TableHead>}
             {isColumnVisible("categories") && <TableHead>Categories</TableHead>}
             {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
@@ -585,6 +605,35 @@ export default function Product() {
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       {product.type}
                     </span>
+                  </TableCell>
+                )}
+                {isColumnVisible("status") && (
+                  <TableCell>
+                    {product.status === "DRAFT" && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                        Draft
+                      </span>
+                    )}
+                    {product.status === "ENRICHMENT" && (
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                        Enrichment
+                      </span>
+                    )}
+                    {product.status === "VALIDATION" && (
+                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
+                        Validation
+                      </span>
+                    )}
+                    {product.status === "APPROVAL" && (
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                        Approval
+                      </span>
+                    )}
+                    {product.status === "PUBLISHING" && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                        Publishing
+                      </span>
+                    )}
                   </TableCell>
                 )}
                 {isColumnVisible("attributeSet") && (

@@ -16,6 +16,16 @@ export const findAll = async (skip, limit, filters = {}) => {
     where.type = filters.type;
   }
 
+  // Status filter
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  // Assigned user filter
+  if (filters.assignedTo) {
+    where.assignedTo = parseInt(filters.assignedTo);
+  }
+
   // Category filter
   if (filters.categoryId) {
     where.productCategories = {
@@ -220,6 +230,13 @@ export const findAll = async (skip, limit, filters = {}) => {
       where,
       include: {
         attributeSet: true,
+        assignedUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         productAssets: {
           include: {
             asset: true,
@@ -252,6 +269,13 @@ export const findBySku = async (sku) => {
     where: { sku: sku },
     include: {
       attributeSet: true,
+      assignedUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       productAssets: {
         include: {
           asset: true,
@@ -280,6 +304,13 @@ export const findById = async (id) => {
   return await prisma.product.findUnique({
     where: { id: id },
     include: {
+      assignedUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       attributeSet: {
         include: {
           groups: {
@@ -336,6 +367,13 @@ export const create = async (data) => {
     data: data,
     include: {
       attributeSet: true,
+      assignedUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       productAssets: {
         include: {
           asset: true,
@@ -366,6 +404,13 @@ export const update = async (id, data) => {
     data: data,
     include: {
       attributeSet: true,
+      assignedUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       productAssets: {
         include: {
           asset: true,

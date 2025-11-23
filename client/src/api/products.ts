@@ -9,6 +9,7 @@ export const ProductsApi = {
     filters: Filters = {
       search: "",
       type: "",
+      status: "",
       categoryId: "",
       attributeFilters: {},
       sortBy: "createdAt",
@@ -24,6 +25,7 @@ export const ProductsApi = {
 
     if (filters.search) params.append("search", filters.search);
     if (filters.type) params.append("type", filters.type);
+    if (filters.status) params.append("status", filters.status);
     if (filters.categoryId) params.append("categoryId", filters.categoryId);
     if (Object.keys(filters.attributeFilters).length > 0) {
       params.append("attributes", JSON.stringify(filters.attributeFilters));

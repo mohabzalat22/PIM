@@ -28,6 +28,7 @@ import { ProductAttributeValueService } from "@/services/productAttributeValue.s
 import { ProductCategoryService } from "@/services/productCategory.service";
 import { ProductAssetService } from "@/services/productAsset.service";
 import { asyncWrapper } from "@/utils/asyncWrapper";
+import { WorkflowHistory } from "@/components/app/WorkflowHistory";
 
 type ApiError = {
   message?: string;
@@ -593,6 +594,7 @@ export default function ProductDetail() {
           <TabsTrigger value="attributes">Attributes</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
+          <TabsTrigger value="workflow">Workflow History</TabsTrigger>
         </TabsList>
 
         {/* Attribute Set Tab */}
@@ -635,6 +637,11 @@ export default function ProductDetail() {
             onDelete={setAssetToDelete}
             getMimeTypeIcon={getMimeTypeIcon}
           />
+        </TabsContent>
+
+        {/* Workflow History Tab */}
+        <TabsContent value="workflow" className="space-y-4">
+          <WorkflowHistory productId={product.id} />
         </TabsContent>
       </Tabs>
 

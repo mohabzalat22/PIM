@@ -13,6 +13,7 @@ import {
   Globe,
   Users,
   UserPlus,
+  Kanban,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -51,6 +52,12 @@ const menuItems = {
         url: "/products",
         icon: Package,
         description: "Manage product catalog"
+      },
+      {
+        title: "Product Workflow",
+        url: "/product-workflow",
+        icon: Kanban,
+        description: "Kanban board for workflow stages"
       },
       {
         title: "Product Attributes",

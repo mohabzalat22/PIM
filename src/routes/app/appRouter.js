@@ -16,6 +16,7 @@ import analyticsRoutes from "../../routes/analyticsRoute.js";
 import userRoutes from "../../routes/userRoute.js";
 import teamRoutes from "../../routes/teamRoute.js";
 import teamMemberRoutes from "../../routes/teamMemberRoute.js";
+import productWorkflowHistoryRoutes from "../../routes/productWorkflowHistoryRoutes.js";
 import { authMiddleware, requireAuthentication } from "../../middlewares/authMiddleware.js";
 import { csrfMiddleware } from "../../middlewares/csrfMiddleware.js";
 
@@ -51,5 +52,8 @@ router.use(`/analytics`, analyticsRoutes);
 router.use(`/users`, userRoutes);
 router.use(`/teams`, teamRoutes);
 router.use(`/team-members`, teamMemberRoutes);
+
+// Workflow history routes
+router.use(`/`, productWorkflowHistoryRoutes);
 
 export default router;

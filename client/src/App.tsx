@@ -11,6 +11,7 @@ import Asset from "./pages/Asset";
 import Dashboard from "./pages/Dashboard";
 import ProductAttributes from "./pages/ProductAttributes";
 import ProductDetail from "./pages/ProductDetail";
+import ProductKanban from "./pages/ProductKanban";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import LocalePage from "./pages/Locale";
@@ -47,6 +48,7 @@ function App() {
           <Route path="/locales" element={<LocalePage></LocalePage>}></Route>
           <Route path="/products" element={<Product></Product>}></Route>
           <Route path="/products/:id" element={<ProductDetail></ProductDetail>}></Route>
+          <Route path="/product-workflow" element={<ProductKanban></ProductKanban>}></Route>
           <Route path="/categories" element={<Category></Category>}></Route>
           <Route path="/attributes" element={<Attribute></Attribute>}></Route>
           <Route path="/attribute-sets" element={<AttributeSetPage></AttributeSetPage>}></Route>

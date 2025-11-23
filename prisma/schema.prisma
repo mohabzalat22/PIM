@@ -15,11 +15,21 @@ enum ProductType {
   DOWNLOADABLE
 }
 
+enum ProductStatus {
+  DRAFT
+  ENRICHMENT
+  VALIDATION
+  APPROVAL
+  PUBLISHING
+}
+
 model Product {
   id        Int         @id @default(autoincrement())
   sku       String      @unique
   type      ProductType @default(SIMPLE)
+  status    ProductStatus @default(DRAFT)
   attributeSetId Int?
+  assignedTo Int?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -29,7 +39,28 @@ model Product {
   productAssets          ProductAsset[]
   productCategories      ProductCategory[]
   productAttributeValues ProductAttributeValue[]
+  workflowHistory        ProductWorkflowHistory[]
   attributeSet           AttributeSet?        @relation(fields: [attributeSetId], references: [id], onDelete: SetNull)
+  assignedUser           User?                @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+}
+
+model ProductWorkflowHistory {
+  id          Int           @id @default(autoincrement())
+  productId   Int
+  fromStatus  ProductStatus?
+  toStatus    ProductStatus
+  changedById Int?
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  /**
+   * Relations
+   */
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  changedBy   User?    @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([createdAt])
 }
 
 model Asset {
@@ -290,7 +321,9 @@ model User {
   /**
    * Relations
    */
-  teamMembers   TeamMember[]
+  teamMembers         TeamMember[]
+  assignedProducts    Product[]
+  workflowHistory     ProductWorkflowHistory[]
 }
 
 model Team {
