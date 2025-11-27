@@ -19,6 +19,7 @@ import teamMemberRoutes from "../../routes/teamMemberRoute.js";
 import productWorkflowHistoryRoutes from "../../routes/productWorkflowHistoryRoutes.js";
 import { authMiddleware, requireAuthentication } from "../../middlewares/authMiddleware.js";
 import { csrfMiddleware } from "../../middlewares/csrfMiddleware.js";
+import paymentRoutes from "../../routes/paymentRoute.js";
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -30,6 +31,9 @@ router.use(`/attributes`, attributeRoutes);
 router.use(`/product-attributes`, productAttributeRoute);
 router.use(`/attribute-sets`, attributeSetRoutes);
 router.use(`/attribute-groups`, attributeGroupRoutes);
+
+// Payment related routes
+router.use(`/payment/checkout`, paymentRoutes);
 
 // Asset related routes
 router.use(`/assets`, assetRoutes);

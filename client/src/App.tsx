@@ -21,14 +21,20 @@ import SignUpPage from "./pages/SignUpPage";
 import TeamPage from "./pages/Team";
 import TeamMemberPage from "./pages/TeamMember";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import Success from "./pages/payment/Success";
+import Cancel from "./pages/payment/Cancel";
+import { Subscriptions } from "./pages/payment/Subscriptions";
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
+        <Route path="/subscriptions" element = {<Subscriptions />} />
 
         <Route
           element={

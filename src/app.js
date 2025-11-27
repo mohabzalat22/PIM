@@ -11,12 +11,14 @@ import rateLimiter from "./config/rateLimiterConfig.js";
 import dotenv from "dotenv";
 import appRouter from "./routes/app/appRouter.js";
 import clerkWebhookRoute from "./webhooks/clerkRoute.js";
+import stripeWebhook from "./webhooks/stripe.webhook.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 const apiEndpoint = process.env.API_ENDPOINT || "/api/v1";
 
 const app = express();
+app.use(responseHelper);
 
 // Trust proxy - required for rate limiting behind reverse proxies
 app.set('trust proxy', 1);
@@ -24,11 +26,12 @@ app.set('trust proxy', 1);
 // configurations
 app.use(cors(corsOptions));
 app.use(rateLimiter);
+// STRIPE WEB HOOK
+app.use(apiEndpoint + "/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhook);
 // parsers
 app.use(express.json());
 app.use(cookieParser());
 // middlewares
-app.use(responseHelper);
 
 
 // Swagger API Documentation
@@ -44,7 +47,7 @@ app.get('/api-docs.json', (req, res) => {
 });
 
 // Webhooks route (unprotected) - MUST come before protected routes
-app.use(apiEndpoint, clerkWebhookRoute);
+app.use(apiEndpoint+ "/webhooks/clerk", clerkWebhookRoute);
 
 // CSRF route
 app.use(apiEndpoint, csrfRoute);

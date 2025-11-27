@@ -57,6 +57,23 @@ export const findByEmail = async (email) => {
     where: { email },
   });
 };
+/**
+ * Find by stripe customer ID
+ * @param {string} stripeCustomerId - Stripe Customer ID
+ * @returns {Promise<Object|null>} - User object or null
+ */
+export const findByStripeCustomerId = async (stripeCustomerId) => {
+  return await prisma.user.findUnique({
+    where: { stripeCustomerId },
+    include: {
+      teamMembers: {
+        include: {
+          team: true,
+        },
+      },
+    },
+  });
+};  
 
 /**
  * Find user by Clerk ID

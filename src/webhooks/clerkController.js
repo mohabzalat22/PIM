@@ -6,6 +6,8 @@ import {
   findByEmail,
 } from "../models/userModel.js";
 
+import CustomerService from "../services/customer.service.js";
+
 /**
  * Clerk Webhook Controller
  * Handles webhook events from Clerk to sync user data
@@ -70,11 +72,14 @@ const handleUserCreated = async (userData) => {
   }
 
   // Create new user
+  const stripeCustomer = await CustomerService.create({ email, name });
   const newUser = await create({
     clerkId,
+    stripeCustomerId: stripeCustomer.id,
     email,
     name,
   });
+  // Update user with Stripe customer ID
   return newUser;
 };
 

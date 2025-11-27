@@ -5,6 +5,6 @@ import { verifyClerkSignature } from "./verifyClerkSignature.middleware.js";
 const router = express.Router();
 
 // Define your clerk webhook route handlers here
-router.post("/webhooks/clerk", verifyClerkSignature, asyncWrapper(clerkController));
+router.post("/", verifyClerkSignature, asyncWrapper(clerkController));
 
 export default router;
