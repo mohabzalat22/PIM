@@ -14,6 +14,8 @@ import {
   Users,
   UserPlus,
   Kanban,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -28,7 +30,15 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import clsx from "clsx";
 
 // Menu items organized by category
@@ -40,179 +50,202 @@ const menuItems = {
         title: "Dashboard",
         url: "/dashboard",
         icon: Home,
-        description: "System overview and analytics"
       }
     ]
   },
   products: {
-    label: "Product Management",
+    label: "Products",
     items: [
       {
         title: "Products",
         url: "/products",
         icon: Package,
-        description: "Manage product catalog"
       },
       {
-        title: "Product Workflow",
+        title: "Workflow",
         url: "/product-workflow",
         icon: Kanban,
-        description: "Kanban board for workflow stages"
       },
       {
-        title: "Product Attributes",
+        title: "Attributes",
         url: "/product-attributes",
         icon: Tag,
-        description: "EAV attribute assignments"
       }
     ]
   },
   catalog: {
-    label: "Catalog Structure",
+    label: "Catalog",
     items: [
       {
         title: "Categories",
         url: "/categories",
         icon: ChartBarStacked,
-        description: "Product categorization"
       },
       {
         title: "Attributes",
         url: "/attributes",
         icon: Brush,
-        description: "Attribute definitions"
       },
       {
         title: "Attribute Sets",
         url: "/attribute-sets",
         icon: Layers,
-        description: "Attribute set configurations"
       },
       {
         title: "Attribute Groups",
         url: "/attribute-groups",
         icon: FileText,
-        description: "Group attributes within sets"
       },
       {
         title: "Assets",
         url: "/assets",
         icon: Video,
-        description: "Media and file management"
       }
     ]
   },
   stores: {
-    label: "Store Management",
+    label: "Channels",
     items: [
       {
         title: "Stores",
         url: "/stores",
         icon: Store,
-        description: "Store configuration"
       },
       {
         title: "Store Views",
         url: "/store-views",
         icon: Globe,
-        description: "Multi-language support"
       },
       {
         title: "Locales",
         url: "/locales",
         icon: Globe,
-        description: "Locale definitions (value & label)"
       }
     ]
   },
   teams: {
-    label: "Team Management",
+    label: "System",
     items: [
       {
         title: "Teams",
         url: "/teams",
         icon: Users,
-        description: "Manage teams and organizations"
       },
       {
-        title: "Team Members",
+        title: "Members",
         url: "/team-members",
         icon: UserPlus,
-        description: "Assign users to teams with roles"
       }
     ]
   }
 };
 
 export function AppSidebar() {
+  const { state, toggleSidebar } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   return (
-    <Sidebar className="border-r bg-sidebar text-sidebar-foreground animate-in slide-in-from-left duration-300">
-      <SidebarHeader className="border-b bg-sidebar-primary text-sidebar-primary-foreground">
-        <div className="flex items-center space-x-3 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary-foreground/10 backdrop-blur-sm">
-            <Database className="h-5 w-5 text-sidebar-primary-foreground" />
+    <Sidebar collapsible="icon" className="border-r border-border/40">
+      {/* Header */}
+      <SidebarHeader className="h-16 border-b border-border/40">
+        <div className="flex h-full items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {!isCollapsed && (
+              <>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary flex-shrink-0">
+                  <Database className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-sm font-bold tracking-tight truncate">MOLAB PIM</h1>
+                  <p className="text-xs text-muted-foreground truncate">Product Information</p>
+                </div>
+              </>
+            )}
           </div>
-          <div>
-            <h1 className="text-lg font-bold">PIM System</h1>
-            <p className="text-xs text-sidebar-primary-foreground/80">Product Information Management</p>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="h-8 w-8 hover:bg-accent flex-shrink-0"
+          >
+            {isCollapsed ? (
+              <PanelLeft className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-2 py-4 space-y-2">
-        {Object.entries(menuItems).map(([key, section]) => (
-          <SidebarGroup key={key} className="mb-6">
-            <SidebarGroupLabel className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {section.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="space-y-1">
-                {section.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url}
-                        className={({ isActive }) =>
-                          clsx(
-                            "group/item flex items-center space-x-3 rounded-lg px-4 py-5 text-sm font-medium border border-transparent transition-colors duration-200 ease-out",
-                            "hover:bg-sidebar-primary/10 hover:border-sidebar-primary hover:text-foreground hover:shadow-sm",
-                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                            isActive
-                              ? "bg-sidebar-primary/10 text-sidebar-primary border-r-2 border-sidebar-primary shadow-sm"
-                              : "text-muted-foreground"
-                          )
-                        }
-                      >
-                        <item.icon className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover/item:scale-110" />
-                        <div className="flex-1 min-w-0">
-                          <span className="truncate">{item.title}</span>
-                          <p className="text-xs text-muted-foreground truncate group-hover/item:text-foreground">
-                            {item.description}
-                          </p>
-                        </div>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+      {/* Content */}
+      <SidebarContent className="px-2 py-3 gap-2">
+        <TooltipProvider delayDuration={0}>
+          {Object.entries(menuItems).map(([key, section]) => (
+            <SidebarGroup key={key} className="px-0">
+              {!isCollapsed && (
+                <SidebarGroupLabel className="px-3 h-8 text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
+                  {section.label}
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-0.5">
+                  {section.items.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton asChild className="h-9">
+                            <NavLink 
+                              to={item.url}
+                              className={({ isActive }) =>
+                                clsx(
+                                  "flex items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-all",
+                                  isCollapsed && "justify-center px-0 w-full",
+                                  "hover:bg-accent hover:text-accent-foreground",
+                                  isActive
+                                    ? "bg-primary/10 text-primary font-semibold"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )
+                              }
+                            >
+                              <item.icon className="h-4 w-4 flex-shrink-0" />
+                              {!isCollapsed && (
+                                <span className="truncate">{item.title}</span>
+                              )}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        {isCollapsed && (
+                          <TooltipContent side="right" className="font-medium">
+                            {item.title}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </TooltipProvider>
       </SidebarContent>
       
-      <SidebarFooter className="border-t bg-sidebar/80 p-4">
+      {/* Footer */}
+      <SidebarFooter className="border-t border-border/40 p-2">
         <NavLink
           to="/settings"
-          className="flex items-center space-x-3 rounded-lg px-2 py-2 text-sm font-medium text-sidebar-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          className={({ isActive }) =>
+            clsx(
+              "flex items-center gap-3 rounded-md px-2.5 h-10 text-sm font-medium transition-all",
+              isCollapsed && "justify-center px-0",
+              "hover:bg-accent hover:text-accent-foreground",
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )
+          }
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-accent">
-            <Settings className="h-4 w-4 text-sidebar-primary" />
-          </div>
-          <div className="flex-1 min-w-0 text-left">
-            <p className="text-sm font-medium">Settings</p>
-            <p className="text-xs text-muted-foreground truncate">Theme & application preferences</p>
-          </div>
+          <Settings className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span className="truncate">Settings</span>}
         </NavLink>
       </SidebarFooter>
     </Sidebar>

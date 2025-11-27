@@ -75,78 +75,87 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-full p-4 md:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Business Analytics Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Comprehensive insights into your product information management system
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            Analytics Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2 text-base">
+            Real-time insights into your product information management system
           </p>
         </div>
-        <Button onClick={fetchDashboardData} variant="outline" size="sm">
-          <RefreshCwIcon className="h-4 w-4 mr-2" />
+        <Button onClick={fetchDashboardData} variant="outline" size="default" className="gap-2">
+          <RefreshCwIcon className="h-4 w-4" />
           Refresh Data
         </Button>
       </div>
 
       {/* Key Metrics Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <PackageIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.summary.totalProducts.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {analytics.summary.productsLast7Days > 0 && (
-                <span className="text-green-600">
-                  +{analytics.summary.productsLast7Days} last 7 days
-                </span>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="data-card group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+              <PackageIcon className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="metric-label">Total Products</p>
+            <p className="metric-value">{analytics.summary.totalProducts.toLocaleString()}</p>
+            {analytics.summary.productsLast7Days > 0 && (
+              <div className="metric-trend-up">
+                <TrendingUpIcon className="h-3 w-3" />
+                <span>+{analytics.summary.productsLast7Days} last 7 days</span>
+              </div>
+            )}
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
-            <FolderIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.summary.totalCategories.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+        <div className="data-card group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 rounded-xl bg-chart-2/20 text-chart-2 group-hover:bg-chart-2/30 transition-colors">
+              <FolderIcon className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="metric-label">Total Categories</p>
+            <p className="metric-value">{analytics.summary.totalCategories.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">
               {analytics.topCategories.length} active categories
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Attributes</CardTitle>
-            <TagIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.summary.totalAttributes.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+        <div className="data-card group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 rounded-xl bg-chart-3/20 text-chart-3 group-hover:bg-chart-3/30 transition-colors">
+              <TagIcon className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="metric-label">Total Attributes</p>
+            <p className="metric-value">{analytics.summary.totalAttributes.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">
               Across all attribute sets
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Store Views</CardTitle>
-            <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.summary.totalStoreViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+        <div className="data-card group">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 rounded-xl bg-chart-4/20 text-chart-4 group-hover:bg-chart-4/30 transition-colors">
+              <TrendingUpIcon className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="metric-label">Store Views</p>
+            <p className="metric-value">{analytics.summary.totalStoreViews.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">
               Multi-store coverage
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row 1: Product Type & Growth */}

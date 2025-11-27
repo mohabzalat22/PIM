@@ -13,12 +13,10 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   MoreHorizontalIcon,
-  FilterIcon,
   PlusIcon,
   EditIcon,
   TrashIcon,
   SearchIcon,
-  XIcon,
   StoreIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";

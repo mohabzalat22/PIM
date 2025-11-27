@@ -11,7 +11,7 @@ interface dateTypeProps {
 }
 
 export function DateType(props: dateTypeProps) {
-  const { initialValue = "", onValueChange, placeholder = "Select date range" } = props;
+  const { initialValue = "", onValueChange } = props;
   
   // Parse initial value - format: "fromDate:toDate" or single date
   const parseInitialValue = (value: string): { from: string; to: string } => {

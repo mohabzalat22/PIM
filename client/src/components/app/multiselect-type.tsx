@@ -61,18 +61,19 @@ export function MultiSelectType(props: multiSelectProps) {
     onValueChange?.(newValues);
   };
 
-  const removeValue = (value: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newValues = selectedValues.filter((v) => v !== value);
-    setSelectedValues(newValues);
-    onValueChange?.(newValues);
-  };
+  // Unused functions - kept for future use
+  // const removeValue = (value: string, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   const newValues = selectedValues.filter((v) => v !== value);
+  //   setSelectedValues(newValues);
+  //   onValueChange?.(newValues);
+  // };
 
-  const clearAll = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedValues([]);
-    onValueChange?.([]);
-  };
+  // const clearAll = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   setSelectedValues([]);
+  //   onValueChange?.([]);
+  // };
 
   // If no valid options, render disabled button
   if (validOptions.length === 0) {
