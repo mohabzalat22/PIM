@@ -19,6 +19,9 @@
       "skipFiles": ["<node_internals>/**"],
       "runtimeExecutable": "nodemon",
       "restart": true,
+      "runtimeArgs": ["--inspect"],
+      "console": "integratedTerminal",
+
     }
   ],
   "compounds": [
