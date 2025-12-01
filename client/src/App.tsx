@@ -30,11 +30,11 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
-        <Route path="/subscriptions" element = {<Subscriptions />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
 
         <Route
           element={
@@ -53,16 +53,34 @@ function App() {
           <Route path="/store-views" element={<StoreView></StoreView>}></Route>
           <Route path="/locales" element={<LocalePage></LocalePage>}></Route>
           <Route path="/products" element={<Product></Product>}></Route>
-          <Route path="/products/:id" element={<ProductDetail></ProductDetail>}></Route>
-          <Route path="/product-workflow" element={<ProductKanban></ProductKanban>}></Route>
+          <Route
+            path="/products/:id"
+            element={<ProductDetail></ProductDetail>}
+          ></Route>
+          <Route
+            path="/product-workflow"
+            element={<ProductKanban></ProductKanban>}
+          ></Route>
           <Route path="/categories" element={<Category></Category>}></Route>
           <Route path="/attributes" element={<Attribute></Attribute>}></Route>
-          <Route path="/attribute-sets" element={<AttributeSetPage></AttributeSetPage>}></Route>
-          <Route path="/attribute-groups" element={<AttributeGroupPage></AttributeGroupPage>}></Route>
+          <Route
+            path="/attribute-sets"
+            element={<AttributeSetPage></AttributeSetPage>}
+          ></Route>
+          <Route
+            path="/attribute-groups"
+            element={<AttributeGroupPage></AttributeGroupPage>}
+          ></Route>
           <Route path="/assets" element={<Asset></Asset>}></Route>
-          <Route path="/product-attributes" element={<ProductAttributes></ProductAttributes>}></Route>
+          <Route
+            path="/product-attributes"
+            element={<ProductAttributes></ProductAttributes>}
+          ></Route>
           <Route path="/teams" element={<TeamPage></TeamPage>}></Route>
-          <Route path="/team-members" element={<TeamMemberPage></TeamMemberPage>}></Route>
+          <Route
+            path="/team-members"
+            element={<TeamMemberPage></TeamMemberPage>}
+          ></Route>
           <Route path="/settings" element={<Settings></Settings>}></Route>
         </Route>
 
