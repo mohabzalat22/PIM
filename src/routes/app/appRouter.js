@@ -14,10 +14,14 @@ import attributeSetRoutes from "../../routes/attributeSetRoute.js";
 import attributeGroupRoutes from "../../routes/attributeGroupRoute.js";
 import analyticsRoutes from "../../routes/analyticsRoute.js";
 import userRoutes from "../../routes/userRoute.js";
-import teamRoutes from "../../routes/teamRoute.js";
-import teamMemberRoutes from "../../routes/teamMemberRoute.js";
+import workspaceRoutes from "../../routes/workspaceRoute.js";
+import workspaceMemberRoutes from "../../routes/workspaceMemberRoute.js";
+import workspaceInviteRoutes from "../../routes/workspaceInviteRoute.js";
 import productWorkflowHistoryRoutes from "../../routes/productWorkflowHistoryRoutes.js";
-import { authMiddleware, requireAuthentication } from "../../middlewares/authMiddleware.js";
+import {
+  authMiddleware,
+  requireAuthentication,
+} from "../../middlewares/authMiddleware.js";
 import { csrfMiddleware } from "../../middlewares/csrfMiddleware.js";
 import paymentRoutes from "../../routes/paymentRoute.js";
 
@@ -52,10 +56,11 @@ router.use(`/locales`, localeRoutes);
 // Analytics routes
 router.use(`/analytics`, analyticsRoutes);
 
-// User and Team related routes
+// User and Workspace related routes
 router.use(`/users`, userRoutes);
-router.use(`/teams`, teamRoutes);
-router.use(`/team-members`, teamMemberRoutes);
+router.use(`/workspaces`, workspaceRoutes);
+router.use(`/workspace-members`, workspaceMemberRoutes);
+router.use(`/workspace-invites`, workspaceInviteRoutes);
 
 // Workflow history routes
 router.use(`/`, productWorkflowHistoryRoutes);

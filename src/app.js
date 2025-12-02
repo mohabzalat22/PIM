@@ -12,6 +12,8 @@ import dotenv from "dotenv";
 import appRouter from "./routes/app/appRouter.js";
 import clerkWebhookRoute from "./webhooks/clerkRoute.js";
 import stripeWebhook from "./webhooks/stripe.webhook.js";
+import { validateInvitationToken } from "./controllers/workspaceInviteController.js";
+import { asyncWrapper } from "./utils/asyncWrapper.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
@@ -48,6 +50,9 @@ app.get('/api-docs.json', (req, res) => {
 
 // Webhooks route (unprotected) - MUST come before protected routes
 app.use(apiEndpoint+ "/webhooks/clerk", clerkWebhookRoute);
+
+// Public workspace invitation validation (unprotected)
+app.get(apiEndpoint + "/workspace-invites/validate/:token", asyncWrapper(validateInvitationToken));
 
 // CSRF route
 app.use(apiEndpoint, csrfRoute);

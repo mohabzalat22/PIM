@@ -13,9 +13,13 @@ export const findAll = async (skip, limit) => {
     skip,
     take: limit,
     include: {
-      teamMembers: {
+      workspaceMembers: {
         include: {
-          team: true,
+          workspace: {
+            include: {
+              invites: true,
+            },
+          },
         },
       },
     },
@@ -38,9 +42,13 @@ export const findById = async (id) => {
   return await prisma.user.findUnique({
     where: { id: parseInt(id) },
     include: {
-      teamMembers: {
+      workspaceMembers: {
         include: {
-          team: true,
+          workspace: {
+            include: {
+              invites: true,
+            },
+          },
         },
       },
     },
@@ -65,15 +73,8 @@ export const findByEmail = async (email) => {
 export const findByStripeCustomerId = async (stripeCustomerId) => {
   return await prisma.user.findUnique({
     where: { stripeCustomerId },
-    include: {
-      teamMembers: {
-        include: {
-          team: true,
-        },
-      },
-    },
   });
-};  
+};
 
 /**
  * Find user by Clerk ID
@@ -82,14 +83,7 @@ export const findByStripeCustomerId = async (stripeCustomerId) => {
  */
 export const findByClerkId = async (clerkId) => {
   return await prisma.user.findUnique({
-    where: { clerkId },
-    include: {
-      teamMembers: {
-        include: {
-          team: true,
-        },
-      },
-    },
+    where: { clerkId: clerkId },
   });
 };
 
@@ -102,7 +96,7 @@ export const create = async (data) => {
   return await prisma.user.create({
     data,
     include: {
-      teamMembers: true,
+      workspaceMembers: true,
     },
   });
 };
@@ -118,9 +112,13 @@ export const update = async (id, data) => {
     where: { id: parseInt(id) },
     data,
     include: {
-      teamMembers: {
+      workspaceMembers: {
         include: {
-          team: true,
+          workspace: {
+            include: {
+              invites: true,
+            },
+          },
         },
       },
     },

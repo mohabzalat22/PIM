@@ -323,9 +323,10 @@ model User {
   /**
    * Relations
    */
-  teamMembers         TeamMember[]
+  workspaceMembers    WorkspaceMember[]
   assignedProducts    Product[]
   workflowHistory     ProductWorkflowHistory[]
+  ownedWorkspaces           Workspace[] @relation("OwnerWorkspaces")
 }
 
 enum SubscriptionStatus {
@@ -352,37 +353,57 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Team {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  /**
-  * Relations 
-  */
-  teamMembers   TeamMember[]
-}
-
 enum MemberRole {
-  OWNER
   ADMIN
   MEMBER
 }
 
-model TeamMember {
-  id        Int      @id @default(autoincrement())
-  teamId    Int
-  userId    Int
-  role      MemberRole     @default(MEMBER)
+model Workspace {
+  id Int @id @default(autoincrement())
+  name String 
+  ownerId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   /**
+  relations
+  */
+
+  owner User @relation("OwnerWorkspaces", fields: [ownerId], references: [id])
+  members WorkspaceMember[]
+  invites WorkspaceInvite[]
+}
+model WorkspaceMember {
+  id        Int      @id @default(autoincrement())
+  workspaceId    Int
+  userId    Int
+  role      MemberRole     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
+
+  /**
    * Relations
    */
-  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, userId])
+  @@unique([workspaceId, userId])
+}
+
+
+model WorkspaceInvite{
+  id  Int @id @default(autoincrement())
+  workspaceId Int
+  email String
+  token String @unique
+  role MemberRole @default(MEMBER)
+  expiresAt DateTime 
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+
+  /**
+   relations 
+  */
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

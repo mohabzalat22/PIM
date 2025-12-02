@@ -18,8 +18,10 @@ import LocalePage from "./pages/Locale";
 import Home from "./pages/Home";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
-import TeamPage from "./pages/Team";
-import TeamMemberPage from "./pages/TeamMember";
+import InviteSignUpPage from "./pages/InviteSignUp";
+import InviteSignInPage from "./pages/InviteSignIn";
+import WorkspacePage from "./pages/Workspace";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import Success from "./pages/payment/Success";
 import Cancel from "./pages/payment/Cancel";
@@ -32,6 +34,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
+        <Route path="/invite/sign-up/*" element={<InviteSignUpPage />} />
+        <Route path="/invite/sign-in/*" element={<InviteSignInPage />} />
+        <Route path="/workspace/invite" element={<AcceptInvitation />} />
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
@@ -76,10 +81,9 @@ function App() {
             path="/product-attributes"
             element={<ProductAttributes></ProductAttributes>}
           ></Route>
-          <Route path="/teams" element={<TeamPage></TeamPage>}></Route>
           <Route
-            path="/team-members"
-            element={<TeamMemberPage></TeamMemberPage>}
+            path="/workspaces"
+            element={<WorkspacePage></WorkspacePage>}
           ></Route>
           <Route path="/settings" element={<Settings></Settings>}></Route>
         </Route>

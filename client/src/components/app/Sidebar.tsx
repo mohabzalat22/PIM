@@ -12,7 +12,6 @@ import {
   FileText,
   Globe,
   Users,
-  UserPlus,
   Kanban,
   PanelLeftClose,
   PanelLeft,
@@ -50,8 +49,8 @@ const menuItems = {
         title: "Dashboard",
         url: "/dashboard",
         icon: Home,
-      }
-    ]
+      },
+    ],
   },
   products: {
     label: "Products",
@@ -70,8 +69,8 @@ const menuItems = {
         title: "Attributes",
         url: "/product-attributes",
         icon: Tag,
-      }
-    ]
+      },
+    ],
   },
   catalog: {
     label: "Catalog",
@@ -100,8 +99,8 @@ const menuItems = {
         title: "Assets",
         url: "/assets",
         icon: Video,
-      }
-    ]
+      },
+    ],
   },
   stores: {
     label: "Channels",
@@ -120,24 +119,19 @@ const menuItems = {
         title: "Locales",
         url: "/locales",
         icon: Globe,
-      }
-    ]
+      },
+    ],
   },
-  teams: {
+  workspaces: {
     label: "System",
     items: [
       {
-        title: "Teams",
-        url: "/teams",
+        title: "Workspaces",
+        url: "/workspaces",
         icon: Users,
       },
-      {
-        title: "Members",
-        url: "/team-members",
-        icon: UserPlus,
-      }
-    ]
-  }
+    ],
+  },
 };
 
 export function AppSidebar() {
