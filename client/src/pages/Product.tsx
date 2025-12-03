@@ -13,6 +13,8 @@ import {
 import { PaginationBar } from "@/components/app/PaginationBar";
 import { BulkActionBar } from "@/components/app/BulkActionBar";
 import { ColumnSelector, type Column } from "@/components/app/ColumnSelector";
+import { ProductExport } from "@/components/ProductExport";
+import { ProductImport } from "@/components/ProductImport";
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -407,7 +409,12 @@ export default function Product() {
       title="Products"
       actions={
         <div className="flex items-center gap-2">
-          <ColumnSelector columns={columns} onColumnChange={handleColumnChange} />
+          <ProductExport filters={filters} />
+          <ProductImport onImportComplete={refetchProducts} />
+          <ColumnSelector
+            columns={columns}
+            onColumnChange={handleColumnChange}
+          />
           <Button onClick={() => setShowCreateDialog(true)}>
             <PlusIcon className="w-4 h-4 mr-2" />
             Add Product
@@ -485,7 +492,10 @@ export default function Product() {
                     })),
                   ]}
                   onValueChange={(value) =>
-                    handleFilterChange("categoryId", value === "all" ? "" : value)
+                    handleFilterChange(
+                      "categoryId",
+                      value === "all" ? "" : value
+                    )
                   }
                 />
               )}
@@ -503,8 +513,7 @@ export default function Product() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {attributes
                     .filter(
-                      (attr) =>
-                        attr.isFilterable && attr.inputType !== "MEDIA"
+                      (attr) => attr.isFilterable && attr.inputType !== "MEDIA"
                     )
                     .map((attribute) => {
                       const filterComponent = renderFilterComponent(attribute);
@@ -564,22 +573,29 @@ export default function Product() {
               <TableHead className="w-[50px]">
                 <Checkbox
                   checked={
-                    products && products.length > 0 && 
+                    products &&
+                    products.length > 0 &&
                     products.every((p) => selectedProductIds.has(p.id))
                   }
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
             )}
-            {isColumnVisible("id") && <TableHead className="w-[100px]">ID</TableHead>}
+            {isColumnVisible("id") && (
+              <TableHead className="w-[100px]">ID</TableHead>
+            )}
             {isColumnVisible("sku") && <TableHead>SKU</TableHead>}
             {isColumnVisible("type") && <TableHead>Type</TableHead>}
             {isColumnVisible("status") && <TableHead>Status</TableHead>}
-            {isColumnVisible("attributeSet") && <TableHead>Attribute Set</TableHead>}
+            {isColumnVisible("attributeSet") && (
+              <TableHead>Attribute Set</TableHead>
+            )}
             {isColumnVisible("categories") && <TableHead>Categories</TableHead>}
             {isColumnVisible("attributes") && <TableHead>Attributes</TableHead>}
             {isColumnVisible("created") && <TableHead>Created</TableHead>}
-            {isColumnVisible("actions") && <TableHead className="w-[100px]">Actions</TableHead>}
+            {isColumnVisible("actions") && (
+              <TableHead className="w-[100px]">Actions</TableHead>
+            )}
           </>
         }
         rows={
@@ -732,8 +748,14 @@ export default function Product() {
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
         title="Delete Multiple Products"
-        description={`Are you sure you want to delete ${selectedProductIds.size} product${selectedProductIds.size !== 1 ? "s" : ""}? This action cannot be undone.`}
-        primaryLabel={`Delete ${selectedProductIds.size} Product${selectedProductIds.size !== 1 ? "s" : ""}`}
+        description={`Are you sure you want to delete ${
+          selectedProductIds.size
+        } product${
+          selectedProductIds.size !== 1 ? "s" : ""
+        }? This action cannot be undone.`}
+        primaryLabel={`Delete ${selectedProductIds.size} Product${
+          selectedProductIds.size !== 1 ? "s" : ""
+        }`}
         onConfirm={confirmBulkDelete}
       />
 
