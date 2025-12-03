@@ -1,6 +1,0 @@
-GET  /api/v1/csrf-token  200  1ms 
-GET  /api/v1/attributes?page=1&limit=100&sortBy=createdAt&sortOrder=desc  304  17ms 
-GET  /api/v1/attribute-sets?page=1&limit=10&sortBy=createdAt&sortOrder=desc  304  21ms 
-GET  /api/v1/csrf-token  200  1ms 
-GET  /api/v1/attribute-sets?page=1&limit=10&sortBy=createdAt&sortOrder=desc  304  10ms 
-GET  /api/v1/attributes?page=1&limit=100&sortBy=createdAt&sortOrder=desc  304  12ms 
