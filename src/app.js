@@ -14,12 +14,14 @@ import clerkWebhookRoute from "./webhooks/clerkRoute.js";
 import stripeWebhook from "./webhooks/stripe.webhook.js";
 import { validateInvitationToken } from "./controllers/workspaceInviteController.js";
 import { asyncWrapper } from "./utils/asyncWrapper.js";
+import logger from "./middlewares/loggerMiddleware.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 const apiEndpoint = process.env.API_ENDPOINT || "/api/v1";
 
 const app = express();
+app.use(logger);
 app.use(responseHelper);
 
 // Trust proxy - required for rate limiting behind reverse proxies
